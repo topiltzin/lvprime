@@ -115,6 +115,26 @@
 
 ---
 
+## Actualización de Programa — 14 de Septiembre, 2026
+
+**Cambio adoptado:** Se reemplazó el programa de fase base por una rutina de ganancia de masa muscular/fuerza con enfoque en pull-up, push-up y skills (handstand), 5 días/semana (3 piernas + 2 tren superior).
+
+**Se descartó una opción alterna** de plan de alimentación con énfasis en "pérdida de grasa" propuesta el mismo día — contradice el objetivo documentado de recomposición sin bajar de peso, dado su IMC 21.5 ya en el límite bajo saludable. No se aplicó.
+
+**Ajustes hechos antes de adoptar la rutina de entrenamiento:**
+- Reordenados los días para que los 3 días de pierna (lunes/miércoles/viernes) no queden consecutivos — la propuesta original tenía miércoles y jueves como días de pierna seguidos, riesgo de acumulación de fatiga a su edad.
+- Calentamiento y cierre/estiramiento explícitos agregados a los 5 días (la propuesta original solo detallaba el lunes).
+- Trabajo de balance/propiocepción agregado en los días de pierna, para no perder el enfoque de skills que se había priorizado en el programa anterior.
+- Pull-up y push-up progression inician en el escalón más conservador (scapular pull-up / push-up inclinada) dado que su nivel de referencia previo era flexión contra pared — **pendiente confirmar en sesión 1 si necesita ajuste de escalón**.
+- Se agregó hollow hold como activación de core antes de pull-ups (martes y jueves), plank shoulder taps (jueves), y plank frontal como segundo ejercicio de core el viernes — para reforzar core/hombro de cara a pull-ups y handstand.
+
+**Puntos de seguimiento para esta fase:**
+- Confirmar escalón real de pull-up/push-up en la primera sesión (martes).
+- Vigilar recuperación entre los 3 días de pierna — si reporta fatiga acumulada pese al reordenamiento, considerar bajar volumen de glúteo/cadera.
+- Preguntar específicamente por sensación en hombro con hollow hold y plank shoulder taps (ejercicios nuevos para ella).
+
+---
+
 ## Comunicación Esperada
 
 Jaqueline debe actualizar `feedback.md` después de cada sesión o mínimo 2x por semana. Revisar regularmente para:

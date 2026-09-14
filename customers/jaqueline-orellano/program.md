@@ -1,9 +1,11 @@
 # Programa de Entrenamiento: Jaqueline Orellano
 
-**Objetivo:** Aumento de Masa Muscular y Fuerza  
-**Edad:** 58 años | **Altura:** 1.60m | **Peso:** 55kg  
+**Versión vigente desde:** 14 de Septiembre, 2026 (reemplaza el programa de fase base anterior)
+
+**Objetivo:** Ganancia de masa muscular, incremento de fuerza y mejora de movilidad y skills (pull-up, handstand)  
+**Edad:** 58 años | **Altura:** 1.60m | **Peso:** 55.5kg  
 **Nivel:** Activo (5 días/semana)  
-**Duración:** 60 min/sesión (10-15 min calentamiento + estiramiento, 45-50 min entrenamiento)  
+**Duración:** 55-65 min/sesión (7 min calentamiento, entrenamiento principal, 5 min cierre/estiramiento)  
 **Duración del Plan:** 4 semanas
 
 ---
@@ -22,187 +24,137 @@
 
 ---
 
-## Semana 1-2: Fase Base
+## Estructura Semanal
 
-### LUNES - Tren Superior (Pecho y Espalda)
+| Día | Enfoque |
+|---|---|
+| Lunes | Piernas A — Cuádriceps + Glúteos + Abdomen |
+| Martes | Tren Superior A — Pull-up + Push-up + Tren Superior |
+| Miércoles | Piernas B — Glúteos + Femorales + Unilateral |
+| Jueves | Tren Superior B — Pull-up + Push-up + Tren Superior |
+| Viernes | Piernas C — Cuádriceps + Glúteos + Abdomen |
+| Sáb/Dom | Descanso / movilidad ligera |
 
-**Calentamiento (5-8 min):**
-- 2 min: Bicicleta estacionaria o marcha suave
-- 3-4 min: Círculos de brazos, flexibilidad de hombros
-- 1 min: Activación de pecho (flexiones contra pared)
-
-**Entrenamiento (45 min):**
-
-1. **Flexiones en máquina o contra pared** - 3 sets x 8-10 reps
-   - Forma: Espalda recta, codos hacia atrás, descender controladamente
-   - Descanso: 90 seg entre sets
-
-2. **Remo sentada en máquina** - 3 sets x 10-12 reps
-   - Forma: Pecho al pecho, contraer omóplatos
-   - Descanso: 90 seg
-
-3. **Press de pecho con mancuernas** - 3 sets x 10 reps
-   - Peso: Empezar ligero (2-3 kg), lo que permita control
-   - Forma: Elbows a 45°, bajar hasta pecho
-   - Descanso: 90 seg
-
-4. **Lat pulldown (espalda)** - 2 sets x 12 reps
-   - Descanso: 60 seg
-
-**Estiramiento (5-7 min):**
-- Pecho (30 seg cada lado)
-- Espalda y hombros (30 seg)
-- Brazos (20 seg cada brazo)
+> **Nota de diseño:** los 3 días de pierna (lunes/miércoles/viernes) quedan separados por al menos un día para permitir recuperación adecuada a su edad — el orden original agrupaba dos días de pierna consecutivos (miércoles-jueves), lo cual se corrigió antes de adoptar esta versión.
 
 ---
 
-### MARTES - Tren Inferior (Piernas y Glúteos)
+### LUNES - Piernas A (Cuádriceps + Glúteos + Abdomen)
 
-**Calentamiento (5-8 min):**
-- 2 min: Caminata o bicicleta suave
-- 2 min: Activación de glúteos (puentes, caminata de cangrejo)
-- 1-2 min: Flexibilidad de caderas
+**Calentamiento (7 min):** Caminata ligera · Movilidad de cadera y tobillo · Sentadilla con peso corporal × 10 · 30 seg de pie en una pierna (cada lado)
 
-**Entrenamiento (45 min):**
+1. **Sentadilla libre / Goblet squat** - 3 x 8-10 - Descanso 90-120 seg
+   - Forma: Rodillas alineadas con tobillos, bajar controlado
+2. **Hip thrust** - 3 x 8-10 - Descanso 90-120 seg
+   - Forma: Contraer glúteo arriba, no hiperextender lumbar
+3. **Bulgarian split squat** - 3 x 8-10 por pierna - Descanso 90-120 seg
+   - Forma: Torso ligeramente inclinado adelante, rodilla estable
+4. **Extensión de pierna** - 3 x 12-15 - Descanso 45-75 seg
+5. **Hip abduction** - 3 x 12-15 - Descanso 45-75 seg
+6. **Reverse crunch** - 3 x 10-15 - Descanso 45-75 seg
 
-1. **Sentadillas (o sentadillas en máquina Smith)** - 3 sets x 10-12 reps
-   - Forma: Descender hasta 90°, rodillas alineadas con tobillos
-   - Descanso: 2 min (es el ejercicio más demandante)
-
-2. **Extensión de piernas en máquina** - 3 sets x 12 reps
-   - Forma: Movimiento controlado, contraer cuádriceps
-   - Descanso: 90 seg
-
-3. **Curl de pierna (máquina)** - 3 sets x 10-12 reps
-   - Forma: Traer talones hacia glúteos
-   - Descanso: 90 seg
-
-4. **Puente de glúteos (o levantamiento de cadera)** - 2 sets x 15 reps
-   - Forma: Elevar cadera, contraer glúteos al tope
-   - Descanso: 60 seg
-
-**Estiramiento (5-7 min):**
-- Cuádriceps (30 seg cada pierna)
-- Isquiotibiales (30 seg)
-- Glúteos y cadera (30 seg cada lado)
+**Cierre (5 min):** Estiramiento de cuádriceps/glúteo/cadera + 30 seg balance en una pierna (cada lado)
 
 ---
 
-### MIÉRCOLES - Skills (Técnica y Movilidad)
+### MARTES - Tren Superior A (Pull-up + Push-up + Tren Superior)
 
-**Enfoque:** Mejorar rango de movimiento, estabilidad y técnica
+**Calentamiento (7 min):** Bicicleta o marcha suave · Círculos de brazos y hombros · Activación de escápulas (retracciones) x 10
 
-**Calentamiento (8-10 min):**
-- Caminata suave
-- Movilidad articular (hombros, caderas, tobillos)
+1. **Hollow hold** (activación core antes de pull-ups) - 2 x 20-30 seg - Descanso 30-45 seg
+   - Forma: Zona lumbar pegada al piso, piernas y brazos extendidos y firmes
+2. **Pull-up progression** (iniciar en escalón: scapular pull-up) - 3 x 4-6 - Descanso 60-90 seg
+   - Evaluar nivel real en la primera sesión antes de avanzar de escalón
+3. **Push-up progression** (iniciar en escalón: inclinada) - 3 x 6-10 - Descanso 60-90 seg
+4. **Lat pulldown** - 3 x 8-10 - Descanso 90-120 seg
+5. **Dumbbell chest press** - 3 x 8-10 - Descanso 90-120 seg
+6. **Seated cable row** - 3 x 8-10 - Descanso 90-120 seg
+7. **Lateral raises** - 3 x 12-15 - Descanso 45-75 seg
+8. **Biceps curl** - 3 x 10-12 - Descanso 45-75 seg
+9. **Triceps rope pushdown** - 3 x 10-12 - Descanso 45-75 seg
 
-**Entrenamiento (40-45 min):**
-
-1. **Trabalenguas de movilidad** - 3 series
-   - Rotaciones de tronco (1 min)
-   - Círculos de cadera (1 min)
-   - Flexiones laterales (1 min)
-
-2. **Ejercicios de estabilidad core**
-   - Plank estático - 3 sets x 20-30 seg
-   - Bird Dog (pájaro) - 3 sets x 8 reps cada lado
-   - Dead bug - 3 sets x 10 reps
-
-3. **Técnica con barra ligera o sin peso**
-   - Press de hombros (técnica) - 15 reps x 3
-   - Remo (técnica) - 15 reps x 3
-   - Sentadilla (técnica) - 15 reps x 3
-
-4. **Equilibrio y propiocepción**
-   - Pararse en una pierna - 3 sets x 20-30 seg cada pierna
-   - Caminar en línea recta (talón-punta) - 30 metros x 2
-
-**Estiramiento extensivo (10 min):**
-- Estiramiento estático profundo de todo el cuerpo
-- Yoga suave o pilates
+**Cierre (5 min):** Estiramiento de pecho/espalda/hombros + movilidad de columna torácica
 
 ---
 
-### JUEVES - Tren Superior (Espalda y Brazos)
+### MIÉRCOLES - Piernas B (Glúteos + Femorales + Unilateral)
 
-**Calentamiento (5-8 min):**
-- Bicicleta estacionaria o marcha
-- Movilidad de brazos y hombros
+**Calentamiento (7 min):** Caminata suave · Activación de glúteos (puentes x 10) · Movilidad de cadera
 
-**Entrenamiento (45 min):**
+1. **Romanian deadlift** - 3 x 8-10 - Descanso 90-120 seg
+   - Forma: Espalda neutra, bisagra de cadera
+2. **Hip thrust** - 3 x 10-12 - Descanso 90-120 seg
+3. **Step-up** - 3 x 8-10 por pierna - Descanso 90-120 seg
+4. **Leg curl** - 3 x 10-12 - Descanso 45-75 seg
+5. **Hip abduction** - 3 x 12-15 - Descanso 45-75 seg
+6. **Pallof press** (core/anti-rotación) - 3 x 10-12 por lado - Descanso 45-75 seg
+   - Forma: Resistir la rotación, core firme, movimiento lento
 
-1. **Remo en máquina (variante)** - 3 sets x 10-12 reps
-   - Forma: Control total, contraer espalda
-   - Descanso: 90 seg
-
-2. **Elevaciones laterales de hombros** - 3 sets x 12-15 reps
-   - Peso: 1-2 kg (muy ligero)
-   - Forma: Movimiento lento, arriba al nivel de hombro
-   - Descanso: 60 seg
-
-3. **Curl de bíceps en mancuernas** - 3 sets x 10-12 reps
-   - Peso: 2-3 kg
-   - Forma: Movimiento controlado, palmas hacia adelante
-   - Descanso: 60 seg
-
-4. **Extensión de tríceps (cuerda o polea)** - 3 sets x 12 reps
-   - Forma: Extender completamente los brazos
-   - Descanso: 60 seg
-
-5. **Cara-pull (espalda posterior de hombro)** - 2 sets x 15 reps
-   - Bueno para postura
-   - Descanso: 60 seg
-
-**Estiramiento (5-7 min):**
-- Brazos, hombros y pecho (30 seg c/u)
-- Espalda (30 seg)
+**Cierre (5 min):** Estiramiento de isquiotibiales/glúteo + caminata talón-punta 2 x 10m (balance)
 
 ---
 
-### VIERNES - Tren Inferior + Core
+### JUEVES - Tren Superior B (Pull-up + Push-up + Tren Superior)
 
-**Calentamiento (5-8 min):**
-- Caminata o bicicleta
-- Activación de glúteos
+**Calentamiento (7 min):** Bicicleta o marcha suave · Movilidad de hombros · Activación de espalda alta (face pull con banda x 10)
 
-**Entrenamiento (45 min):**
+1. **Hollow hold** (activación core antes de pull-ups) - 2 x 20-30 seg - Descanso 30-45 seg
+2. **Plank shoulder taps** - 2 x 8-10 por lado - Descanso 30-45 seg
+   - Forma: Cadera estable, evitar rotar tronco al tocar el hombro
+3. **Pull-up progression** (escalón según lo observado el martes) - 3 x 4-6 - Descanso 60-90 seg
+4. **Push-up progression** - 3 x 6-10 - Descanso 60-90 seg
+5. **One-arm dumbbell row** - 3 x 8-10 por lado - Descanso 90-120 seg
+6. **Incline dumbbell press** - 3 x 8-10 - Descanso 90-120 seg
+7. **Lat pulldown / assisted pull-up** - 3 x 8-10 - Descanso 90-120 seg
+8. **Face pull** - 3 x 12-15 - Descanso 45-75 seg
+9. **Lateral raises** - 3 x 12-15 - Descanso 45-75 seg
+10. **Biceps curl + Triceps pushdown** - 3 x 10-12 cada uno - Descanso 45-75 seg
 
-1. **Leg Press (máquina)** - 3 sets x 12 reps
-   - Forma: Rango de movimiento completo
-   - Descanso: 2 min
-
-2. **Abducción de cadera (máquina)** - 3 sets x 15 reps
-   - Forma: Trabajo de glúteo lateral
-   - Descanso: 60 seg
-
-3. **Prensa de pierna inclinada o sentadilla asimétrica** - 2 sets x 10 reps
-
-4. **Plank dinámico** - 3 sets x 10 movimientos
-   - Forma: Plank + alternancia de rodillas al pecho
-
-5. **Levantamiento de cadera (puente)** - 3 sets x 15 reps
-   - Descanso: 60 seg
-
-6. **Crunch en máquina** - 2 sets x 12 reps
-   - Descanso: 45 seg
-
-**Estiramiento (5-7 min):**
-- Enfoque en piernas, caderas y espalda baja
+**Cierre (5 min):** Estiramiento de brazos/hombros/pecho + movilidad de columna torácica
 
 ---
 
-## Progresión (Semana 3-4)
+### VIERNES - Piernas C (Cuádriceps + Glúteos + Abdomen)
 
-**Aumentar en:**
-- Peso: +1-2 kg en ejercicios principales (si siente control)
-- Reps: Si llega a 12 reps fácilmente, aumentar peso
-- Sets: Agregar 1 set más en 1-2 ejercicios por sesión
+**Calentamiento (7 min):** Caminata o bicicleta suave · Activación de glúteos · Movilidad de tobillo
+
+1. **Leg press** - 3 x 8-10 - Descanso 90-120 seg
+2. **Goblet squat / squat** - 3 x 10-12 - Descanso 90-120 seg
+3. **Reverse lunge** - 3 x 8-10 por pierna - Descanso 90-120 seg
+4. **Hip thrust / glute bridge** - 3 x 8-10 - Descanso 90-120 seg
+5. **Extensión de pierna** - 3 x 12-15 - Descanso 45-75 seg
+6. **Dead bug** - 3 x 8-10 por lado - Descanso 45-75 seg
+7. **Plank frontal** (fortalece core/hombro para pull-ups y handstand) - 2-3 x 20-30 seg - Descanso 45-60 seg
+   - Forma: Línea recta cabeza-cadera-talón, hombros activos empujando el piso
+
+**Cierre (5 min):** Estiramiento general de piernas/cadera + 30 seg balance en una pierna (cada lado)
+
+---
+
+### SÁBADO Y DOMINGO - Descanso / Movilidad Ligera
+Caminata suave, estiramientos, yoga suave o pilates. Sin entrenamiento de fuerza.
+
+---
+
+## Progresión de Pull-up (nivel actual → siguiente)
+Scapular pull-up → Pull-up asistida → Pull-up asistida con menor asistencia → Eccentric pull-up → Pull-up sin asistencia. La progresión depende de su nivel observado en sesión.
+
+## Progresión de Push-up
+Push-up inclinada → superficie progresivamente más baja → push-up en suelo → aumentar progresivamente las repeticiones.
+
+## Progresión Semanal (4 semanas)
+
+- **Semana 1:** Encontrar una carga cómoda y dominar la técnica.
+- **Semana 2:** Aumentar progresivamente las repeticiones dentro del rango indicado.
+- **Semana 3:** Si completa todas las repeticiones con buena técnica, aumentar ligeramente la carga.
+- **Semana 4:** Mantener o aumentar ligeramente carga/repeticiones, siempre priorizando la técnica.
 
 **Señales de progreso a observar:**
 - Aumento de fuerza (levanta más peso)
 - Mayor resistencia (menos fatiga en sesión)
 - Mejor postura y técnica
 - Sensación de firmeza muscular
+- Avance de escalón en pull-up/push-up progression
 
 ---
 
