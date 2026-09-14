@@ -1,0 +1,18 @@
+# Node.js
+node_modules/
+dist/
+build/
+*.log
+.env
+.env.*
+
+# App-local data (rebuildable SQLite index cache — never committed)
+app/data/
+
+# Editor/OS
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+.vscode/
+.idea/

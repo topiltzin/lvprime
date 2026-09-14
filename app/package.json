@@ -1,0 +1,22 @@
+{
+  "name": "fitness-plan-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local coach-only dashboard over customers/*/program.md, feedback.md, notes.md",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "start": "node server/serve.js",
+    "test": "node --test tests/"
+  },
+  "dependencies": {
+    "marked": "^13.0.3"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "devDependencies": {
+    "vite": "^8.3.0"
+  }
+}
