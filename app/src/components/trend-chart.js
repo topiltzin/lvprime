@@ -27,19 +27,55 @@ export function renderTrendChart(trend) {
   svg.setAttribute('height', height);
   svg.setAttribute('role', 'img');
   svg.setAttribute('aria-label', 'Difficulty and completion trend over sessions');
+  svg.setAttribute('aria-describedby', 'trend-chart-details');
+
+  // Colorblind users and screen readers can't rely on the green/red bar fill
+  // alone, so missed sessions also get a diagonal hatch pattern (visual) and
+  // every session is repeated as a hidden text list (assistive tech).
+  const defs = document.createElementNS(SVG_NS, 'defs');
+  const pattern = document.createElementNS(SVG_NS, 'pattern');
+  pattern.setAttribute('id', 'missed-hatch');
+  pattern.setAttribute('width', '6');
+  pattern.setAttribute('height', '6');
+  pattern.setAttribute('patternTransform', 'rotate(45)');
+  pattern.setAttribute('patternUnits', 'userSpaceOnUse');
+  const hatchLine = document.createElementNS(SVG_NS, 'line');
+  hatchLine.setAttribute('x1', '0');
+  hatchLine.setAttribute('y1', '0');
+  hatchLine.setAttribute('x2', '0');
+  hatchLine.setAttribute('y2', '6');
+  hatchLine.setAttribute('stroke', '#ffffff');
+  hatchLine.setAttribute('stroke-width', '2');
+  pattern.appendChild(hatchLine);
+  defs.appendChild(pattern);
+  svg.appendChild(defs);
+
+  const summaryItems = [];
 
   trend.points.forEach((point, i) => {
     const x = BAR_GAP / 2 + BAR_WIDTH / 2 + i * (BAR_WIDTH + BAR_GAP);
     const barHeight = point.difficultyScore ? (point.difficultyScore / maxScore) * (height - 40) : 6;
+    const missed = point.completed === false;
     const rect = document.createElementNS(SVG_NS, 'rect');
     rect.setAttribute('x', x - BAR_WIDTH / 2);
     rect.setAttribute('y', height - 24 - barHeight);
     rect.setAttribute('width', BAR_WIDTH);
     rect.setAttribute('height', barHeight);
     rect.setAttribute('rx', 4);
-    rect.setAttribute('fill', point.completed === false ? MISSED_COLOR : COMPLETED_COLOR);
+    rect.setAttribute('fill', missed ? MISSED_COLOR : COMPLETED_COLOR);
     rect.setAttribute('opacity', point.difficultyScore ? '1' : '0.35');
     svg.appendChild(rect);
+
+    if (missed) {
+      const hatchOverlay = document.createElementNS(SVG_NS, 'rect');
+      hatchOverlay.setAttribute('x', x - BAR_WIDTH / 2);
+      hatchOverlay.setAttribute('y', height - 24 - barHeight);
+      hatchOverlay.setAttribute('width', BAR_WIDTH);
+      hatchOverlay.setAttribute('height', barHeight);
+      hatchOverlay.setAttribute('rx', 4);
+      hatchOverlay.setAttribute('fill', 'url(#missed-hatch)');
+      svg.appendChild(hatchOverlay);
+    }
 
     const label = document.createElementNS(SVG_NS, 'text');
     label.setAttribute('x', x);
@@ -49,15 +85,25 @@ export function renderTrendChart(trend) {
     label.setAttribute('text-anchor', 'middle');
     label.textContent = point.date ? point.date.slice(5) : '?';
     svg.appendChild(label);
+
+    const dateText = point.date || 'Unknown date';
+    const difficultyText = point.difficultyScore ? `difficulty ${point.difficultyScore}/${maxScore}` : 'no difficulty recorded';
+    summaryItems.push(`${dateText}: ${missed ? 'missed' : 'completed'}, ${difficultyText}`);
   });
 
   wrap.appendChild(svg);
+
+  const details = document.createElement('ul');
+  details.id = 'trend-chart-details';
+  details.className = 'sr-only';
+  details.innerHTML = summaryItems.map((item) => `<li>${item}</li>`).join('');
+  wrap.appendChild(details);
 
   const legend = document.createElement('div');
   legend.className = 'trend-legend';
   legend.innerHTML = `
     <span class="trend-legend-item"><span class="trend-swatch" style="background:${COMPLETED_COLOR}"></span>Completed</span>
-    <span class="trend-legend-item"><span class="trend-swatch" style="background:${MISSED_COLOR}"></span>Missed</span>
+    <span class="trend-legend-item"><span class="trend-swatch trend-swatch-missed" style="background:${MISSED_COLOR}"></span>Missed</span>
   `;
   wrap.appendChild(legend);
 

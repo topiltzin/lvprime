@@ -60,13 +60,12 @@ body {
   font-weight: 500;
 }
 
+/* Static context label, not an action — no pill border so it doesn't read as
+   a clickable button next to the nav (it has no href/handler). */
 .header-chip {
   font-size: var(--meta-size);
   letter-spacing: var(--label-tracking);
   text-transform: uppercase;
-  padding: 0.4rem 0.9rem;
-  border-radius: var(--radius-pill);
-  border: 1px solid rgba(255, 255, 255, 0.2);
   color: rgba(255, 255, 255, 0.72);
 }
 
@@ -230,6 +229,10 @@ h3 {
   border-color: color-mix(in srgb, var(--accent) 40%, transparent);
   box-shadow: var(--shadow-hover);
   transform: translateY(-2px);
+}
+
+.customer-card[hidden] {
+  display: none;
 }
 
 .customer-card h2 {
@@ -475,9 +478,12 @@ th, td {
 }
 
 .stat-tile-value {
-  font-size: var(--h2-size);
+  font-size: clamp(1rem, 3vw, var(--h2-size));
   font-weight: 700;
   color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .stat-tile-value.stat-tile-empty {
@@ -514,6 +520,29 @@ th, td {
   height: 10px;
   border-radius: 2px;
   display: inline-block;
+}
+
+.trend-swatch-missed {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.7) 0,
+    rgba(255, 255, 255, 0.7) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+/* Visually hidden but available to assistive tech (e.g. per-bar chart data). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* Feedback entry cards (FR entries, 2x2 fact grid) */
