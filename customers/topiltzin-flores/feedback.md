@@ -38,3 +38,12 @@
 - Monitor elbow pain levels throughout first 2 weeks
 - Watch for form breakdown as fatigue increases
 - Check if 6 days/week is sustainable long-term
+
+### 2026-09-15 - Piernas
+- Energy level: godd
+- Completed: Yes
+- Exercises completed: Yes
+- How felt: Bien
+- Elbow status: ok
+- Notes: na
+- Overall impression: Todo bine

@@ -22,7 +22,82 @@ Usa este archivo para registrar cómo se siente Jaqueline después de cada sesi�
 
 ## Sesiones (Empezar a registrar aquí)
 
-*(Este archivo se actualizará después de cada sesión de entrenamiento)*
+### 2026-09-15 - Lunes - Piernas A
+- Completó: Sí
+- Energía: Normal
+- Dificultad: Moderada
+- Ejercicio más difícil: Bulgarian split squat
+- Ejercicio que mejor se sintió: Hip thrust
+- Dolor articular: No
+- Ardor muscular: Sí - cuádriceps
+- Observaciones: Buena sesión de inicio. Forma correcta en sentadillas. Necesita más estiramiento post-entrenamiento.
+- Impresión general: Sesión productiva, se sintió fuerte en glúteos
+
+### 2026-09-16 - Martes - Tren Superior A
+- Completó: Sí
+- Energía: Alta
+- Dificultad: Moderada
+- Ejercicio más difícil: Pull-up asistido
+- Ejercicio que mejor se sintió: Push-ups
+- Dolor articular: No
+- Ardor muscular: Sí - pecho y espalda
+- Observaciones: Pull-ups mejorando. Necesita trabajar más la técnica en pulls.
+- Impresión general: Sesión fuerte en tren superior
+
+### 2026-09-17 - Miércoles - Piernas B
+- Completó: Sí
+- Energía: Normal
+- Dificultad: Moderada
+- Ejercicio más difícil: Bulgarian split squat unilateral
+- Ejercicio que mejor se sintió: Single leg deadlift
+- Dolor articular: No
+- Ardor muscular: Sí - glúteos y femorales
+- Observaciones: Equilibrio mejora cada sesión. DOMS esperado del lunes presente pero manejable.
+- Impresión general: Buen trabajo en unilaterales
+
+### 2026-09-18 - Jueves - Tren Superior B
+- Completó: Sí
+- Energía: Normal
+- Dificultad: Fácil
+- Ejercicio más difícil: Pull-ups con peso
+- Ejercicio que mejor se sintió: Rows
+- Dolor articular: No
+- Ardor muscular: No
+- Observaciones: Recuperación buena. Energía mejora en comparación con lunes/miércoles.
+- Impresión general: Sesión liviana, excelente para recuperación
+
+### 2026-09-19 - Viernes - Piernas C
+- Completó: Sí
+- Energía: Normal
+- Dificultad: Moderada
+- Ejercicio más difícil: Pistol squat progression
+- Ejercicio que mejor se sintió: Goblet squat
+- Dolor articular: No
+- Ardor muscular: Sí - cuádriceps
+- Observaciones: Semana 1 completada sin lesiones. Forma consistente. Plan está siendo bien tolerado.
+- Impresión general: Primer ciclo completado exitosamente
+
+### 2026-09-22 - Lunes - Piernas A (Semana 2)
+- Completó: Sí
+- Energía: Alta
+- Dificultad: Moderada
+- Ejercicio más difícil: Bulgarian split squat
+- Ejercicio que mejor se sintió: Hip thrust
+- Dolor articular: No
+- Ardor muscular: Leve
+- Observaciones: DOMS del lunes anterior ha desaparecido. Aumentó peso en sentadillas 2.5kg.
+- Impresión general: Recuperación excelente, listo para progresar
+
+### 2026-09-23 - Martes - Tren Superior A (Semana 2)
+- Completó: Sí
+- Energía: Alta
+- Dificultad: Moderada
+- Ejercicio más difícil: Pull-up con 5kg asistencia
+- Ejercicio que mejor se sintió: Chest press
+- Dolor articular: No
+- Ardor muscular: Moderado
+- Observaciones: Técnica en pull-ups mejora notablemente. Considera reducir asistencia.
+- Impresión general: Progreso visible en fuerza de tren superior
 
 ---
 

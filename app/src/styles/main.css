@@ -1,14 +1,22 @@
+@import url('/src/styles/tabs.css');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Clash+Display:wght@600;700&display=swap');
+
 :root {
   color-scheme: light dark;
-  --bg: #f7f7f5;
+  --bg: #f5f5f5;
   --surface: #ffffff;
-  --text: #1c1c1a;
-  --muted: #6b6b64;
-  --border: #e2e2dc;
-  --accent: #2f6f4f;
+  --text: #1a1a1a;
+  --muted: #666666;
+  --border: #e0e0e0;
+  --accent: #333333;
+  --accent-light: #f0f0f0;
   --accent-contrast: #ffffff;
-  --danger: #b3401f;
-  --radius: 8px;
+  --danger: #dc2626;
+  --success: #16a34a;
+  --radius: 12px;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -29,50 +37,132 @@
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, "Segoe UI", sans-serif;
   background: var(--bg);
   color: var(--text);
-  line-height: 1.5;
+  line-height: 1.6;
+  font-size: 15px;
+}
+
+/* Modern Header with Lv Fitness branding */
+.app-header {
+  background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+  color: var(--accent-contrast);
+  padding: 0;
+  box-shadow: var(--shadow-md);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 3px solid rgba(0, 0, 0, 0.1);
+}
+
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.logo-text {
+  font-family: 'Clash Display', system-ui, sans-serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.logo-subtitle {
+  font-size: 0.85rem;
+  opacity: 0.9;
+  font-weight: 500;
+  letter-spacing: 0.5px;
 }
 
 #app {
-  max-width: 960px;
+  max-width: 1000px;
   margin: 0 auto;
-  padding: 1.5rem 1rem 4rem;
+  padding: 2rem 1.5rem 4rem;
 }
 
 a {
   color: var(--accent);
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+a:hover {
+  opacity: 0.8;
 }
 
 h1, h2, h3 {
-  line-height: 1.25;
+  line-height: 1.3;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+h2 {
+  font-size: 1.5rem;
+  color: var(--text);
+}
+
+h3 {
+  font-size: 1.1rem;
+  color: var(--text);
 }
 
 .page-header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .page-header a.back-link {
   font-size: 0.9rem;
-  text-decoration: none;
+  padding: 0.5rem 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: opacity 0.2s ease;
+}
+
+.page-header a.back-link:hover {
+  opacity: 0.6;
 }
 
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 1rem 1.25rem;
-  margin-bottom: 1rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
 }
 
 .customer-list {
   display: grid;
-  gap: 0.75rem;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
 }
 
 .customer-card {
@@ -82,23 +172,28 @@ h1, h2, h3 {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 1rem 1.25rem;
-  transition: border-color 0.15s ease;
+  padding: 1.5rem;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
 }
 
 .customer-card:hover {
   border-color: var(--accent);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
 .customer-card h2 {
-  margin: 0 0 0.25rem;
-  font-size: 1.1rem;
+  margin: 0 0 0.5rem;
+  font-size: 1.2rem;
+  color: var(--text);
 }
 
 .customer-card .summary-line {
   color: var(--muted);
   font-size: 0.9rem;
-  margin: 0.15rem 0;
+  margin: 0.25rem 0;
+  line-height: 1.5;
 }
 
 .badge {
@@ -122,19 +217,32 @@ h1, h2, h3 {
 }
 
 .error-banner {
-  background: var(--danger);
-  color: #fff;
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
   border-radius: var(--radius);
-  padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.error-banner::before {
+  content: '⚠️ ';
+  margin-right: 0.5rem;
 }
 
 section.weekly-schedule .day-block {
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  background: var(--accent-light);
+  border-left: 4px solid var(--accent);
+  border-radius: calc(var(--radius) - 4px);
+  padding: 1.25rem;
 }
 
 section.weekly-schedule .day-block h3 {
-  margin-bottom: 0.25rem;
+  margin: 0 0 0.75rem 0;
+  color: var(--accent);
+  font-size: 1rem;
 }
 
 table {
@@ -170,41 +278,70 @@ th, td {
 
 form.feedback-form {
   display: grid;
-  gap: 0.75rem;
-  max-width: 480px;
+  gap: 1.25rem;
+  max-width: 500px;
 }
 
 form.feedback-form label {
   display: grid;
-  gap: 0.25rem;
-  font-size: 0.9rem;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 500;
 }
 
 form.feedback-form input,
 form.feedback-form select,
 form.feedback-form textarea {
   font: inherit;
-  padding: 0.4rem 0.5rem;
+  padding: 0.75rem;
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--radius);
   background: var(--surface);
   color: var(--text);
+  transition: all 0.2s ease;
+}
+
+form.feedback-form input:focus,
+form.feedback-form select:focus,
+form.feedback-form textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+form.feedback-form textarea {
+  resize: vertical;
+  min-height: 80px;
 }
 
 form.feedback-form .field-error {
   color: var(--danger);
-  font-size: 0.8rem;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
 }
 
 form.feedback-form button {
-  justify-self: start;
-  padding: 0.5rem 1.1rem;
+  padding: 0.75rem 1.5rem;
   border-radius: var(--radius);
   border: none;
   background: var(--accent);
   color: var(--accent-contrast);
   font: inherit;
+  font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+form.feedback-form button:hover:not(:disabled) {
+  background: #1a1a1a;
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+form.feedback-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .trend-chart {
