@@ -1,4 +1,6 @@
-// Renders one customer's overview card (User Story 1).
+import { deriveStatus, STATUS_LABEL, formatRelativeCheckIn } from '../lib/status.js';
+
+// Renders one client's overview card (User Story 1, FR-002).
 export function renderCustomerCard(customer) {
   const a = document.createElement('a');
   a.className = 'customer-card';
@@ -9,29 +11,31 @@ export function renderCustomerCard(customer) {
   a.appendChild(h2);
 
   const goalLine = document.createElement('p');
-  goalLine.className = 'summary-line';
+  goalLine.className = 'summary-line goal-line';
   if (customer.hasProgram && customer.programGoal) {
-    goalLine.textContent = `Goal: ${customer.programGoal}`;
+    goalLine.textContent = customer.programGoal;
   } else if (customer.hasProgram) {
-    goalLine.textContent = 'Program: present';
+    goalLine.textContent = 'Program in progress';
   } else {
-    goalLine.innerHTML = '<span class="badge missing">program not yet created</span>';
+    goalLine.innerHTML = '<span class="badge missing">No program yet</span>';
   }
   a.appendChild(goalLine);
 
-  const feedbackLine = document.createElement('p');
-  feedbackLine.className = 'summary-line';
-  feedbackLine.textContent = customer.lastFeedbackDate
-    ? `Last feedback: ${customer.lastFeedbackDate}`
-    : 'No feedback logged yet';
-  a.appendChild(feedbackLine);
+  const footer = document.createElement('div');
+  footer.className = 'customer-card-footer';
 
-  if (!customer.hasNotes) {
-    const notesLine = document.createElement('p');
-    notesLine.className = 'summary-line';
-    notesLine.innerHTML = '<span class="badge missing">notes not yet created</span>';
-    a.appendChild(notesLine);
-  }
+  const checkIn = document.createElement('span');
+  checkIn.className = 'check-in-date';
+  checkIn.textContent = `Last check-in · ${formatRelativeCheckIn(customer.lastFeedbackDate)}`;
+  footer.appendChild(checkIn);
+
+  const status = deriveStatus(customer.lastFeedbackDate);
+  const pill = document.createElement('span');
+  pill.className = `status-pill status-${status}`;
+  pill.textContent = STATUS_LABEL[status];
+  footer.appendChild(pill);
+
+  a.appendChild(footer);
 
   return a;
 }

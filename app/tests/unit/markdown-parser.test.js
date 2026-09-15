@@ -7,7 +7,9 @@ import {
   parseFeedbackEntries,
   extractFeedbackTemplate,
   formatFeedbackEntry,
+  parseProgramDetail,
 } from '../../server/markdown-parser.js';
+import { renderMarkdown } from '../../server/markdown-render.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CUSTOMERS_DIR = path.resolve(__dirname, '..', '..', '..', 'customers');
@@ -96,4 +98,52 @@ test('a malformed/partial entry is still returned (never dropped), with raw_matc
   assert.equal(entries[0].entry_date, '2026-09-01');
   assert.equal(entries[0].raw_matched, false);
   assert.equal(entries[0].felt, null);
+});
+
+// User Story 2 / contracts/exercise-row-parsing.md: structured exercise rows extracted
+// from real, unmodified customer program files — Spanish and English authoring alike.
+test('parseProgramDetail extracts exercise rows from a real Spanish program (jaqueline-orellano, Descanso/Forma)', () => {
+  const text = fs.readFileSync(path.join(CUSTOMERS_DIR, 'jaqueline-orellano', 'program.md'), 'utf8');
+  const detail = parseProgramDetail(text, renderMarkdown);
+
+  const monday = detail.weeklySchedule.find((d) => /^LUNES/i.test(d.day));
+  assert.ok(monday, 'expected a Monday ("LUNES") day block');
+  assert.ok(monday.exercises.length > 0, 'expected at least one extracted exercise');
+  assert.ok(monday.html.length > 0, 'the existing html field must remain populated');
+
+  const squat = monday.exercises[0];
+  assert.equal(squat.name, 'Sentadilla libre / Goblet squat');
+  assert.equal(squat.setsReps, '3 x 8-10');
+  assert.equal(squat.rest, '90-120 seg');
+  assert.equal(squat.formTip, 'Rodillas alineadas con tobillos, bajar controlado');
+});
+
+test('parseProgramDetail extracts exercise rows from a real English program (topiltzin-flores, Rest/Form tip)', () => {
+  const text = fs.readFileSync(path.join(CUSTOMERS_DIR, 'topiltzin-flores', 'program.md'), 'utf8');
+  const detail = parseProgramDetail(text, renderMarkdown);
+
+  const monday = detail.weeklySchedule.find((d) => /^Monday/i.test(d.day));
+  assert.ok(monday, 'expected a Monday day block');
+  assert.ok(monday.exercises.length > 0, 'expected at least one extracted exercise');
+
+  const bench = monday.exercises[0];
+  assert.equal(bench.name, 'Barbell Bench Press');
+  assert.equal(bench.setsReps, '4 × 6-8 reps');
+  assert.equal(bench.rest, '2 min');
+  assert.equal(bench.formTip, 'Full range of motion, chest to bar, feet planted');
+});
+
+test('parseProgramDetail falls back to an empty exercises array (html still populated) for a day with no matching lines', () => {
+  const text = `# Test Program
+
+**Objetivo:** Recuperación
+
+### SÁBADO Y DOMINGO - Descanso / Movilidad Ligera
+Caminata suave, estiramientos, yoga suave o pilates. Sin entrenamiento de fuerza.
+`;
+  const detail = parseProgramDetail(text, renderMarkdown);
+  assert.equal(detail.weeklySchedule.length, 1);
+  const restDay = detail.weeklySchedule[0];
+  assert.deepEqual(restDay.exercises, []);
+  assert.ok(restDay.html.includes('Caminata suave'), 'the rest-day prose must still render via html');
 });

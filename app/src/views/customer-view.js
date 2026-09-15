@@ -1,8 +1,8 @@
 import { getCustomer } from '../api-client.js';
-import { renderTrendChart } from '../components/trend-chart.js';
-import { renderFeedbackEntry } from '../components/feedback-entry.js';
 import { renderFeedbackForm } from './feedback-form-view.js';
 import { TabContainer } from '../components/tab-container.js';
+import { renderClientHero } from '../components/client-hero.js';
+import { showToast } from '../components/toast.js';
 
 // Make renderFeedbackForm available globally for TabContainer
 window.renderFeedbackForm = renderFeedbackForm;
@@ -12,6 +12,31 @@ function formatBytes(bytes) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+const DIFFICULTY_LABELS = { 1: 'Easy', 2: 'Moderate', 3: 'Hard', 4: 'Brutal' };
+
+/**
+ * Feedback-tab stat strip (FR-013): completion %, last session date, and average
+ * difficulty — computed only from real logged data (data-model.md → Feedback Stats).
+ * Each value is null when there isn't enough data, so the tab can render an honest
+ * empty state instead of a fabricated number.
+ */
+function buildFeedbackStats(feedback) {
+  if (!feedback || !feedback.entries || feedback.entries.length === 0) {
+    return { completionPercent: null, lastSessionDate: null, avgDifficultyLabel: null };
+  }
+
+  const trend = feedback.trend || { completionRate: null, points: [] };
+  const completionPercent = trend.completionRate == null ? null : Math.round(trend.completionRate * 100);
+  const lastSessionDate = feedback.entries[feedback.entries.length - 1]?.date || null;
+
+  const scores = (trend.points || []).map((p) => p.difficultyScore).filter((s) => s != null);
+  const avgDifficultyLabel = scores.length
+    ? DIFFICULTY_LABELS[Math.min(4, Math.max(1, Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)))]
+    : null;
+
+  return { completionPercent, lastSessionDate, avgDifficultyLabel };
 }
 
 /**
@@ -28,31 +53,28 @@ function buildTabConfig(data) {
     },
     {
       id: 'feedback',
+      // Always enabled — a client with zero entries still sees the Feedback tab,
+      // showing an honest empty state rather than being hidden (US3 edge cases).
       label: 'Feedback',
-      isEnabled: data.feedback && data.feedback.entries && data.feedback.entries.length > 0,
+      isEnabled: true,
       contentType: 'feedback',
       order: 1,
     },
     {
       id: 'add-entry',
-      label: 'Add Entry',
+      label: 'Log Session',
       isEnabled: true, // Always enabled for adding feedback
       contentType: 'add-entry',
       order: 2,
     },
     {
-      id: 'history',
-      label: 'History',
-      isEnabled: data.feedback && data.feedback.entries && data.feedback.entries.length > 0,
-      contentType: 'history',
-      order: 3,
-    },
-    {
       id: 'notes',
+      // Always enabled — a client with no notes.md still sees the Notes tab,
+      // showing a dashed empty state rather than being hidden (FR-018).
       label: 'Notes',
-      isEnabled: data.notes && data.notes.present,
+      isEnabled: true,
       contentType: 'notes',
-      order: 4,
+      order: 3,
     },
   ];
 }
@@ -63,73 +85,34 @@ function buildTabConfig(data) {
 function buildTabData(customerData) {
   const program = customerData.program && customerData.program.present ? customerData.program : null;
 
-  // Build feedback data from entries
-  // Map API field names (date, felt, completed, difficulty, notes) to display model
-  const feedbackData = customerData.feedback && customerData.feedback.entries
-    ? {
-        entries: customerData.feedback.entries.map((entry) => ({
-          date: entry.date || 'N/A',
-          exercise: entry.label || 'General', // Use label as exercise/session identifier
-          howCustomerFelt: entry.felt || 'N/A', // API field is 'felt', not 'howFelt'
-          completed: entry.completed || false,
-          notes: entry.notes || '',
-          overallImpression: entry.difficulty || 'N/A', // API field is 'difficulty', not 'impression'
-        })),
-      }
-    : null;
+  const rawFeedback = customerData.feedback || { entries: [], trend: null };
+  // Map API field names (date, felt, completed, difficulty, notes) to display model.
+  // Always an object (never null) — the Feedback tab is always enabled and renders its
+  // own honest empty states when entries is empty (FR-013, US3 edge cases).
+  const feedbackData = {
+    entries: (rawFeedback.entries || []).map((entry) => ({
+      date: entry.date || 'N/A',
+      exercise: entry.label || 'General', // Use label as exercise/session identifier
+      howCustomerFelt: entry.felt || 'N/A', // API field is 'felt', not 'howFelt'
+      completed: entry.completed || false,
+      notes: entry.notes || '',
+      overallImpression: entry.difficulty || 'N/A', // API field is 'difficulty', not 'impression'
+    })),
+    stats: buildFeedbackStats(rawFeedback),
+    trend: rawFeedback.trend,
+  };
 
-  // Build history data by aggregating feedback
-  const historyData = feedbackData
-    ? {
-        sessionsCompleted: feedbackData.entries.filter((e) => e.completed).length,
-        sessionsProgrammed: feedbackData.entries.length,
-        completionRate:
-          feedbackData.entries.length > 0
-            ? feedbackData.entries.filter((e) => e.completed).length / feedbackData.entries.length
-            : 0,
-        avgDifficulty:
-          feedbackData.entries.length > 0
-            ? feedbackData.entries.reduce(
-                (acc, e) => {
-                  if (e.overallImpression === 'Hard') acc.hard++;
-                  else if (e.overallImpression === 'Moderate') acc.moderate++;
-                  else if (e.overallImpression === 'Easy') acc.easy++;
-                  return acc;
-                },
-                { easy: 0, moderate: 0, hard: 0 }
-              ) &&
-              (() => {
-                const counts = feedbackData.entries.reduce(
-                  (acc, e) => {
-                    if (e.overallImpression === 'Hard') acc.hard++;
-                    else if (e.overallImpression === 'Moderate') acc.moderate++;
-                    else if (e.overallImpression === 'Easy') acc.easy++;
-                    return acc;
-                  },
-                  { easy: 0, moderate: 0, hard: 0 }
-                );
-                if (counts.hard > counts.moderate && counts.hard > counts.easy) return 'Hard';
-                if (counts.easy > counts.moderate && counts.easy > counts.hard) return 'Easy';
-                return 'Moderate';
-              })()
-            : 'N/A',
-        highlights: ['Program is progressing well', 'Consistent session completion'],
-      }
-    : null;
-
-  const notes = customerData.notes && customerData.notes.present
-    ? {
-        observations: [{ date: 'Latest', observation: 'Customer showing good progress' }],
-        recommendations: [
-          { date: 'Latest', recommendation: 'Continue with current program', rationale: 'Based on recent performance' },
-        ],
-      }
-    : null;
+  // Always an object (never null) — the Notes tab is always enabled; renders notes.html
+  // directly when present, a dashed empty state otherwise (FR-017, FR-018). No synthetic
+  // "observations"/"recommendations" content is ever fabricated here.
+  const notes = {
+    present: !!(customerData.notes && customerData.notes.present),
+    html: (customerData.notes && customerData.notes.html) || null,
+  };
 
   return {
     program,
     feedback: feedbackData,
-    history: historyData,
     notes,
     'add-entry': {}, // Placeholder for form tab (form rendered via global renderFeedbackForm function)
   };
@@ -159,15 +142,14 @@ function renderAttachments(container, attachments) {
 export async function renderCustomer(container, slug) {
   container.innerHTML = '';
 
-  const header = document.createElement('div');
-  header.className = 'page-header';
-  header.innerHTML = '<a class="back-link" href="#/">&larr; All customers</a>';
-  container.appendChild(header);
-
   let data;
   try {
     data = await getCustomer(slug);
   } catch (err) {
+    const header = document.createElement('div');
+    header.className = 'page-header';
+    header.innerHTML = '<a class="back-link" href="#/">&larr; All clients</a>';
+    container.appendChild(header);
     const banner = document.createElement('div');
     banner.className = 'error-banner';
     banner.textContent = err.message || 'Failed to load this customer.';
@@ -175,9 +157,7 @@ export async function renderCustomer(container, slug) {
     return;
   }
 
-  const title = document.createElement('h1');
-  title.textContent = data.displayName;
-  container.appendChild(title);
+  container.appendChild(renderClientHero(data));
 
   // Build tab configuration and data
   const tabConfig = buildTabConfig(data);
@@ -194,7 +174,8 @@ export async function renderCustomer(container, slug) {
     const tabsContainer = document.createElement('div');
     container.appendChild(tabsContainer);
 
-    // Callback when new feedback is added - refreshes the feedback data
+    // Callback when new feedback is added - refreshes the feedback data, confirms the
+    // save, and hands the coach off to the Feedback tab (FR-016).
     const onFeedbackAdded = async (newEntry) => {
       // Reload customer data to get updated feedback
       try {
@@ -204,11 +185,13 @@ export async function renderCustomer(container, slug) {
 
         // Replace the tab container with updated data
         tabsContainer.innerHTML = '';
-        new TabContainer(tabsContainer, updatedTabConfig, updatedTabData, {
+        const refreshed = new TabContainer(tabsContainer, updatedTabConfig, updatedTabData, {
           slug,
           feedbackTemplate: data.feedback?.template,
           onFeedbackAdded,
         });
+        refreshed.setActiveTab('feedback');
+        showToast('Saved · view in Feedback');
       } catch (err) {
         console.error('Failed to refresh feedback:', err);
       }

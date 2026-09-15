@@ -46,6 +46,10 @@ test('GET /api/customers/:slug returns program, notes, feedback, and attachments
   assert.equal(body.program.weeklySchedule.length, 1);
   assert.equal(body.program.weeklySchedule[0].day, 'Monday');
   assert.match(body.program.weeklySchedule[0].html, /Squat/);
+  assert.equal(body.program.weeklySchedule[0].exercises.length, 1);
+  assert.equal(body.program.weeklySchedule[0].exercises[0].name, 'Squat');
+  assert.equal(body.program.weeklySchedule[0].exercises[0].setsReps, '3 x 8');
+  assert.equal(body.program.weeklySchedule[0].exercises[0].rest, '90s');
 
   assert.equal(body.notes.present, true);
   assert.match(body.notes.html, /progressing well/);

@@ -1,0 +1,79 @@
+/* Self-hosted type system (research.md §4) — no external font CDN. */
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/inter/700.css';
+@import '@fontsource/inter-tight/700.css';
+
+:root {
+  color-scheme: light dark;
+
+  /* Color (locked visual system) */
+  --bg: #f4f2ee;
+  --surface: #ffffff;
+  --ink: #111111;
+  --muted: #6b6b64;
+  --border: #e6e3dc;
+  --accent: #1f7a4d;
+  --accent-deep: #143d2b;
+  --accent-tint: #e8f5ee;
+  --accent-contrast: #ffffff;
+  --danger: #c23b22;
+  --danger-tint: #fee2e2;
+  --danger-border: #fca5a5;
+  --warning-deep: #8a5a1c;
+  --warning-tint: #fdf0e2;
+  --header-bg: #0b0b0b;
+
+  /* Type */
+  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Inter Tight', 'Inter', system-ui, -apple-system, sans-serif;
+  --h1-size: 2rem; /* 32px */
+  --h1-line: 2.375rem; /* 38px */
+  --h2-size: 1.375rem; /* 22px */
+  --h2-line: 1.75rem; /* 28px */
+  --body-size: 0.9375rem; /* 15px */
+  --body-line: 1.5rem; /* 24px */
+  --meta-size: 0.8125rem; /* 13px */
+  --meta-line: 1.125rem; /* 18px */
+  --logo-tracking: -0.02em;
+  --label-tracking: 0.04em;
+
+  /* Space & shape */
+  --radius-card: 16px;
+  --radius-pill: 999px;
+  --radius-input: 10px;
+  --page-max-width: 1080px;
+  --header-height: 104px;
+  --tab-header-height: 50px;
+  --card-padding: 20px;
+  --shadow-rest: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.06);
+
+  /* Motion */
+  --motion-fast: 150ms;
+  --motion-base: 200ms;
+  --motion-ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #171715;
+    --surface: #211f1d;
+    --ink: #f0efe9;
+    --muted: #a9a79f;
+    --border: #35332f;
+    --accent: #3ddc97;
+    /* On dark surfaces, tint text needs to be light-on-dark (not the light-mode
+       dark-green shade), or it goes muddy/illegible against --accent-tint. */
+    --accent-deep: #3ddc97;
+    --accent-tint: #10251b;
+    --accent-contrast: #10251b;
+    /* Same light-on-dark fix applied to the danger/warning semantic colors so
+       their tint backgrounds don't read as a jarring light patch on a dark page. */
+    --danger-tint: #3a1712;
+    --danger-border: #5c261a;
+    --warning-deep: #e8b979;
+    --warning-tint: #3a2a12;
+  }
+}

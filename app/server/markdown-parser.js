@@ -110,6 +110,52 @@ export function parseProgramGoal(programMdText) {
 
 const DAY_NAME = /^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Lunes|Martes|Mi[ée]rcoles|Jueves|Viernes|S[áa]bado|Domingo)/i;
 
+// Structured exercise-row extraction (User Story 2 / contracts/exercise-row-parsing.md).
+// Matches the numbered-list shape both existing customer files already use, regardless of
+// authored language: "N. **Name** (optional parenthetical) - <sets x reps> - <Descanso|Rest> <duration>",
+// optionally followed by a "- Forma:"/"- Form tip:" bullet on the next line. Lines that don't
+// match this shape are simply skipped — the day's existing `html` still carries them (research.md §1).
+const EXERCISE_LINE = /^\d+\.\s*\*\*(.+?)\*\*\s*(.*)$/;
+const LEADING_PARENTHETICAL = /^\([^)]*\)\s*/;
+const LEADING_DASH = /^-\s*/;
+const SEGMENT_SPLIT = /\s+-\s+/;
+const REST_LABEL = /^(?:Descanso|Rest)\.?\s*:?\s*/i;
+const FORM_TIP_LINE = /^\s*-\s*(?:Forma|Form tip|Form)\s*:\s*(.+)$/i;
+
+/**
+ * Extract structured exercise rows from one training day's Markdown body lines.
+ * @returns {Array<{name: string, setsReps: string, rest: string|null, formTip: string|null}>}
+ */
+function extractExercises(bodyLines) {
+  const exercises = [];
+  for (let i = 0; i < bodyLines.length; i++) {
+    const match = bodyLines[i].match(EXERCISE_LINE);
+    if (!match) continue;
+
+    const name = match[1].trim();
+    let remainder = match[2].trim().replace(LEADING_PARENTHETICAL, '').replace(LEADING_DASH, '');
+    const segments = remainder.split(SEGMENT_SPLIT).map((s) => s.trim()).filter(Boolean);
+    if (segments.length < 2) continue;
+
+    const restSegment = segments[segments.length - 1];
+    const restLabelMatch = restSegment.match(REST_LABEL);
+    if (!restLabelMatch) continue;
+
+    const setsReps = segments.slice(0, -1).join(' - ');
+    const rest = restSegment.slice(restLabelMatch[0].length).trim() || null;
+
+    let formTip = null;
+    const nextLine = bodyLines[i + 1];
+    if (nextLine) {
+      const tipMatch = nextLine.match(FORM_TIP_LINE);
+      if (tipMatch) formTip = tipMatch[1].trim();
+    }
+
+    exercises.push({ name, setsReps, rest, formTip });
+  }
+  return exercises;
+}
+
 /**
  * Full program detail for the customer detail view (US2): level, durations, one
  * block per day-of-week heading (any heading level whose text starts with a day
@@ -145,7 +191,12 @@ export function parseProgramDetail(programMdText, renderMarkdown) {
       bodyLines.push(lines[j]);
       j++;
     }
-    weeklySchedule.push({ day, focus, html: renderMarkdown(bodyLines.join('\n').trim()) });
+    weeklySchedule.push({
+      day,
+      focus,
+      html: renderMarkdown(bodyLines.join('\n').trim()),
+      exercises: extractExercises(bodyLines),
+    });
     i = j - 1;
   }
 

@@ -3,12 +3,18 @@
  * Main component for managing tabbed interface for customer data
  */
 
+import { renderProgramDay, renderDaySubnav } from './program-day.js';
+import { renderFeedbackEntry } from './feedback-entry.js';
+import { renderTrendChart } from './trend-chart.js';
+
 export class TabContainer {
   constructor(containerEl, tabs, data, options = {}) {
     this.containerEl = containerEl;
     this.tabs = tabs; // Array of TabConfig: { id, label, icon?, isEnabled, contentType, order }
-    this.data = data; // Object with program, feedback, history, notes data
-    this.activeTabId = 'program'; // Default tab (session-scoped, resets on mount)
+    this.data = data; // Object with program, feedback, notes data
+    // Default to the first enabled tab (FR-007) — not a hardcoded id, so a client
+    // whose Program tab is disabled still lands on a real, selected tab.
+    this.activeTabId = (tabs.find((t) => t.isEnabled) || {}).id || null;
     this.tabElements = {};
     this.panelElements = {};
 
@@ -67,6 +73,20 @@ export class TabContainer {
       }
     });
 
+    // Left/Right arrow navigation between enabled tabs (FR-007), wrapping at the ends.
+    header.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      const enabledIds = this.tabs.filter((t) => t.isEnabled).map((t) => t.id);
+      const currentIndex = enabledIds.indexOf(this.activeTabId);
+      if (currentIndex === -1) return;
+
+      e.preventDefault();
+      const delta = e.key === 'ArrowRight' ? 1 : -1;
+      const nextId = enabledIds[(currentIndex + delta + enabledIds.length) % enabledIds.length];
+      this.setActiveTab(nextId);
+      this.tabElements[nextId]?.focus();
+    });
+
     return header;
   }
 
@@ -109,9 +129,6 @@ export class TabContainer {
       case 'feedback':
         this.renderFeedbackContent(container, data);
         break;
-      case 'history':
-        this.renderHistoryContent(container, data);
-        break;
       case 'notes':
         this.renderNotesContent(container, data);
         break;
@@ -124,68 +141,41 @@ export class TabContainer {
   }
 
   renderProgramContent(container, program) {
-    const meta = document.createElement('p');
-    meta.className = 'summary-line';
-    meta.textContent = [
-      program.goal ? `Goal: ${program.goal}` : null,
-      program.fitnessLevel ? `Level: ${program.fitnessLevel}` : null,
-      program.sessionDuration ? `Duration: ${program.sessionDuration}` : null,
-    ]
-      .filter(Boolean)
-      .join(' · ');
-    container.appendChild(meta);
-
     if (program.weeklySchedule && program.weeklySchedule.length) {
+      const subnav = renderDaySubnav(program.weeklySchedule);
+      if (subnav) container.appendChild(subnav);
+
       const scheduleSection = document.createElement('div');
       scheduleSection.className = 'weekly-schedule';
       for (const day of program.weeklySchedule) {
-        const block = document.createElement('div');
-        block.className = 'day-block';
-        const h3 = document.createElement('h3');
-        h3.textContent = day.focus ? `${day.day} — ${day.focus}` : day.day;
-        block.appendChild(h3);
-        const body = document.createElement('div');
-        body.innerHTML = day.html || '';
-        block.appendChild(body);
-        scheduleSection.appendChild(block);
+        scheduleSection.appendChild(renderProgramDay(day));
       }
       container.appendChild(scheduleSection);
     }
 
     if (program.progressionHtml) {
       const progression = document.createElement('div');
+      progression.className = 'card program-progression';
       progression.innerHTML = program.progressionHtml;
       container.appendChild(progression);
     }
   }
 
   renderFeedbackContent(container, feedbackData) {
-    // Title for feedback list
+    container.appendChild(this.renderFeedbackStatStrip(feedbackData.stats));
+
+    if (feedbackData.trend) {
+      container.appendChild(renderTrendChart(feedbackData.trend));
+    }
+
     const listTitle = document.createElement('h3');
     listTitle.textContent = 'Session History';
     container.appendChild(listTitle);
 
-    // Render previous feedback entries
     if (feedbackData.entries && feedbackData.entries.length) {
       const list = document.createElement('div');
       list.className = 'feedback-list';
-
-      feedbackData.entries.forEach((entry) => {
-        const entryEl = document.createElement('div');
-        entryEl.className = 'feedback-entry';
-        entryEl.innerHTML = `
-          <div class="feedback-meta">
-            <strong>${entry.date || 'N/A'}</strong> — ${entry.exercise || 'General'}
-          </div>
-          <div class="feedback-body">
-            <p><strong>How felt:</strong> ${entry.howCustomerFelt || 'N/A'}</p>
-            <p><strong>Completed:</strong> ${entry.completed ? 'Yes' : 'No'}</p>
-            <p><strong>Overall impression:</strong> ${entry.overallImpression || 'N/A'}</p>
-            <p><strong>Notes:</strong> ${entry.notes || 'N/A'}</p>
-          </div>
-        `;
-        list.appendChild(entryEl);
-      });
+      feedbackData.entries.forEach((entry) => list.appendChild(renderFeedbackEntry(entry)));
       container.appendChild(list);
     } else {
       const emptyMsg = document.createElement('p');
@@ -195,11 +185,39 @@ export class TabContainer {
     }
   }
 
+  /**
+   * Three stat tiles (Completion %, Last session, Average difficulty), each computed
+   * only from real logged data — an explicit empty state, never a placeholder value,
+   * when there isn't enough data yet (FR-013, contracts/feedback-honesty-and-stats.md).
+   */
+  renderFeedbackStatStrip(stats) {
+    const strip = document.createElement('div');
+    strip.className = 'stat-strip';
+
+    const tiles = [
+      ['Completion', stats.completionPercent != null ? `${stats.completionPercent}%` : null],
+      ['Last session', stats.lastSessionDate || null],
+      ['Avg. difficulty', stats.avgDifficultyLabel || null],
+    ];
+
+    for (const [label, value] of tiles) {
+      const tile = document.createElement('div');
+      tile.className = 'stat-tile';
+      const valueEl = document.createElement('div');
+      valueEl.className = value ? 'stat-tile-value' : 'stat-tile-value stat-tile-empty';
+      valueEl.textContent = value || 'Not enough data yet';
+      const labelEl = document.createElement('div');
+      labelEl.className = 'stat-tile-label';
+      labelEl.textContent = label;
+      tile.appendChild(valueEl);
+      tile.appendChild(labelEl);
+      strip.appendChild(tile);
+    }
+
+    return strip;
+  }
+
   renderAddEntryContent(container, feedbackData) {
-    // Title for form
-    const formTitle = document.createElement('h3');
-    formTitle.textContent = 'Log New Session';
-    container.appendChild(formTitle);
 
     // Add feedback form if available
     if (this.slug && this.feedbackTemplate && this.onFeedbackAdded) {
@@ -221,83 +239,22 @@ export class TabContainer {
     }
   }
 
-  renderHistoryContent(container, historyData) {
-    const summaryEl = document.createElement('div');
-    summaryEl.className = 'history-summary';
-    summaryEl.innerHTML = `
-      <div class="history-stat">
-        <span class="label">Sessions Completed:</span>
-        <span class="value">${historyData.sessionsCompleted || 0}</span>
-      </div>
-      <div class="history-stat">
-        <span class="label">Sessions Programmed:</span>
-        <span class="value">${historyData.sessionsProgrammed || 0}</span>
-      </div>
-      <div class="history-stat">
-        <span class="label">Completion Rate:</span>
-        <span class="value">${((historyData.completionRate || 0) * 100).toFixed(0)}%</span>
-      </div>
-      <div class="history-stat">
-        <span class="label">Average Difficulty:</span>
-        <span class="value">${historyData.avgDifficulty || 'N/A'}</span>
-      </div>
-    `;
-    container.appendChild(summaryEl);
-
-    if (historyData.highlights && historyData.highlights.length) {
-      const highlightsEl = document.createElement('div');
-      highlightsEl.className = 'history-highlights';
-      const h3 = document.createElement('h3');
-      h3.textContent = 'Highlights';
-      highlightsEl.appendChild(h3);
-      const ul = document.createElement('ul');
-      historyData.highlights.forEach((highlight) => {
-        const li = document.createElement('li');
-        li.textContent = highlight;
-        ul.appendChild(li);
-      });
-      highlightsEl.appendChild(ul);
-      container.appendChild(highlightsEl);
-    }
-  }
-
+  /**
+   * Renders the coach's real notes.md content verbatim, or a dashed empty-state card
+   * when none exists yet — never fabricated observation/recommendation text
+   * (FR-017, FR-018).
+   */
   renderNotesContent(container, notes) {
-    if (notes.observations && notes.observations.length) {
-      const obsSection = document.createElement('div');
-      obsSection.className = 'notes-observations';
-      const h3 = document.createElement('h3');
-      h3.textContent = 'Observations';
-      obsSection.appendChild(h3);
-      const list = document.createElement('ul');
-      notes.observations.forEach((obs) => {
-        const li = document.createElement('li');
-        li.innerHTML = `<strong>${obs.date || 'N/A'}:</strong> ${obs.observation || ''}`;
-        list.appendChild(li);
-      });
-      obsSection.appendChild(list);
-      container.appendChild(obsSection);
-    }
-
-    if (notes.recommendations && notes.recommendations.length) {
-      const recSection = document.createElement('div');
-      recSection.className = 'notes-recommendations';
-      const h3 = document.createElement('h3');
-      h3.textContent = 'Recommendations';
-      recSection.appendChild(h3);
-      const list = document.createElement('ul');
-      notes.recommendations.forEach((rec) => {
-        const li = document.createElement('li');
-        li.innerHTML = `<strong>${rec.date || 'N/A'}:</strong> ${rec.recommendation || ''}`;
-        if (rec.rationale) {
-          const rationale = document.createElement('p');
-          rationale.className = 'rationale';
-          rationale.textContent = `Rationale: ${rec.rationale}`;
-          li.appendChild(rationale);
-        }
-        list.appendChild(li);
-      });
-      recSection.appendChild(list);
-      container.appendChild(recSection);
+    if (notes.present && notes.html) {
+      const body = document.createElement('div');
+      body.className = 'notes-body';
+      body.innerHTML = notes.html;
+      container.appendChild(body);
+    } else {
+      const empty = document.createElement('div');
+      empty.className = 'empty-state-card';
+      empty.textContent = 'No coach notes yet.';
+      container.appendChild(empty);
     }
   }
 
@@ -334,9 +291,6 @@ export class TabContainer {
   getEmptyStateMessage(contentType) {
     const messages = {
       program: 'Program not yet created.',
-      feedback: 'No feedback recorded yet. Customer sessions will be logged here after each workout.',
-      history: 'Workout history will appear here after the first session is completed.',
-      notes: 'Coach observations will appear here after analyzing customer progress.',
       'add-entry': 'Feedback form is not available.',
     };
     return messages[contentType] || 'No data available.';

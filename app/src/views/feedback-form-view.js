@@ -10,10 +10,10 @@ function todayIso() {
 // feedback list/trend in place without a page reload.
 export function renderFeedbackForm(slug, template, onSuccess) {
   const wrap = document.createElement('div');
-  wrap.className = 'card';
+  wrap.className = 'log-session-form-wrap';
 
   const heading = document.createElement('h3');
-  heading.textContent = 'Log a new feedback entry';
+  heading.textContent = 'Log a new session';
   wrap.appendChild(heading);
 
   const form = document.createElement('form');

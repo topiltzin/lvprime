@@ -10,16 +10,15 @@ export function renderTrendChart(trend) {
     return wrap;
   }
 
-  const rateLine = document.createElement('p');
-  rateLine.className = 'summary-line';
-  rateLine.textContent =
-    trend.completionRate == null
-      ? 'Completion rate: n/a'
-      : `Completion rate: ${Math.round(trend.completionRate * 100)}%`;
-  wrap.appendChild(rateLine);
+  // Completion % is already shown in the stat strip above (renderFeedbackStatStrip) —
+  // this chart focuses on the per-session trend, not a repeated summary number.
 
-  const width = Math.max(240, trend.points.length * 36);
-  const height = 90;
+  const COMPLETED_COLOR = '#1f7a4d';
+  const MISSED_COLOR = '#c23b22';
+  const BAR_WIDTH = 28;
+  const BAR_GAP = 20;
+  const width = Math.max(240, trend.points.length * (BAR_WIDTH + BAR_GAP));
+  const height = 110;
   const maxScore = 4;
 
   const svg = document.createElementNS(SVG_NS, 'svg');
@@ -30,26 +29,37 @@ export function renderTrendChart(trend) {
   svg.setAttribute('aria-label', 'Difficulty and completion trend over sessions');
 
   trend.points.forEach((point, i) => {
-    const x = 18 + i * 36;
-    const barHeight = point.difficultyScore ? (point.difficultyScore / maxScore) * (height - 30) : 4;
+    const x = BAR_GAP / 2 + BAR_WIDTH / 2 + i * (BAR_WIDTH + BAR_GAP);
+    const barHeight = point.difficultyScore ? (point.difficultyScore / maxScore) * (height - 40) : 6;
     const rect = document.createElementNS(SVG_NS, 'rect');
-    rect.setAttribute('x', x - 10);
-    rect.setAttribute('y', height - 20 - barHeight);
-    rect.setAttribute('width', 20);
+    rect.setAttribute('x', x - BAR_WIDTH / 2);
+    rect.setAttribute('y', height - 24 - barHeight);
+    rect.setAttribute('width', BAR_WIDTH);
     rect.setAttribute('height', barHeight);
-    rect.setAttribute('fill', point.completed === false ? '#b3401f' : '#2f6f4f');
-    rect.setAttribute('opacity', point.difficultyScore ? '1' : '0.3');
+    rect.setAttribute('rx', 4);
+    rect.setAttribute('fill', point.completed === false ? MISSED_COLOR : COMPLETED_COLOR);
+    rect.setAttribute('opacity', point.difficultyScore ? '1' : '0.35');
     svg.appendChild(rect);
 
     const label = document.createElementNS(SVG_NS, 'text');
     label.setAttribute('x', x);
-    label.setAttribute('y', height - 6);
-    label.setAttribute('font-size', '9');
+    label.setAttribute('y', height - 8);
+    label.setAttribute('font-size', '11');
+    label.setAttribute('fill', '#6b6b64');
     label.setAttribute('text-anchor', 'middle');
     label.textContent = point.date ? point.date.slice(5) : '?';
     svg.appendChild(label);
   });
 
   wrap.appendChild(svg);
+
+  const legend = document.createElement('div');
+  legend.className = 'trend-legend';
+  legend.innerHTML = `
+    <span class="trend-legend-item"><span class="trend-swatch" style="background:${COMPLETED_COLOR}"></span>Completed</span>
+    <span class="trend-legend-item"><span class="trend-swatch" style="background:${MISSED_COLOR}"></span>Missed</span>
+  `;
+  wrap.appendChild(legend);
+
   return wrap;
 }
