@@ -136,8 +136,9 @@ function addTable(doc, tableData, x, y, width) {
       }
 
       // Cell text
-      doc.setFont(rowIndex === 0 ? 'helvetica' : 'helvetica', rowIndex === 0 ? 'bold' : 'normal');
-      doc.setTextColor(rowIndex === 0 ? ...COLORS.headerText : ...COLORS.text);
+      doc.setFont('helvetica', rowIndex === 0 ? 'bold' : 'normal');
+      const textColor = rowIndex === 0 ? COLORS.headerText : COLORS.text;
+      doc.setTextColor(...textColor);
 
       if (rowIndex === 0) {
         doc.setFillColor(...COLORS.headerBg);
