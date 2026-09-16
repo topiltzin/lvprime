@@ -8,6 +8,11 @@ const PROGRAM = `# Test Customer
 
 ### Monday - Legs
 1. **Squat** - 3 x 8 - Rest 90s
+
+## Progression (4 weeks)
+
+- **Week 1:** Find a comfortable load.
+- **Week 2:** Increase reps within the given range.
 `;
 
 const FEEDBACK = `# Test Customer - Feedback
@@ -50,6 +55,11 @@ test('GET /api/customers/:slug returns program, notes, feedback, and attachments
   assert.equal(body.program.weeklySchedule[0].exercises[0].name, 'Squat');
   assert.equal(body.program.weeklySchedule[0].exercises[0].setsReps, '3 x 8');
   assert.equal(body.program.weeklySchedule[0].exercises[0].rest, '90s');
+
+  assert.deepEqual(body.program.weeklyProgression, [
+    { weekNumber: 1, text: 'Find a comfortable load.' },
+    { weekNumber: 2, text: 'Increase reps within the given range.' },
+  ]);
 
   assert.equal(body.notes.present, true);
   assert.match(body.notes.html, /progressing well/);

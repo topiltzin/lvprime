@@ -4,8 +4,11 @@
  */
 
 import { renderProgramDay, renderDaySubnav } from './program-day.js';
+import { renderWeekSubnav, resolveProgressionText } from './week-subnav.js';
+import { downloadProgramWeekPdf } from './program-pdf.js';
 import { renderFeedbackEntry } from './feedback-entry.js';
 import { renderTrendChart } from './trend-chart.js';
+import { showToast } from './toast.js';
 
 export class TabContainer {
   constructor(containerEl, tabs, data, options = {}) {
@@ -17,6 +20,9 @@ export class TabContainer {
     this.activeTabId = (tabs.find((t) => t.isEnabled) || {}).id || null;
     this.tabElements = {};
     this.panelElements = {};
+    // Program tab week selector state (contracts/week-tab-navigation.md): resets to Week 1
+    // on every fresh TabContainer instance, i.e. every customer page load.
+    this.activeWeek = 1;
 
     // Options for feedback form integration
     this.slug = options.slug; // Customer slug for feedback API calls
@@ -141,6 +147,21 @@ export class TabContainer {
   }
 
   renderProgramContent(container, program) {
+    // Week 1-4 selector (User Story 1): reuses the same day-by-day schedule below for
+    // every week (FR-003, FR-011) and only swaps the progression note text on switch. The
+    // subnav element itself manages its own active-chip state in place (never torn down
+    // and rebuilt — see week-subnav.js), so keyboard focus survives arrow-key navigation.
+    const progressionNoteEl = document.createElement('div');
+    progressionNoteEl.className = 'program-progression-note';
+    progressionNoteEl.textContent = resolveProgressionText(this.activeWeek, program.weeklyProgression);
+
+    const weekSubnav = renderWeekSubnav(this.activeWeek, (weekNumber) => {
+      this.activeWeek = weekNumber;
+      progressionNoteEl.textContent = resolveProgressionText(weekNumber, program.weeklyProgression);
+    });
+    container.appendChild(weekSubnav);
+    container.appendChild(progressionNoteEl);
+
     if (program.weeklySchedule && program.weeklySchedule.length) {
       const subnav = renderDaySubnav(program.weeklySchedule);
       if (subnav) container.appendChild(subnav);
@@ -159,6 +180,22 @@ export class TabContainer {
       progression.innerHTML = program.progressionHtml;
       container.appendChild(progression);
     }
+
+    // "Download PDF" (User Story 2): always acts on whichever week is active at click
+    // time, reading `this.activeWeek` fresh rather than closing over the value at
+    // render time (spec.md User Story 2 Acceptance Scenario 2).
+    const pdfButton = document.createElement('button');
+    pdfButton.type = 'button';
+    pdfButton.className = 'pdf-download-button';
+    pdfButton.textContent = 'Download PDF';
+    pdfButton.addEventListener('click', () => {
+      try {
+        downloadProgramWeekPdf(this.activeWeek, program, this.slug);
+      } catch (err) {
+        showToast('Could not generate the PDF. Please try again.', 3000, 'error');
+      }
+    });
+    container.appendChild(pdfButton);
   }
 
   renderFeedbackContent(container, feedbackData) {

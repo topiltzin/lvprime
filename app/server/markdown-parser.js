@@ -156,6 +156,33 @@ function extractExercises(bodyLines) {
   return exercises;
 }
 
+// Weekly progression note extraction (contracts/weekly-progression-parsing.md): bullet
+// lines shaped "- **Semana N:** <text>" / "- **Week N:** <text>" within the program's
+// existing progression section — the same "Semana N:" bullets already authored in
+// customer files like customers/jaqueline-orellano/program.md, not a new format.
+const WEEKLY_PROGRESSION_ENTRY = /^-\s*\*\*(?:Semana|Week)\s+(\d+)\s*:?\*\*\s*(.+)$/i;
+
+/**
+ * @returns {Array<{weekNumber: number, text: string}>} entries in document order,
+ * restricted to week numbers 1-4 (the feature's fixed 4-week structure), keeping only
+ * the first occurrence of a given week number if the file has a duplicate.
+ */
+function parseWeeklyProgression(progressionSectionText) {
+  if (!progressionSectionText) return [];
+  const seen = new Set();
+  const entries = [];
+  for (const line of progressionSectionText.split(/\r?\n/)) {
+    const match = line.match(WEEKLY_PROGRESSION_ENTRY);
+    if (!match) continue;
+    const weekNumber = Number(match[1]);
+    if (weekNumber < 1 || weekNumber > 4) continue;
+    if (seen.has(weekNumber)) continue;
+    seen.add(weekNumber);
+    entries.push({ weekNumber, text: match[2].trim() });
+  }
+  return entries;
+}
+
 /**
  * Full program detail for the customer detail view (US2): level, durations, one
  * block per day-of-week heading (any heading level whose text starts with a day
@@ -204,8 +231,9 @@ export function parseProgramDetail(programMdText, renderMarkdown) {
     /(^|\n)(#{2,3}\s*(Progresi[oó]n|Progression)[\s\S]*?)(?=\n#{1,2}\s*(?!.*Progresi[oó]n)(?!.*Progression)|$)/i
   );
   const progressionHtml = progressionMatch ? renderMarkdown(progressionMatch[2].trim()) : null;
+  const weeklyProgression = parseWeeklyProgression(progressionMatch ? progressionMatch[2] : null);
 
-  return { fitnessLevel, sessionDuration, planDuration, weeklySchedule, progressionHtml };
+  return { fitnessLevel, sessionDuration, planDuration, weeklySchedule, progressionHtml, weeklyProgression };
 }
 
 function matchLabelLine(text, labelRe) {

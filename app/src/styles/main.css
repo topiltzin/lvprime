@@ -368,6 +368,86 @@ h3 {
   opacity: 1;
 }
 
+/* Program week selector (Week 1-4) — mirrors .day-subnav/.day-chip above, one level up. */
+.week-subnav {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0.25rem 0 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.week-chip {
+  flex: 0 0 auto;
+  font-size: var(--body-size);
+  font-weight: 600;
+  color: var(--muted);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease),
+    background var(--motion-fast) var(--motion-ease);
+}
+
+.week-chip:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.week-chip.active {
+  color: var(--accent-contrast);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.week-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.program-progression-note {
+  background: var(--accent-tint);
+  border-radius: var(--radius-card);
+  padding: 0.9rem 1.1rem;
+  color: var(--accent-deep);
+  font-size: var(--body-size);
+  margin-bottom: 1rem;
+}
+
+.pdf-download-button {
+  min-height: 48px;
+  padding: 0.75rem 1.5rem;
+  margin-top: 1rem;
+  border-radius: var(--radius-input);
+  border: none;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--motion-fast) var(--motion-ease), box-shadow var(--motion-fast) var(--motion-ease);
+  box-shadow: var(--shadow-rest);
+}
+
+.pdf-download-button:hover:not(:disabled) {
+  background: var(--accent-deep);
+  box-shadow: var(--shadow-hover);
+}
+
+.pdf-download-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+  .pdf-download-button {
+    width: 100%;
+  }
+}
+
 .weekly-schedule {
   display: grid;
   gap: 1rem;
@@ -685,6 +765,10 @@ form.feedback-form button:disabled {
 .toast-visible {
   opacity: 1;
   transform: translate(-50%, 0);
+}
+
+.toast-error {
+  background: var(--danger);
 }
 
 @media (max-width: 480px) {

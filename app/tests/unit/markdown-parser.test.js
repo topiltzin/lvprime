@@ -147,3 +147,77 @@ Caminata suave, estiramientos, yoga suave o pilates. Sin entrenamiento de fuerza
   assert.deepEqual(restDay.exercises, []);
   assert.ok(restDay.html.includes('Caminata suave'), 'the rest-day prose must still render via html');
 });
+
+// User Story 1 (003) / contracts/weekly-progression-parsing.md: weekly progression notes
+// extracted from a program's existing "Progresión Semanal"/"Weekly Progression" section.
+test('parseProgramDetail extracts a well-formed 4-entry weekly progression section (jaqueline-orellano)', () => {
+  const text = fs.readFileSync(path.join(CUSTOMERS_DIR, 'jaqueline-orellano', 'program.md'), 'utf8');
+  const detail = parseProgramDetail(text, renderMarkdown);
+
+  assert.equal(detail.weeklyProgression.length, 4);
+  assert.deepEqual(
+    detail.weeklyProgression.map((e) => e.weekNumber),
+    [1, 2, 3, 4]
+  );
+  assert.equal(detail.weeklyProgression[0].text, 'Encontrar una carga cómoda y dominar la técnica.');
+  assert.equal(
+    detail.weeklyProgression[1].text,
+    'Aumentar progresivamente las repeticiones dentro del rango indicado.'
+  );
+});
+
+test('parseProgramDetail returns an empty weeklyProgression array for a program whose progression section is not in the per-week bullet format (topiltzin-flores uses week-range subheadings)', () => {
+  const text = fs.readFileSync(path.join(CUSTOMERS_DIR, 'topiltzin-flores', 'program.md'), 'utf8');
+  const detail = parseProgramDetail(text, renderMarkdown);
+  assert.deepEqual(detail.weeklyProgression, []);
+});
+
+test('parseProgramDetail returns only the weeks a partial weekly progression section covers', () => {
+  const text = `# Test Program
+
+**Objetivo:** Fuerza
+
+### Monday - Full Body
+1. **Squat** - 3 x 8 - Rest 90s
+
+## Progression (4 weeks)
+
+- **Week 1:** Find a comfortable load.
+- **Week 3:** Increase load slightly if form holds.
+`;
+  const detail = parseProgramDetail(text, renderMarkdown);
+  assert.deepEqual(detail.weeklyProgression, [
+    { weekNumber: 1, text: 'Find a comfortable load.' },
+    { weekNumber: 3, text: 'Increase load slightly if form holds.' },
+  ]);
+});
+
+test('parseProgramDetail drops an out-of-range week number and still parses the rest of the file', () => {
+  const text = `# Test Program
+
+**Objetivo:** Fuerza
+
+### Monday - Full Body
+1. **Squat** - 3 x 8 - Rest 90s
+
+## Progresión Semanal (4 semanas)
+
+- **Semana 1:** Carga cómoda.
+- **Semana 5:** Fuera de rango, no debe aparecer.
+`;
+  const detail = parseProgramDetail(text, renderMarkdown);
+  assert.deepEqual(detail.weeklyProgression, [{ weekNumber: 1, text: 'Carga cómoda.' }]);
+  assert.equal(detail.weeklySchedule.length, 1, 'unrelated schedule parsing must be unaffected');
+});
+
+test('parseProgramDetail keeps only the first occurrence of a duplicated week number', () => {
+  const text = `# Test Program
+
+## Progresión Semanal (4 semanas)
+
+- **Semana 2:** Primera entrada.
+- **Semana 2:** Segunda entrada duplicada.
+`;
+  const detail = parseProgramDetail(text, renderMarkdown);
+  assert.deepEqual(detail.weeklyProgression, [{ weekNumber: 2, text: 'Primera entrada.' }]);
+});
