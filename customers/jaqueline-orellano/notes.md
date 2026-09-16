@@ -143,3 +143,64 @@ Jaqueline debe actualizar `feedback.md` después de cada sesión o mínimo 2x po
 - Celebrar progreso
 - Ajustar programa según feedback real
 
+---
+
+## Actualización Nutricional — 16 de Septiembre, 2026
+
+### Feedback de la Entrenadora sobre Nutrición:
+
+**Problema con plan original:**
+- Jaqueline entrena realmente a las 7:30am (no antes)
+- Termina entrenamiento entre 8:30-9:00am
+- Desayuna alrededor de 10:00am (post-entreno, llega a casa)
+- NO tiene hambre para comer pre-entreno
+- Pre-workout no es necesario en su caso
+- Preferencias de cena: recetas simples, sin elaboración
+- Límite de cena: antes de las 7pm
+
+**Ajustes Implementados en `nutrition_plan.md` v1.1:**
+
+1. **Eliminado Pre-Workout**
+   - No aplica (sin hambre pre-entreno)
+   - Entrenar en ayunas es seguro para sesiones 60-90 min
+   - Desayuno post-entreno es suficiente
+
+2. **Simplificado Post-Workout**
+   - Cambio: Batido convencional → Plátano mediano (puente rápido)
+   - Timing: 8:30-9:00am (inmediato post-entreno)
+   - Propósito: Repone glucógeno, prepara apetito para desayuno 10am
+   - Alternativa: Barra proteica 40g (si quiere llevar al gym)
+
+3. **Desayuno Movido a 10:00am**
+   - Ahora es la COMIDA PRINCIPAL (post-entreno real)
+   - Mantiene: Kéfir + queso + pan + café (excelente base)
+   - Proteína: ~25-30g (ideal para ganancia muscular)
+
+4. **Cenas Simplificadas** ⭐ CAMBIO PRINCIPAL
+   - Antes: Recetas variadas, ligeramente elaboradas
+   - Ahora: Máximo 15 minutos, 3-4 ingredientes, recetas ultra-simples
+   - Opciones principales:
+     - Huevos revueltos + pan tostado + tomate crudo (7 min)
+     - Pollo plancha + papas congeladas (10 min)
+     - Atún enlatado + arroz microondas + cebolla (5 min)
+   - Horario: 6:00-6:30pm (respeta límite de 7pm)
+
+5. **Enfoque en Conveniencia**
+   - Congelados cuando sea posible (papas, verduras, pescado)
+   - Verduras crudas sin preparación (tomate, lechuga)
+   - Proteínas rápidas (huevos, atún, pollo congelado)
+
+### Impacto Esperado:
+- ✓ Menos presión de preparación (recetas simples)
+- ✓ Mejor adaptación al horario real de entrenamiento
+- ✓ Respeta preferencias de Jaqueline (no comer tarde)
+- ✓ Mantiene objetivos nutricionales (100g proteína, recuperación muscular)
+- ✓ Mayor probabilidad de adherencia (simplicidad)
+
+### A Monitorear:
+- Cómo se siente Jaqueline entrenar sin pre-workout
+- Si el plátano post-entreno es suficiente energía
+- Adaptación a horario de desayuno 10am
+- Si logra mantener cena antes de 7pm
+- Nivel de energía general con nueva estructura
+

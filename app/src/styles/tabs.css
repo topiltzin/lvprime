@@ -227,3 +227,27 @@
   border-top: 2px solid var(--border);
   margin: 24px 0;
 }
+
+/* Nutrition PDF Download Button */
+.nutrition-pdf-download-button {
+  padding: 10px 20px;
+  background-color: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+  margin-top: 20px;
+  align-self: flex-start;
+}
+
+.nutrition-pdf-download-button:hover {
+  background-color: var(--accent-dark, #0066cc);
+  opacity: 0.9;
+}
+
+.nutrition-pdf-download-button:active {
+  transform: scale(0.98);
+}

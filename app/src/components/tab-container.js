@@ -7,6 +7,7 @@ import { marked } from 'marked';
 import { renderProgramDay, renderDaySubnav } from './program-day.js';
 import { renderWeekSubnav, resolveProgressionText } from './week-subnav.js';
 import { downloadProgramWeekPdf } from './program-pdf.js';
+import { downloadNutritionPdf } from './nutrition-pdf.js';
 import { renderFeedbackEntry } from './feedback-entry.js';
 import { renderTrendChart } from './trend-chart.js';
 import { showToast } from './toast.js';
@@ -307,6 +308,22 @@ export class TabContainer {
       const htmlContent = marked(nutrition.content);
       body.innerHTML = htmlContent;
       container.appendChild(body);
+
+      // Add PDF download button
+      const pdfButton = document.createElement('button');
+      pdfButton.type = 'button';
+      pdfButton.className = 'nutrition-pdf-download-button';
+      pdfButton.textContent = 'Download PDF';
+      pdfButton.addEventListener('click', () => {
+        try {
+          // Extract customer name from slug or use default
+          const customerName = this.slug ? this.slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Nutrition Plan';
+          downloadNutritionPdf(customerName, nutrition.content);
+        } catch (err) {
+          showToast('Could not generate the PDF. Please try again.', 3000, 'error');
+        }
+      });
+      container.appendChild(pdfButton);
     } else {
       const empty = document.createElement('div');
       empty.className = 'empty-state-card';
