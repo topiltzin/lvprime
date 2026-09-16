@@ -52,20 +52,27 @@ function buildTabConfig(data) {
       order: 0,
     },
     {
+      id: 'nutrition',
+      label: 'Nutrition Plan',
+      isEnabled: true, // Always enabled; shows empty state if no nutrition plan
+      contentType: 'nutrition',
+      order: 1,
+    },
+    {
       id: 'feedback',
       // Always enabled — a client with zero entries still sees the Feedback tab,
       // showing an honest empty state rather than being hidden (US3 edge cases).
       label: 'Feedback',
       isEnabled: true,
       contentType: 'feedback',
-      order: 1,
+      order: 2,
     },
     {
       id: 'add-entry',
       label: 'Log Session',
       isEnabled: true, // Always enabled for adding feedback
       contentType: 'add-entry',
-      order: 2,
+      order: 3,
     },
     {
       id: 'notes',
@@ -74,7 +81,7 @@ function buildTabConfig(data) {
       label: 'Notes',
       isEnabled: true,
       contentType: 'notes',
-      order: 3,
+      order: 4,
     },
   ];
 }
@@ -110,10 +117,16 @@ function buildTabData(customerData) {
     html: (customerData.notes && customerData.notes.html) || null,
   };
 
+  // Nutrition plan data: markdown content that will be rendered to HTML by marked library.
+  // Always an object (never null) — Nutrition tab is always enabled; renders content when
+  // present, empty state message otherwise.
+  const nutrition = customerData.nutrition || { present: false, content: '', isEmpty: true };
+
   return {
     program,
     feedback: feedbackData,
     notes,
+    nutrition,
     'add-entry': {}, // Placeholder for form tab (form rendered via global renderFeedbackForm function)
   };
 }

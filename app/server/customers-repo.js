@@ -158,5 +158,6 @@ export function customerPaths(slug) {
     program: path.join(dir, 'program.md'),
     feedback: path.join(dir, 'feedback.md'),
     notes: path.join(dir, 'notes.md'),
+    nutrition: path.join(dir, 'nutrition_plan.md'),
   };
 }

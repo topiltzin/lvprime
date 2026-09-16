@@ -3,6 +3,7 @@
  * Main component for managing tabbed interface for customer data
  */
 
+import { marked } from 'marked';
 import { renderProgramDay, renderDaySubnav } from './program-day.js';
 import { renderWeekSubnav, resolveProgressionText } from './week-subnav.js';
 import { downloadProgramWeekPdf } from './program-pdf.js';
@@ -131,6 +132,9 @@ export class TabContainer {
     switch (tab.contentType) {
       case 'program':
         this.renderProgramContent(container, data);
+        break;
+      case 'nutrition':
+        this.renderNutritionContent(container, data);
         break;
       case 'feedback':
         this.renderFeedbackContent(container, data);
@@ -295,6 +299,22 @@ export class TabContainer {
     }
   }
 
+  renderNutritionContent(container, nutrition) {
+    if (nutrition && nutrition.present && nutrition.content && !nutrition.isEmpty) {
+      const body = document.createElement('div');
+      body.className = 'nutrition-body';
+      // Convert markdown to HTML using marked library
+      const htmlContent = marked(nutrition.content);
+      body.innerHTML = htmlContent;
+      container.appendChild(body);
+    } else {
+      const empty = document.createElement('div');
+      empty.className = 'empty-state-card';
+      empty.textContent = 'No nutrition plan available yet. Once your nutrition plan is created, it will appear here.';
+      container.appendChild(empty);
+    }
+  }
+
   attachEventListeners() {
     Object.values(this.tabElements).forEach((button) => {
       button.addEventListener('click', (e) => {
@@ -328,6 +348,7 @@ export class TabContainer {
   getEmptyStateMessage(contentType) {
     const messages = {
       program: 'Program not yet created.',
+      nutrition: 'No nutrition plan available yet.',
       'add-entry': 'Feedback form is not available.',
     };
     return messages[contentType] || 'No data available.';
