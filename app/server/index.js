@@ -451,7 +451,7 @@ const ROUTES = [
 ];
 
 /** Routes a single HTTP request under /api/*. Used both by the Vite dev middleware
- * (vite.config.js) and the standalone server (server/serve.js). */
+ * (vite.config.js) and the standalone server (server.js). */
 export async function handleApiRequest(req, res) {
   const url = new URL(req.url, 'http://localhost');
   const pathname = url.pathname;
@@ -470,7 +470,7 @@ export async function handleApiRequest(req, res) {
   } catch (err) {
     // Supabase connection/query failures surface here as DatabaseError from
     // customer-data.js (per T048); translate to a friendly message instead of
-    // letting vite.config.js/serve.js's outer catch return a bare
+    // letting vite.config.js/server.js's outer catch return a bare
     // "internal_error" (T049 — customer-view.js already displays err.message
     // from the API response in its error banner).
     if (err.code === 'DATABASE_ERROR') {

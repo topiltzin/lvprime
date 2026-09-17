@@ -2,10 +2,16 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { handleApiRequest } from './index.js';
+import { handleApiRequest } from './server/index.js';
+
+// Vercel auto-detects this file as a Node.js server entrypoint (root-level
+// server.js calling .listen()) and routes ALL incoming requests to it —
+// covering both /api/* and /customer-files/* without needing vercel.json
+// rewrites. See https://vercel.com/docs/functions/runtimes/node-js.
+// Also used locally for `npm start` (production preview of the built app).
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DIST_DIR = path.join(__dirname, '..', 'dist');
+const DIST_DIR = path.join(__dirname, 'dist');
 const PORT = process.env.PORT || 4173;
 
 const MIME = {
