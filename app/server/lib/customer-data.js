@@ -1,0 +1,426 @@
+/**
+ * Data Access Layer for customer data on Supabase PostgreSQL.
+ * See specs/006-customer-data-storage/contracts/data-api-layer.md for the
+ * full contract this module implements.
+ *
+ * Server-only: imports @supabase/supabase-js with SUPABASE_SECRET_KEY, which
+ * must never reach the browser bundle. Only import this from app/server/*.
+ */
+import { getSupabaseClient } from './database-client.js';
+import { computeContentHash, verifyContentHash } from '../hash-utils.js';
+import {
+  detectVersionMismatch,
+  resolveCoachSync,
+} from '../sync-engine.js';
+
+// ---- Error classes (contracts/data-api-layer.md "Error Handling") ----
+
+export class CustomerNotFoundError extends Error {
+  constructor(slug) {
+    super(`Customer not found: ${slug}`);
+    this.name = 'CustomerNotFoundError';
+    this.code = 'CUSTOMER_NOT_FOUND';
+  }
+}
+
+export class ValidationError extends Error {
+  constructor(field, message) {
+    super(`Validation error on ${field}: ${message}`);
+    this.name = 'ValidationError';
+    this.code = 'VALIDATION_ERROR';
+    this.field = field;
+  }
+}
+
+export class DatabaseError extends Error {
+  constructor(message, cause) {
+    super(`Database error: ${message}`);
+    this.name = 'DatabaseError';
+    this.code = 'DATABASE_ERROR';
+    this.cause = cause;
+  }
+}
+
+// ---- Validation helpers ----
+
+// Per contracts/database-schema.md customers table constraint.
+const SLUG_REGEX = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
+
+function assertValidSlug(slug) {
+  if (typeof slug !== 'string' || slug.length < 3 || slug.length > 100 || !SLUG_REGEX.test(slug)) {
+    throw new ValidationError('slug', `must be lowercase alphanumeric with hyphens, 3-100 chars, got "${slug}"`);
+  }
+}
+
+// Programs and Notes: 500KB (data-model.md). NutritionPlan keeps the
+// pre-existing 100KB limit from specs/005-nutrition-plan-tab FR-008 so
+// this migration doesn't change that feature's behavior.
+const MAX_CONTENT_BYTES = 500 * 1024;
+const MAX_NUTRITION_BYTES = 100 * 1024;
+
+function assertContentSize(content, field, maxBytes = MAX_CONTENT_BYTES) {
+  if (typeof content !== 'string' || content.length === 0) {
+    throw new ValidationError(field, 'content must be a non-empty string');
+  }
+  if (Buffer.byteLength(content, 'utf8') > maxBytes) {
+    throw new ValidationError(field, `content MUST NOT exceed ${Math.round(maxBytes / 1024)}KB`);
+  }
+}
+
+function dbError(context, error) {
+  return new DatabaseError(`${context}: ${error.message}`, error);
+}
+
+// ---- Core read functions (contracts/data-api-layer.md) ----
+
+export async function getCustomer(slug) {
+  assertValidSlug(slug);
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase.from('customers').select('*').eq('slug', slug).maybeSingle();
+  if (error) throw dbError(`getCustomer(${slug})`, error);
+  if (!data) throw new CustomerNotFoundError(slug);
+  return data;
+}
+
+export async function getCustomerProgram(slug) {
+  const customer = await getCustomer(slug);
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase.from('programs').select('*').eq('customer_id', customer.id).maybeSingle();
+  if (error) throw dbError(`getCustomerProgram(${slug})`, error);
+  return data || null;
+}
+
+export async function getCustomerFeedback(slug) {
+  const customer = await getCustomer(slug);
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase.from('feedbacks').select('*').eq('customer_id', customer.id).maybeSingle();
+  if (error) throw dbError(`getCustomerFeedback(${slug})`, error);
+  return data || { entries: [] };
+}
+
+export async function getCustomerNotes(slug) {
+  const customer = await getCustomer(slug);
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase.from('notes').select('*').eq('customer_id', customer.id).maybeSingle();
+  if (error) throw dbError(`getCustomerNotes(${slug})`, error);
+  return data || null;
+}
+
+export async function getCustomerNutritionPlan(slug) {
+  const customer = await getCustomer(slug);
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from('nutrition_plans')
+    .select('*')
+    .eq('customer_id', customer.id)
+    .maybeSingle();
+  if (error) throw dbError(`getCustomerNutritionPlan(${slug})`, error);
+  return data || null;
+}
+
+// ---- Customer upsert (used by the migration script) ----
+
+export async function upsertCustomer(slug, name) {
+  assertValidSlug(slug);
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from('customers')
+    .upsert({ slug, name, updated_at: new Date().toISOString() }, { onConflict: 'slug' })
+    .select()
+    .single();
+  if (error) throw dbError(`upsertCustomer(${slug})`, error);
+  return data;
+}
+
+// ---- Write functions (contracts/data-api-layer.md) ----
+
+const OVERALL_IMPRESSIONS = new Set(['Easy', 'Moderate', 'Hard']);
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function validateFeedbackEntry(entry) {
+  if (!entry || typeof entry !== 'object') throw new ValidationError('entry', 'must be an object');
+  if (!DATE_RE.test(entry.date)) throw new ValidationError('date', 'must be in YYYY-MM-DD format');
+  if (!entry.week) throw new ValidationError('week', 'is required');
+  if (!entry.how_customer_felt) throw new ValidationError('how_customer_felt', 'is required');
+  if (typeof entry.completed !== 'boolean') throw new ValidationError('completed', 'must be a boolean');
+  if (!entry.notes) throw new ValidationError('notes', 'is required');
+  if (!OVERALL_IMPRESSIONS.has(entry.overall_impression)) {
+    throw new ValidationError(
+      'overall_impression',
+      `must be one of Easy, Moderate, Hard, got "${entry.overall_impression}"`
+    );
+  }
+}
+
+export async function addFeedbackEntry(slug, entry) {
+  validateFeedbackEntry(entry);
+  const customer = await getCustomer(slug);
+  const supabase = getSupabaseClient();
+
+  const existing = await getCustomerFeedback(slug);
+  const entries = [...(existing.entries || []), entry];
+
+  const { data, error } = await supabase
+    .from('feedbacks')
+    .upsert(
+      { customer_id: customer.id, entries, updated_at: new Date().toISOString() },
+      { onConflict: 'customer_id' }
+    )
+    .select()
+    .single();
+  if (error) throw dbError(`addFeedbackEntry(${slug})`, error);
+  return data;
+}
+
+export async function updateCustomerNotes(slug, content) {
+  assertContentSize(content, 'content', MAX_CONTENT_BYTES);
+  const customer = await getCustomer(slug);
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from('notes')
+    .upsert(
+      { customer_id: customer.id, content, updated_at: new Date().toISOString() },
+      { onConflict: 'customer_id' }
+    )
+    .select()
+    .single();
+  if (error) throw dbError(`updateCustomerNotes(${slug})`, error);
+  return data;
+}
+
+export async function updateCustomerProgram(slug, content) {
+  assertContentSize(content, 'content', MAX_CONTENT_BYTES);
+  const customer = await getCustomer(slug);
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from('programs')
+    .upsert(
+      { customer_id: customer.id, content, updated_at: new Date().toISOString() },
+      { onConflict: 'customer_id' }
+    )
+    .select()
+    .single();
+  if (error) throw dbError(`updateCustomerProgram(${slug})`, error);
+  return data;
+}
+
+export async function updateCustomerNutritionPlan(slug, content) {
+  assertContentSize(content, 'content', MAX_NUTRITION_BYTES);
+  const customer = await getCustomer(slug);
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from('nutrition_plans')
+    .upsert(
+      { customer_id: customer.id, content, updated_at: new Date().toISOString() },
+      { onConflict: 'customer_id' }
+    )
+    .select()
+    .single();
+  if (error) throw dbError(`updateCustomerNutritionPlan(${slug})`, error);
+  return data;
+}
+
+// ---- Sync & offline queue functions (absorbs sync-engine.js/sync-state.js/offline-queue.js) ----
+
+const SYNC_TABLE_BY_FILE_TYPE = { program: 'programs', notes: 'notes' };
+
+function assertSyncFileType(fileType) {
+  if (!SYNC_TABLE_BY_FILE_TYPE[fileType]) {
+    throw new ValidationError('fileType', `must be 'program' or 'notes', got "${fileType}"`);
+  }
+}
+
+/**
+ * Coach uploads a new program/notes version. Implements the same
+ * "coach-always-wins" conflict resolution as sync-engine.js's resolveCoachSync,
+ * backed by the programs/notes version column instead of a JSON file.
+ */
+export async function syncCoachWrite(slug, fileType, { currentVersion, content, contentHash }) {
+  assertSyncFileType(fileType);
+  if (!verifyContentHash(content, contentHash)) {
+    throw new ValidationError('contentHash', 'does not match computed hash of content');
+  }
+
+  const customer = await getCustomer(slug);
+  const table = SYNC_TABLE_BY_FILE_TYPE[fileType];
+  const supabase = getSupabaseClient();
+
+  const { data: existing, error: readError } = await supabase
+    .from(table)
+    .select('version')
+    .eq('customer_id', customer.id)
+    .maybeSingle();
+  if (readError) throw dbError(`syncCoachWrite(${slug}, ${fileType}) read`, readError);
+
+  const serverVersion = existing ? existing.version : 0;
+  const resolution = resolveCoachSync({ current_version: currentVersion }, serverVersion);
+
+  const { error: writeError } = await supabase.from(table).upsert(
+    {
+      customer_id: customer.id,
+      content,
+      version: resolution.new_version,
+      content_hash: contentHash,
+      last_writer: 'coach',
+      sync_status: 'synced',
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'customer_id' }
+  );
+  if (writeError) throw dbError(`syncCoachWrite(${slug}, ${fileType}) write`, writeError);
+
+  await recordSyncEvent(slug, fileType, resolution.conflicted ? 'sync_conflict' : 'sync_success', {
+    source: 'coach',
+    versionFrom: serverVersion,
+    versionTo: resolution.new_version,
+    contentHash,
+    conflictDescription: resolution.conflicted ? resolution.message : undefined,
+  });
+
+  return {
+    status: 'synced',
+    newVersion: resolution.new_version,
+    conflicted: resolution.conflicted,
+    serverVersion,
+  };
+}
+
+/** Replaces sync-state.js's getSyncState. */
+export async function getSyncState(slug, fileType) {
+  assertSyncFileType(fileType);
+  const customer = await getCustomer(slug);
+  const table = SYNC_TABLE_BY_FILE_TYPE[fileType];
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from(table)
+    .select('version, sync_status, last_writer, content_hash, updated_at')
+    .eq('customer_id', customer.id)
+    .maybeSingle();
+  if (error) throw dbError(`getSyncState(${slug}, ${fileType})`, error);
+  if (!data) return null;
+  return {
+    version: data.version,
+    syncStatus: data.sync_status,
+    lastWriter: data.last_writer,
+    contentHash: data.content_hash,
+    updatedAt: data.updated_at,
+  };
+}
+
+const QUEUE_FILE_TYPES = new Set(['program', 'notes']);
+const HASH_RE = /^[a-f0-9]{64}$/i;
+
+function validateOfflineQueueEntry(entry) {
+  if (!entry || typeof entry !== 'object') throw new ValidationError('entry', 'must be an object');
+  if (!Number.isInteger(entry.sequence)) throw new ValidationError('sequence', 'is required and must be an integer');
+  if (!entry.timestamp || isNaN(new Date(entry.timestamp).getTime())) {
+    throw new ValidationError('timestamp', `must be a valid ISO8601 string, got "${entry.timestamp}"`);
+  }
+  if (!entry.action) throw new ValidationError('action', 'is required');
+  if (!HASH_RE.test(entry.content_hash || '')) {
+    throw new ValidationError('content_hash', `must be a SHA256 hex string (64 chars), got "${entry.content_hash}"`);
+  }
+  if (!(entry.content_size_bytes > 0)) {
+    throw new ValidationError('content_size_bytes', 'must be > 0');
+  }
+}
+
+/** Replaces offline-queue.js's queueChange. */
+export async function queueOfflineChange(slug, fileType, entry) {
+  if (!QUEUE_FILE_TYPES.has(fileType)) {
+    throw new ValidationError('fileType', `must be 'program' or 'notes', got "${fileType}"`);
+  }
+  validateOfflineQueueEntry(entry);
+
+  const customer = await getCustomer(slug);
+  const supabase = getSupabaseClient();
+
+  const existingQueue = await getOfflineQueue(slug, fileType);
+  const maxSequence = existingQueue.length ? Math.max(...existingQueue.map((e) => e.sequence)) : 0;
+  const expectedSequence = maxSequence + 1;
+  if (entry.sequence !== expectedSequence) {
+    if (expectedSequence === 1) {
+      throw new ValidationError('sequence', `First sequence must be 1, got ${entry.sequence}`);
+    }
+    throw new ValidationError('sequence', `Sequence gap: expected ${expectedSequence}, got ${entry.sequence}`);
+  }
+
+  const { error: insertError } = await supabase.from('offline_queue_entries').insert({
+    customer_id: customer.id,
+    file_type: fileType,
+    sequence: entry.sequence,
+    queued_at: entry.timestamp,
+    action: entry.action,
+    content_hash: entry.content_hash,
+    content_size_bytes: entry.content_size_bytes,
+    description: entry.description || null,
+  });
+  if (insertError) throw dbError(`queueOfflineChange(${slug}, ${fileType})`, insertError);
+
+  const table = SYNC_TABLE_BY_FILE_TYPE[fileType];
+  const { error: statusError } = await supabase
+    .from(table)
+    .update({ sync_status: 'pending' })
+    .eq('customer_id', customer.id);
+  if (statusError) throw dbError(`queueOfflineChange(${slug}, ${fileType}) status update`, statusError);
+}
+
+/** Replaces offline-queue.js's getQueue. */
+export async function getOfflineQueue(slug, fileType) {
+  const customer = await getCustomer(slug);
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from('offline_queue_entries')
+    .select('*')
+    .eq('customer_id', customer.id)
+    .eq('file_type', fileType)
+    .order('sequence', { ascending: true });
+  if (error) throw dbError(`getOfflineQueue(${slug}, ${fileType})`, error);
+  return data || [];
+}
+
+/** Replaces offline-queue.js's clearQueue. */
+export async function clearOfflineQueue(slug, fileType) {
+  const customer = await getCustomer(slug);
+  const supabase = getSupabaseClient();
+  const { error } = await supabase
+    .from('offline_queue_entries')
+    .delete()
+    .eq('customer_id', customer.id)
+    .eq('file_type', fileType);
+  if (error) throw dbError(`clearOfflineQueue(${slug}, ${fileType})`, error);
+}
+
+/** Replaces sync-state.js's recordSyncEvent. */
+export async function recordSyncEvent(slug, fileType, eventType, metadata = {}) {
+  const customer = await getCustomer(slug);
+  const supabase = getSupabaseClient();
+  const { error } = await supabase.from('sync_events').insert({
+    customer_id: customer.id,
+    file_type: fileType,
+    event_type: eventType,
+    source: metadata.source || null,
+    version_from: metadata.versionFrom ?? null,
+    version_to: metadata.versionTo ?? null,
+    conflict_description: metadata.conflictDescription || null,
+    error_message: metadata.errorMessage || null,
+    content_hash: metadata.contentHash || null,
+  });
+  if (error) throw dbError(`recordSyncEvent(${slug}, ${fileType})`, error);
+}
+
+/** Replaces sync-state.js's getRecentSyncEvents. */
+export async function getRecentSyncEvents(slug, limit = 10) {
+  const customer = await getCustomer(slug);
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from('sync_events')
+    .select('*')
+    .eq('customer_id', customer.id)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw dbError(`getRecentSyncEvents(${slug})`, error);
+  return data || [];
+}
+
+export { computeContentHash };

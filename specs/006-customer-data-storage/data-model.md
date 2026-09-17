@@ -181,7 +181,7 @@ This section defines the PostgreSQL schema and data structures for storing custo
 
 **Validation Rules**:
 - `content` MUST be valid UTF-8 markdown text
-- `content` MUST NOT exceed 500KB
+- `content` MUST NOT exceed 100KB (per specs/005-nutrition-plan-tab FR-008; existing production behavior returns HTTP 413 above this — kept at 100KB here, not the 500KB used for programs/notes, to avoid a regression)
 - One active nutrition plan per customer_id (no versioning in MVP)
 
 **Example Row**:

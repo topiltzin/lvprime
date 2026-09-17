@@ -332,7 +332,7 @@ const updated = await updateCustomerProgram('jaqueline-orellano',
 
 **Throws**:
 - `CustomerNotFoundError` if slug invalid
-- `ValidationError` if content is empty or >500KB
+- `ValidationError` if content is empty or >100KB (per specs/005-nutrition-plan-tab FR-008; nutrition plans use a lower limit than programs/notes to preserve existing behavior)
 
 **Usage**:
 ```javascript

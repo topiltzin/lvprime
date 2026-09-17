@@ -286,7 +286,7 @@ CREATE INDEX idx_nutrition_plans_customer_id ON nutrition_plans(customer_id);
 
 **Constraints**:
 - `customer_id`: FK to customers.id; cascade delete if customer removed
-- `content`: UTF-8 markdown text, <500KB
+- `content`: UTF-8 markdown text, <100KB (per specs/005-nutrition-plan-tab FR-008 — not 500KB like programs/notes, to preserve the existing 413 behavior)
 - One row per customer (unique constraint enforces this)
 
 ---
