@@ -85,29 +85,29 @@ export async function getCustomer(slug) {
   return data;
 }
 
-export async function getCustomerProgram(slug) {
-  const customer = await getCustomer(slug);
+// "ById" variants take an already-resolved customer_id and skip the slug ->
+// customer lookup. Used internally (handleGetCustomer, listAllCustomers) to
+// run the 4 per-customer queries in parallel via Promise.all instead of each
+// one separately re-resolving the customer — that redundant resolution was
+// turning 1 logical "load a customer" into ~9 sequential Supabase round
+// trips and blowing past the <500ms target (spec SC-004). The public
+// getCustomerXxx(slug) functions below are unchanged for other callers.
+
+async function getCustomerProgramById(customerId) {
   const supabase = getSupabaseClient();
-  const { data, error } = await supabase.from('programs').select('*').eq('customer_id', customer.id).maybeSingle();
-  if (error) throw dbError(`getCustomerProgram(${slug})`, error);
+  const { data, error } = await supabase.from('programs').select('*').eq('customer_id', customerId).maybeSingle();
+  if (error) throw dbError(`getCustomerProgramById(${customerId})`, error);
   return data || null;
 }
 
-/**
- * Feedback is stored as raw markdown (feedbacks.content), not a fixed JSON
- * shape — each customer's feedback.md defines its own field template (see
- * markdown-parser.js). This mirrors what app/server/index.js's
- * handleGetCustomer currently does via fs.readFileSync + parseFeedbackEntries.
- */
-export async function getCustomerFeedback(slug) {
-  const customer = await getCustomer(slug);
+async function getCustomerFeedbackById(customerId) {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from('feedbacks')
     .select('content, updated_at')
-    .eq('customer_id', customer.id)
+    .eq('customer_id', customerId)
     .maybeSingle();
-  if (error) throw dbError(`getCustomerFeedback(${slug})`, error);
+  if (error) throw dbError(`getCustomerFeedbackById(${customerId})`, error);
 
   const content = data ? data.content : '';
   return {
@@ -118,24 +118,67 @@ export async function getCustomerFeedback(slug) {
   };
 }
 
-export async function getCustomerNotes(slug) {
-  const customer = await getCustomer(slug);
+async function getCustomerNotesById(customerId) {
   const supabase = getSupabaseClient();
-  const { data, error } = await supabase.from('notes').select('*').eq('customer_id', customer.id).maybeSingle();
-  if (error) throw dbError(`getCustomerNotes(${slug})`, error);
+  const { data, error } = await supabase.from('notes').select('*').eq('customer_id', customerId).maybeSingle();
+  if (error) throw dbError(`getCustomerNotesById(${customerId})`, error);
   return data || null;
 }
 
-export async function getCustomerNutritionPlan(slug) {
-  const customer = await getCustomer(slug);
+async function getCustomerNutritionPlanById(customerId) {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from('nutrition_plans')
     .select('*')
-    .eq('customer_id', customer.id)
+    .eq('customer_id', customerId)
     .maybeSingle();
-  if (error) throw dbError(`getCustomerNutritionPlan(${slug})`, error);
+  if (error) throw dbError(`getCustomerNutritionPlanById(${customerId})`, error);
   return data || null;
+}
+
+export async function getCustomerProgram(slug) {
+  const customer = await getCustomer(slug);
+  return getCustomerProgramById(customer.id);
+}
+
+/**
+ * Feedback is stored as raw markdown (feedbacks.content), not a fixed JSON
+ * shape — each customer's feedback.md defines its own field template (see
+ * markdown-parser.js). This mirrors what app/server/index.js's
+ * handleGetCustomer currently does via fs.readFileSync + parseFeedbackEntries.
+ */
+export async function getCustomerFeedback(slug) {
+  const customer = await getCustomer(slug);
+  return getCustomerFeedbackById(customer.id);
+}
+
+export async function getCustomerNotes(slug) {
+  const customer = await getCustomer(slug);
+  return getCustomerNotesById(customer.id);
+}
+
+export async function getCustomerNutritionPlan(slug) {
+  const customer = await getCustomer(slug);
+  return getCustomerNutritionPlanById(customer.id);
+}
+
+/**
+ * Loads a full customer profile (customer row + program + notes +
+ * nutrition_plan + feedback) with the 4 related-table queries run in
+ * parallel — this is what handleGetCustomer in server/index.js should call
+ * instead of resolving the customer once and then calling getCustomerProgram/
+ * getCustomerNotes/getCustomerNutritionPlan/getCustomerFeedback separately
+ * (each of which would otherwise redundantly re-resolve the customer).
+ */
+export async function getCustomerFullProfile(slug) {
+  const customer = await getCustomer(slug);
+  const [program, notes, nutritionPlan, feedback] = await Promise.all([
+    getCustomerProgramById(customer.id),
+    getCustomerNotesById(customer.id),
+    getCustomerNutritionPlanById(customer.id),
+    getCustomerFeedbackById(customer.id),
+  ]);
+  return { customer, program, notes, nutritionPlan, feedback };
 }
 
 // ---- List all customers (replaces customers-repo.js's listCustomers + SQLite index) ----
@@ -176,38 +219,41 @@ export function computeFeedbackTrend(entries) {
 /**
  * Replaces customers-repo.js's listCustomers() (which reindexed from the
  * filesystem into SQLite then read back). Coach-only tool with 10-50
- * customers (per plan.md Scale/Scope), so N+1 queries here are fine.
+ * customers (per plan.md Scale/Scope) — the 3 queries per customer run in
+ * parallel, and all customers are processed in parallel with each other too
+ * (not one customer at a time), so this is bounded by one network round
+ * trip's worth of latency rather than 3x the customer count.
  */
 export async function listAllCustomers() {
   const supabase = getSupabaseClient();
   const { data: customers, error } = await supabase.from('customers').select('*').order('name');
   if (error) throw dbError('listAllCustomers', error);
 
-  const results = [];
-  for (const customer of customers) {
-    const [programRes, notesRes, feedbackRes] = await Promise.all([
-      supabase.from('programs').select('content').eq('customer_id', customer.id).maybeSingle(),
-      supabase.from('notes').select('id').eq('customer_id', customer.id).maybeSingle(),
-      supabase.from('feedbacks').select('content').eq('customer_id', customer.id).maybeSingle(),
-    ]);
-    if (programRes.error) throw dbError(`listAllCustomers(${customer.slug}) program`, programRes.error);
-    if (notesRes.error) throw dbError(`listAllCustomers(${customer.slug}) notes`, notesRes.error);
-    if (feedbackRes.error) throw dbError(`listAllCustomers(${customer.slug}) feedback`, feedbackRes.error);
+  return Promise.all(
+    customers.map(async (customer) => {
+      const [programRes, notesRes, feedbackRes] = await Promise.all([
+        supabase.from('programs').select('content').eq('customer_id', customer.id).maybeSingle(),
+        supabase.from('notes').select('id').eq('customer_id', customer.id).maybeSingle(),
+        supabase.from('feedbacks').select('content').eq('customer_id', customer.id).maybeSingle(),
+      ]);
+      if (programRes.error) throw dbError(`listAllCustomers(${customer.slug}) program`, programRes.error);
+      if (notesRes.error) throw dbError(`listAllCustomers(${customer.slug}) notes`, notesRes.error);
+      if (feedbackRes.error) throw dbError(`listAllCustomers(${customer.slug}) feedback`, feedbackRes.error);
 
-    const programGoal = programRes.data?.content ? parseProgramGoal(programRes.data.content) : null;
-    const entries = feedbackRes.data?.content ? parseFeedbackEntries(feedbackRes.data.content) : [];
-    const lastMatched = [...entries].reverse().find((e) => e.raw_matched && e.entry_date_iso);
+      const programGoal = programRes.data?.content ? parseProgramGoal(programRes.data.content) : null;
+      const entries = feedbackRes.data?.content ? parseFeedbackEntries(feedbackRes.data.content) : [];
+      const lastMatched = [...entries].reverse().find((e) => e.raw_matched && e.entry_date_iso);
 
-    results.push({
-      slug: customer.slug,
-      displayName: customer.name,
-      hasProgram: !!programRes.data,
-      hasNotes: !!notesRes.data,
-      programGoal,
-      lastFeedbackDate: lastMatched ? lastMatched.entry_date_iso : null,
-    });
-  }
-  return results;
+      return {
+        slug: customer.slug,
+        displayName: customer.name,
+        hasProgram: !!programRes.data,
+        hasNotes: !!notesRes.data,
+        programGoal,
+        lastFeedbackDate: lastMatched ? lastMatched.entry_date_iso : null,
+      };
+    })
+  );
 }
 
 // ---- Customer upsert (used by the migration script) ----

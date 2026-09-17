@@ -9,6 +9,7 @@ import {
   getCustomerFeedback,
   getCustomerNotes,
   getCustomerNutritionPlan,
+  getCustomerFullProfile,
   addFeedbackEntry,
   listAllCustomers,
   computeFeedbackTrend,
@@ -69,9 +70,13 @@ async function handleGetCustomers(req, res) {
 }
 
 async function handleGetCustomer(req, res, slug) {
-  let customer;
+  let profile;
   try {
-    customer = await getCustomer(slug);
+    // Runs the 4 related-table queries in parallel instead of resolving the
+    // customer 5 times sequentially (per-slug getCustomer* calls) — that was
+    // ~9 sequential Supabase round trips and blew past the <500ms target
+    // (spec SC-004).
+    profile = await getCustomerFullProfile(slug);
   } catch (err) {
     if (err instanceof CustomerNotFoundError) {
       sendJson(res, 404, { error: 'customer_not_found' });
@@ -79,21 +84,19 @@ async function handleGetCustomer(req, res, slug) {
     }
     throw err;
   }
+  const { customer, program: programRow, notes: notesRow, nutritionPlan: nutritionRow, feedback } = profile;
 
-  const programRow = await getCustomerProgram(slug);
   let program = { present: !!programRow };
   if (programRow) {
     const detail = parseProgramDetail(programRow.content, renderMarkdown);
     program = { present: true, goal: parseProgramGoal(programRow.content), ...detail };
   }
 
-  const notesRow = await getCustomerNotes(slug);
   let notes = { present: !!notesRow };
   if (notesRow) {
     notes = { present: true, html: renderMarkdown(notesRow.content) };
   }
 
-  const nutritionRow = await getCustomerNutritionPlan(slug);
   let nutrition = { present: false, content: '', isEmpty: true };
   if (nutritionRow) {
     nutrition = {
@@ -103,7 +106,6 @@ async function handleGetCustomer(req, res, slug) {
     };
   }
 
-  const feedback = await getCustomerFeedback(slug);
   const entries = feedback.entries.map(toFeedbackEntryJson);
   const trend = computeFeedbackTrend(feedback.entries);
 
