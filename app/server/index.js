@@ -1,30 +1,30 @@
-import { openDb, getCustomerRow, listFeedbackEntries, listAttachments, getFeedbackTrend } from './db.js';
-import { listCustomers, reindexIfStale, customerFolderExists, customerPaths, getCustomersDir } from './customers-repo.js';
-import { parseProgramDetail } from './markdown-parser.js';
+import { getCustomersDir, scanAttachments } from './customers-repo.js';
+import { parseProgramDetail, parseProgramGoal } from './markdown-parser.js';
 import { renderMarkdown } from './markdown-render.js';
-import { validateFeedbackSubmission, appendFeedbackEntry, getFeedbackTemplate } from './feedback-writer.js';
-import * as syncEngine from './sync-engine.js';
-import * as syncState from './sync-state.js';
-import * as offlineQueue from './offline-queue.js';
+import { validateFeedbackSubmission } from './feedback-writer.js';
 import * as hashUtils from './hash-utils.js';
+import {
+  getCustomer,
+  getCustomerProgram,
+  getCustomerFeedback,
+  getCustomerNotes,
+  getCustomerNutritionPlan,
+  addFeedbackEntry,
+  listAllCustomers,
+  computeFeedbackTrend,
+  syncCoachWrite,
+  getSyncState,
+  CustomerNotFoundError,
+} from './lib/customer-data.js';
 import fs from 'node:fs';
 import path from 'node:path';
 
-let _db = null;
-function db() {
-  if (!_db) {
-    // FITNESS_DASHBOARD_DB_PATH lets integration tests use a throwaway DB
-    // instead of the real app/data/index.sqlite.
-    _db = process.env.FITNESS_DASHBOARD_DB_PATH ? openDb(process.env.FITNESS_DASHBOARD_DB_PATH) : openDb();
-  }
-  return _db;
-}
-
-/** Test-only: closes and forgets the cached DB handle so a new one (e.g.
- * pointed at a fresh temp path) is opened on the next request. */
-export function resetDbForTests() {
-  _db = null;
-}
+/** Test-only, kept for compatibility with existing integration test helpers.
+ * No-op now that reads/writes go through Supabase rather than a per-process
+ * SQLite handle. See specs/006-customer-data-storage/tasks.md T054 — the
+ * fixture-filesystem-based integration tests need reworking against a
+ * Supabase test project; that's tracked separately, not done here. */
+export function resetDbForTests() {}
 
 function sendJson(res, status, body) {
   res.statusCode = status;
@@ -50,24 +50,13 @@ function readJsonBody(req) {
   });
 }
 
-function toCustomerSummary(row) {
-  return {
-    slug: row.slug,
-    displayName: row.display_name,
-    hasProgram: !!row.has_program,
-    hasNotes: !!row.has_notes,
-    programGoal: row.program_goal,
-    lastFeedbackDate: row.last_feedback_date,
-  };
-}
-
 function toFeedbackEntryJson(row) {
   return {
-    id: row.id,
+    id: row.sort_order,
     date: row.entry_date,
     label: row.label,
     felt: row.felt,
-    completed: row.completed == null ? null : !!row.completed,
+    completed: row.completed,
     difficulty: row.difficulty,
     notes: row.notes,
     rawMatched: !!row.raw_matched,
@@ -75,119 +64,119 @@ function toFeedbackEntryJson(row) {
 }
 
 async function handleGetCustomers(req, res) {
-  const rows = listCustomers(db());
-  sendJson(res, 200, { customers: rows.map(toCustomerSummary) });
+  const rows = await listAllCustomers();
+  sendJson(res, 200, { customers: rows });
 }
 
 async function handleGetCustomer(req, res, slug) {
-  if (!customerFolderExists(slug)) {
-    sendJson(res, 404, { error: 'customer_not_found' });
-    return;
-  }
-  const row = reindexIfStale(db(), slug);
-  const paths = customerPaths(slug);
-
-  let program = { present: !!row.has_program };
-  if (row.has_program) {
-    const programText = fs.readFileSync(paths.program, 'utf8');
-    const detail = parseProgramDetail(programText, renderMarkdown);
-    program = { present: true, goal: row.program_goal, ...detail };
-  }
-
-  let notes = { present: !!row.has_notes };
-  if (row.has_notes) {
-    const notesText = fs.readFileSync(paths.notes, 'utf8');
-    notes = { present: true, html: renderMarkdown(notesText) };
-  }
-
-  let nutrition = { present: false, content: '', isEmpty: true };
-  if (fs.existsSync(paths.nutrition)) {
-    try {
-      const nutritionText = fs.readFileSync(paths.nutrition, 'utf8');
-      const isEmpty = nutritionText.trim().length === 0;
-      nutrition = {
-        present: true,
-        content: nutritionText,
-        isEmpty: isEmpty
-      };
-    } catch (err) {
-      console.error(`Error reading nutrition plan for ${slug}:`, err);
-      nutrition = { present: false, content: '', isEmpty: true, error: 'Could not read nutrition file' };
+  let customer;
+  try {
+    customer = await getCustomer(slug);
+  } catch (err) {
+    if (err instanceof CustomerNotFoundError) {
+      sendJson(res, 404, { error: 'customer_not_found' });
+      return;
     }
+    throw err;
   }
 
-  const entries = listFeedbackEntries(db(), slug).map(toFeedbackEntryJson);
-  const trend = getFeedbackTrend(db(), slug);
-  const attachments = listAttachments(db(), slug).map((a) => ({
+  const programRow = await getCustomerProgram(slug);
+  let program = { present: !!programRow };
+  if (programRow) {
+    const detail = parseProgramDetail(programRow.content, renderMarkdown);
+    program = { present: true, goal: parseProgramGoal(programRow.content), ...detail };
+  }
+
+  const notesRow = await getCustomerNotes(slug);
+  let notes = { present: !!notesRow };
+  if (notesRow) {
+    notes = { present: true, html: renderMarkdown(notesRow.content) };
+  }
+
+  const nutritionRow = await getCustomerNutritionPlan(slug);
+  let nutrition = { present: false, content: '', isEmpty: true };
+  if (nutritionRow) {
+    nutrition = {
+      present: true,
+      content: nutritionRow.content,
+      isEmpty: nutritionRow.content.trim().length === 0,
+    };
+  }
+
+  const feedback = await getCustomerFeedback(slug);
+  const entries = feedback.entries.map(toFeedbackEntryJson);
+  const trend = computeFeedbackTrend(feedback.entries);
+
+  // Attachments (PDFs etc.) stay filesystem-based — out of scope for this
+  // migration (spec covers program/feedback/notes/nutrition_plan only).
+  const attachmentDir = path.join(getCustomersDir(), slug);
+  const attachments = scanAttachments(slug, attachmentDir).map((a) => ({
     relativePath: a.relative_path,
     sizeBytes: a.size_bytes,
     modifiedAt: a.modified_at ? new Date(a.modified_at).toISOString() : null,
   }));
-  const feedbackTemplate = getFeedbackTemplate(slug);
 
   sendJson(res, 200, {
-    slug: row.slug,
-    displayName: row.display_name,
+    slug: customer.slug,
+    displayName: customer.name,
     program,
     notes,
     nutrition,
-    feedback: { entries, trend, template: feedbackTemplate },
+    feedback: { entries, trend, template: feedback.template },
     attachments,
   });
 }
 
 async function handleGetNutrition(req, res, slug) {
-  if (!customerFolderExists(slug)) {
-    sendJson(res, 404, { error: 'customer_not_found' });
-    return;
-  }
-  const paths = customerPaths(slug);
-  const nutritionPath = paths.nutrition;
-
-  // Check if nutrition plan file exists
-  if (!fs.existsSync(nutritionPath)) {
-    sendJson(res, 200, {
-      content: '',
-      isEmpty: true,
-      lastModified: null,
-    });
-    return;
-  }
-
-  // Read nutrition plan file
   try {
-    const content = fs.readFileSync(nutritionPath, 'utf8');
-    const stats = fs.statSync(nutritionPath);
-
-    // Check file size (max 100KB per spec FR-008)
-    const maxSize = 100 * 1024; // 100KB
-    if (stats.size > maxSize) {
-      sendJson(res, 413, {
-        error: 'file_too_large',
-        message: 'Nutrition plan file exceeds maximum size (100KB)',
-      });
+    await getCustomer(slug);
+  } catch (err) {
+    if (err instanceof CustomerNotFoundError) {
+      sendJson(res, 404, { error: 'customer_not_found' });
       return;
     }
-
-    sendJson(res, 200, {
-      content: content,
-      isEmpty: content.trim().length === 0,
-      lastModified: stats.mtime ? new Date(stats.mtime).toISOString() : null,
-    });
-  } catch (err) {
-    console.error('Error reading nutrition plan:', err);
-    sendJson(res, 500, {
-      error: 'unable_to_read',
-      message: 'Unable to read nutrition plan file',
-    });
+    throw err;
   }
+
+  // Nutrition plans are written outside the app (nutrition specialist skill
+  // or manual creation, per specs/005-nutrition-plan-tab Assumption 2), so
+  // there's no in-app write path to re-check here — the 100KB limit is
+  // enforced at migration/write time in customer-data.js. This defensive
+  // re-check just guards against any future out-of-band insert.
+  const nutritionRow = await getCustomerNutritionPlan(slug);
+  if (!nutritionRow) {
+    sendJson(res, 200, { content: '', isEmpty: true, lastModified: null });
+    return;
+  }
+
+  const maxSize = 100 * 1024; // 100KB, per specs/005-nutrition-plan-tab FR-008
+  if (Buffer.byteLength(nutritionRow.content, 'utf8') > maxSize) {
+    sendJson(res, 413, {
+      error: 'file_too_large',
+      message: 'Nutrition plan file exceeds maximum size (100KB)',
+    });
+    return;
+  }
+
+  sendJson(res, 200, {
+    content: nutritionRow.content,
+    isEmpty: nutritionRow.content.trim().length === 0,
+    lastModified: nutritionRow.updated_at ? new Date(nutritionRow.updated_at).toISOString() : null,
+  });
 }
 
 async function handlePostFeedback(req, res, slug) {
-  if (!customerFolderExists(slug)) {
-    sendJson(res, 404, { error: 'customer_not_found' });
-    return;
+  let customer;
+  try {
+    customer = await getCustomer(slug);
+  } catch (err) {
+    if (err instanceof CustomerNotFoundError) {
+      sendJson(res, 404, { error: 'customer_not_found' });
+      return;
+    }
+    throw err;
   }
+
   let body;
   try {
     body = await readJsonBody(req);
@@ -196,23 +185,18 @@ async function handlePostFeedback(req, res, slug) {
     return;
   }
 
-  const template = getFeedbackTemplate(slug);
-  const result = validateFeedbackSubmission(template, body);
+  const existingFeedback = await getCustomerFeedback(slug);
+  const result = validateFeedbackSubmission(existingFeedback.template, body);
   if (!result.valid) {
     sendJson(res, 422, { error: 'validation_failed', fields: result.fields });
     return;
   }
 
-  const row = getCustomerRow(db(), slug) || reindexIfStale(db(), slug);
-  appendFeedbackEntry(slug, row.display_name, {
+  const created = await addFeedbackEntry(slug, customer.name, {
     date: body.date,
     label: body.label || null,
     fields: body.fields,
   });
-
-  reindexIfStale(db(), slug);
-  const entries = listFeedbackEntries(db(), slug);
-  const created = entries[entries.length - 1];
 
   sendJson(res, 201, toFeedbackEntryJson(created));
 }
@@ -242,12 +226,15 @@ async function handleCustomerFile(req, res, encodedRelPath) {
   });
 }
 
-// Sync API endpoints (T018-T020: Coach Local Sync)
+// Sync API endpoints (T018-T020: Coach Local Sync; DB-backed per
+// specs/006-customer-data-storage tasks.md Phase 6 — sync-state.js's JSON
+// file and offline-queue.js's embedded queue didn't survive Vercel
+// redeployments, same problem as the customer .md files)
 async function handleSyncUpload(req, res) {
   // POST /api/sync/upload - Coach uploads program/notes to server
   try {
     const body = await readJsonBody(req);
-    const { customer_id, file_type, current_version, content, content_hash, offline_queue } = body;
+    const { customer_id, file_type, current_version, content, content_hash } = body;
 
     // Validate required fields
     if (!customer_id || !file_type || current_version === undefined || !content || !content_hash) {
@@ -263,9 +250,11 @@ async function handleSyncUpload(req, res) {
       });
     }
 
-    // Validate customer exists
-    if (!customerFolderExists(customer_id)) {
-      return sendJson(res, 404, { error: 'customer_not_found' });
+    try {
+      await getCustomer(customer_id);
+    } catch (err) {
+      if (err instanceof CustomerNotFoundError) return sendJson(res, 404, { error: 'customer_not_found' });
+      throw err;
     }
 
     // Validate file_type
@@ -276,7 +265,9 @@ async function handleSyncUpload(req, res) {
       });
     }
 
-    // Verify content hash
+    // Verify content hash (also re-checked inside syncCoachWrite; checked
+    // here first so the original integrity_check_failed response shape with
+    // expected/received hashes is preserved exactly)
     if (!hashUtils.verifyContentHash(content, content_hash)) {
       return sendJson(res, 422, {
         error: 'integrity_check_failed',
@@ -285,49 +276,22 @@ async function handleSyncUpload(req, res) {
       });
     }
 
-    // Get current server version
-    let syncState = syncState.getSyncState(customer_id, file_type);
-    const serverVersion = syncState ? syncState.current_version : 0;
-
-    // Detect conflict (coach-always-wins per FR-007)
-    const conflicted = syncEngine.detectVersionMismatch(current_version, serverVersion);
-
-    // Write file to filesystem
-    const paths = customerPaths(customer_id);
-    const filePath = file_type === 'program' ? paths.program : paths.notes;
-    fs.writeFileSync(filePath, content, 'utf8');
-
-    // Update sync metadata
-    const newVersion = serverVersion + 1;
-    if (!syncState) {
-      syncState.initializeSyncState(customer_id, file_type);
-    }
-    syncState.updateSyncMetadata(customer_id, file_type, newVersion, 'coach', content_hash);
-
-    // Log sync event
-    syncState.recordSyncEvent(customer_id, file_type, 'sync_success', {
-      source: 'coach',
-      version_from: serverVersion,
-      version_to: newVersion,
-      content_hash: content_hash
+    const result = await syncCoachWrite(customer_id, file_type, {
+      currentVersion: current_version,
+      content,
+      contentHash: content_hash,
     });
 
-    if (conflicted) {
-      syncState.recordSyncEvent(customer_id, file_type, 'sync_conflict', {
-        source: 'coach',
-        conflict_description: `Coach version ${current_version}, server version ${serverVersion}. Coach changes applied.`
-      });
-    }
-
-    // Return success
     sendJson(res, 201, {
       status: 'synced',
       customer_id,
       file_type,
-      new_version: newVersion,
-      server_version: serverVersion,
+      new_version: result.newVersion,
+      server_version: result.serverVersion,
       last_sync_timestamp: new Date().toISOString(),
-      message: conflicted ? `Version mismatch resolved: coach changes applied (${current_version} → ${newVersion})` : 'Sync successful'
+      message: result.conflicted
+        ? `Version mismatch resolved: coach changes applied (${current_version} → ${result.newVersion})`
+        : 'Sync successful'
     });
   } catch (err) {
     console.error('Sync upload error:', err);
@@ -353,43 +317,39 @@ async function handleSyncDownload(req, res) {
       });
     }
 
-    if (!customerFolderExists(customer_id)) {
-      return sendJson(res, 404, { error: 'customer_not_found' });
+    try {
+      await getCustomer(customer_id);
+    } catch (err) {
+      if (err instanceof CustomerNotFoundError) return sendJson(res, 404, { error: 'customer_not_found' });
+      throw err;
     }
 
-    // Get sync state
-    const state = syncState.getSyncState(customer_id, file_type);
+    const state = await getSyncState(customer_id, file_type);
     if (!state) {
       return sendJson(res, 404, { error: 'not_found', message: 'File never synced' });
     }
 
     // Check if already has latest version (304 Not Modified)
-    if (current_version && parseInt(current_version) === state.current_version) {
+    if (current_version && parseInt(current_version, 10) === state.version) {
       res.statusCode = 304;
       res.end();
       return;
     }
 
-    // Read file content
-    const paths = customerPaths(customer_id);
-    const filePath = file_type === 'program' ? paths.program : paths.notes;
-
-    if (!fs.existsSync(filePath)) {
-      return sendJson(res, 404, { error: 'not_found', message: 'File missing from filesystem' });
+    const row = file_type === 'program' ? await getCustomerProgram(customer_id) : await getCustomerNotes(customer_id);
+    if (!row) {
+      return sendJson(res, 404, { error: 'not_found', message: 'File missing from database' });
     }
-
-    const content = fs.readFileSync(filePath, 'utf8');
-    const contentHash = hashUtils.computeContentHash(content);
 
     sendJson(res, 200, {
       status: 'download',
       customer_id,
       file_type,
-      current_version: state.current_version,
-      content,
-      content_hash: contentHash,
-      last_sync_timestamp: state.last_sync_timestamp,
-      last_writer: state.last_writer,
+      current_version: state.version,
+      content: row.content,
+      content_hash: state.contentHash || hashUtils.computeContentHash(row.content),
+      last_sync_timestamp: state.updatedAt,
+      last_writer: state.lastWriter,
       message: 'Latest version available'
     });
   } catch (err) {
@@ -411,33 +371,29 @@ async function handleSyncStatus(req, res) {
       });
     }
 
-    if (!customerFolderExists(customer_id)) {
-      return sendJson(res, 404, { error: 'customer_not_found' });
+    try {
+      await getCustomer(customer_id);
+    } catch (err) {
+      if (err instanceof CustomerNotFoundError) return sendJson(res, 404, { error: 'customer_not_found' });
+      throw err;
     }
 
-    // Get status for all file types
+    // Get status for program/notes (version-tracked, per sync-engine.js)
     const files = {};
-    ['program', 'feedback', 'notes'].forEach(fileType => {
-      const state = syncState.getSyncState(customer_id, fileType);
-      if (state) {
-        files[fileType] = {
-          status: state.sync_status,
-          current_version: state.current_version,
-          last_sync_timestamp: state.last_sync_timestamp
-        };
-        if (fileType === 'feedback') {
-          // Count feedback entries
-          const paths = customerPaths(customer_id);
-          if (fs.existsSync(paths.feedback)) {
-            const content = fs.readFileSync(paths.feedback, 'utf8');
-            const entryCount = (content.match(/^## \[/gm) || []).length;
-            files[fileType].entry_count = entryCount;
-          }
-        }
-      } else {
-        files[fileType] = { status: 'not_initialized' };
-      }
-    });
+    for (const fileType of ['program', 'notes']) {
+      const state = await getSyncState(customer_id, fileType);
+      files[fileType] = state
+        ? { status: state.syncStatus, current_version: state.version, last_sync_timestamp: state.updatedAt }
+        : { status: 'not_initialized' };
+    }
+
+    // Feedback was never version-tracked by sync-engine.js either (upload
+    // only accepts file_type program/notes); kept as 'not_initialized' to
+    // match, but entry_count now reflects the real parsed count instead of
+    // the original heading-regex count (which never matched real dated
+    // headings and always returned 0 for actual customer files).
+    const feedback = await getCustomerFeedback(customer_id);
+    files.feedback = { status: 'not_initialized', entry_count: feedback.entries.length };
 
     const allSynced = Object.values(files).every(f => !f.status || f.status === 'synced');
 

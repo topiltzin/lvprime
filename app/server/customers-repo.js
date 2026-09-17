@@ -58,7 +58,7 @@ export function listCustomerSlugs() {
     .sort();
 }
 
-function scanAttachments(slug, dir) {
+export function scanAttachments(slug, dir) {
   const attachments = [];
   function walk(current, relBase) {
     let entries;

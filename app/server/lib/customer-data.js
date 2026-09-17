@@ -9,7 +9,12 @@
 import { getSupabaseClient } from './database-client.js';
 import { computeContentHash, verifyContentHash } from '../hash-utils.js';
 import { resolveCoachSync } from '../sync-engine.js';
-import { extractFeedbackTemplate, parseFeedbackEntries, formatFeedbackEntry } from '../markdown-parser.js';
+import {
+  extractFeedbackTemplate,
+  parseFeedbackEntries,
+  formatFeedbackEntry,
+  parseProgramGoal,
+} from '../markdown-parser.js';
 
 // ---- Error classes (contracts/data-api-layer.md "Error Handling") ----
 
@@ -131,6 +136,78 @@ export async function getCustomerNutritionPlan(slug) {
     .maybeSingle();
   if (error) throw dbError(`getCustomerNutritionPlan(${slug})`, error);
   return data || null;
+}
+
+// ---- List all customers (replaces customers-repo.js's listCustomers + SQLite index) ----
+
+const DIFFICULTY_SCORE = {
+  fácil: 1,
+  facil: 1,
+  easy: 1,
+  moderada: 2,
+  moderate: 2,
+  difícil: 3,
+  dificil: 3,
+  hard: 3,
+  brutal: 4,
+};
+
+/**
+ * Computes the completion-rate and difficulty/energy trend directly from
+ * parseFeedbackEntries() output. Replaces db.js's getFeedbackTrend, which
+ * operated on SQLite-indexed rows (completed stored as 1/0/null there vs a
+ * real boolean/null here).
+ */
+export function computeFeedbackTrend(entries) {
+  const rows = entries.filter((r) => r.raw_matched);
+  const withCompleted = rows.filter((r) => r.completed != null);
+  const completionRate = withCompleted.length
+    ? withCompleted.filter((r) => r.completed === true).length / withCompleted.length
+    : null;
+  const points = rows.map((r) => ({
+    date: r.entry_date,
+    completed: r.completed,
+    difficulty: r.difficulty,
+    difficultyScore: r.difficulty ? DIFFICULTY_SCORE[r.difficulty.trim().toLowerCase()] ?? null : null,
+  }));
+  return { completionRate, points };
+}
+
+/**
+ * Replaces customers-repo.js's listCustomers() (which reindexed from the
+ * filesystem into SQLite then read back). Coach-only tool with 10-50
+ * customers (per plan.md Scale/Scope), so N+1 queries here are fine.
+ */
+export async function listAllCustomers() {
+  const supabase = getSupabaseClient();
+  const { data: customers, error } = await supabase.from('customers').select('*').order('name');
+  if (error) throw dbError('listAllCustomers', error);
+
+  const results = [];
+  for (const customer of customers) {
+    const [programRes, notesRes, feedbackRes] = await Promise.all([
+      supabase.from('programs').select('content').eq('customer_id', customer.id).maybeSingle(),
+      supabase.from('notes').select('id').eq('customer_id', customer.id).maybeSingle(),
+      supabase.from('feedbacks').select('content').eq('customer_id', customer.id).maybeSingle(),
+    ]);
+    if (programRes.error) throw dbError(`listAllCustomers(${customer.slug}) program`, programRes.error);
+    if (notesRes.error) throw dbError(`listAllCustomers(${customer.slug}) notes`, notesRes.error);
+    if (feedbackRes.error) throw dbError(`listAllCustomers(${customer.slug}) feedback`, feedbackRes.error);
+
+    const programGoal = programRes.data?.content ? parseProgramGoal(programRes.data.content) : null;
+    const entries = feedbackRes.data?.content ? parseFeedbackEntries(feedbackRes.data.content) : [];
+    const lastMatched = [...entries].reverse().find((e) => e.raw_matched && e.entry_date_iso);
+
+    results.push({
+      slug: customer.slug,
+      displayName: customer.name,
+      hasProgram: !!programRes.data,
+      hasNotes: !!notesRes.data,
+      programGoal,
+      lastFeedbackDate: lastMatched ? lastMatched.entry_date_iso : null,
+    });
+  }
+  return results;
 }
 
 // ---- Customer upsert (used by the migration script) ----
