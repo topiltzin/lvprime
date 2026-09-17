@@ -47,7 +47,7 @@ CREATE INDEX idx_programs_customer_id ON programs(customer_id);
 CREATE TABLE feedbacks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
-  entries JSONB NOT NULL DEFAULT '[]'::jsonb,
+  content TEXT NOT NULL DEFAULT '',
   updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
   UNIQUE(customer_id)
 );
@@ -173,7 +173,7 @@ CREATE INDEX idx_programs_customer_id ON programs(customer_id);
 CREATE TABLE feedbacks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
-  entries JSONB NOT NULL DEFAULT '[]'::jsonb,
+  content TEXT NOT NULL DEFAULT '',
   updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
   UNIQUE(customer_id)
 );
@@ -183,9 +183,15 @@ CREATE INDEX idx_feedbacks_customer_id ON feedbacks(customer_id);
 
 **Constraints**:
 - `customer_id`: FK to customers.id; cascade delete if customer removed
-- `entries`: JSONB array of objects (see data-model.md for schema)
+- `content`: raw markdown text of the customer's feedback.md, including its own freeform "Formato de Entrada" template block; parsed on read / formatted-and-appended on write by the pure functions in `markdown-parser.js` (`parseFeedbackEntries`, `extractFeedbackTemplate`, `formatFeedbackEntry`) — no fixed entry shape is enforced at the database layer, since each customer's file can use different field labels
 - One row per customer (unique constraint enforces this)
-- Default: empty array
+- Default: empty string (no feedback logged yet)
+
+**Migration note**: If you already ran the earlier version of this SQL (with `entries JSONB`), run this to correct it before any data is inserted:
+```sql
+ALTER TABLE feedbacks DROP COLUMN entries;
+ALTER TABLE feedbacks ADD COLUMN content TEXT NOT NULL DEFAULT '';
+```
 
 ---
 

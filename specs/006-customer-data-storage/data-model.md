@@ -83,6 +83,8 @@ This section defines the PostgreSQL schema and data structures for storing custo
 
 **Purpose**: Stores customer's progress log (formerly feedback.md)
 
+**Schema revision (2026-09-17)**: The original version of this entity modeled entries as a fixed JSONB shape (`{date, week, how_customer_felt, completed, notes, overall_impression}` with a strict `Easy|Moderate|Hard` enum). That does not match production: `app/server/markdown-parser.js`'s `extractFeedbackTemplate`/`parseFeedbackEntries`/`formatFeedbackEntry` treat each customer's `feedback.md` as having its **own freeform field template**, extracted from a "Formato de Entrada" example block in the file itself — e.g. `customers/jaqueline-orellano/feedback.md` uses Spanish fields like "Energía", "Dificultad", "Ejercicio más difícil", "Dolor articular", "Ardor muscular", none of which fit the invented schema. Forcing entries into the fixed shape would silently drop most real data. Corrected below to store raw markdown, matching Program/Notes/NutritionPlan.
+
 **Storage**: `feedbacks` table in PostgreSQL
 
 **Structure**:
@@ -91,35 +93,14 @@ This section defines the PostgreSQL schema and data structures for storing custo
 |--------|------|-------------|-------|
 | `id` | UUID | PRIMARY KEY, DEFAULT gen_random_uuid() | Unique feedback record ID |
 | `customer_id` | UUID | FOREIGN KEY (customers.id), NOT NULL | Links to customer |
-| `entries` | JSONB | NOT NULL, DEFAULT '[]'::jsonb | Array of feedback entries |
+| `content` | TEXT | NOT NULL, DEFAULT '' | Full raw markdown content from feedback.md, including the customer's own "Formato de Entrada" template block |
 | `updated_at` | TIMESTAMP | NOT NULL, DEFAULT NOW() | Last update timestamp |
 
-**Entries Schema** (JSONB array):
-```json
-[
-  {
-    "date": "2026-09-16",
-    "week": "Week 1",
-    "how_customer_felt": "Strong energy, good form",
-    "completed": true,
-    "notes": "All exercises completed as prescribed",
-    "overall_impression": "Moderate"
-  },
-  {
-    "date": "2026-09-15",
-    "week": "Week 1",
-    "how_customer_felt": "Fatigued, sore shoulders",
-    "completed": false,
-    "notes": "Skipped shoulder day due to soreness",
-    "overall_impression": "Hard"
-  }
-]
-```
-
 **Validation Rules**:
-- Each entry MUST have: date (YYYY-MM-DD), how_customer_felt, completed (boolean), notes, overall_impression
-- Dates MUST be in YYYY-MM-DD format
-- overall_impression must be one of: Easy, Moderate, Hard
+- `content` MUST be valid UTF-8 markdown text
+- `content` MUST NOT exceed 500KB (same limit as Program/Notes)
+- Entries are never parsed/validated at the storage layer — `parseFeedbackEntries(content)` and `extractFeedbackTemplate(content)` (pure functions, no filesystem dependency, reused unchanged from `markdown-parser.js`) derive structured entries/template on read; `formatFeedbackEntry(template, {date, label, fieldValues})` + append derives the new `content` on write, mirroring `feedback-writer.js`'s existing `appendFeedbackEntry` logic exactly, just reading/writing Supabase instead of the filesystem
+- One row per customer_id; empty string (`''`) means no feedback logged yet
 
 ---
 

@@ -8,10 +8,8 @@
  */
 import { getSupabaseClient } from './database-client.js';
 import { computeContentHash, verifyContentHash } from '../hash-utils.js';
-import {
-  detectVersionMismatch,
-  resolveCoachSync,
-} from '../sync-engine.js';
+import { resolveCoachSync } from '../sync-engine.js';
+import { extractFeedbackTemplate, parseFeedbackEntries, formatFeedbackEntry } from '../markdown-parser.js';
 
 // ---- Error classes (contracts/data-api-layer.md "Error Handling") ----
 
@@ -90,12 +88,29 @@ export async function getCustomerProgram(slug) {
   return data || null;
 }
 
+/**
+ * Feedback is stored as raw markdown (feedbacks.content), not a fixed JSON
+ * shape — each customer's feedback.md defines its own field template (see
+ * markdown-parser.js). This mirrors what app/server/index.js's
+ * handleGetCustomer currently does via fs.readFileSync + parseFeedbackEntries.
+ */
 export async function getCustomerFeedback(slug) {
   const customer = await getCustomer(slug);
   const supabase = getSupabaseClient();
-  const { data, error } = await supabase.from('feedbacks').select('*').eq('customer_id', customer.id).maybeSingle();
+  const { data, error } = await supabase
+    .from('feedbacks')
+    .select('content, updated_at')
+    .eq('customer_id', customer.id)
+    .maybeSingle();
   if (error) throw dbError(`getCustomerFeedback(${slug})`, error);
-  return data || { entries: [] };
+
+  const content = data ? data.content : '';
+  return {
+    content,
+    entries: parseFeedbackEntries(content),
+    template: extractFeedbackTemplate(content),
+    updatedAt: data ? data.updated_at : null,
+  };
 }
 
 export async function getCustomerNotes(slug) {
@@ -134,42 +149,43 @@ export async function upsertCustomer(slug, name) {
 
 // ---- Write functions (contracts/data-api-layer.md) ----
 
-const OVERALL_IMPRESSIONS = new Set(['Easy', 'Moderate', 'Hard']);
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-function validateFeedbackEntry(entry) {
-  if (!entry || typeof entry !== 'object') throw new ValidationError('entry', 'must be an object');
-  if (!DATE_RE.test(entry.date)) throw new ValidationError('date', 'must be in YYYY-MM-DD format');
-  if (!entry.week) throw new ValidationError('week', 'is required');
-  if (!entry.how_customer_felt) throw new ValidationError('how_customer_felt', 'is required');
-  if (typeof entry.completed !== 'boolean') throw new ValidationError('completed', 'must be a boolean');
-  if (!entry.notes) throw new ValidationError('notes', 'is required');
-  if (!OVERALL_IMPRESSIONS.has(entry.overall_impression)) {
-    throw new ValidationError(
-      'overall_impression',
-      `must be one of Easy, Moderate, Hard, got "${entry.overall_impression}"`
-    );
-  }
-}
+/**
+ * DB-backed replacement for feedback-writer.js's appendFeedbackEntry(slug,
+ * displayName, {date, label, fields}): reads feedbacks.content, derives that
+ * customer's own template, formats + appends the new entry, upserts, and
+ * returns the newly parsed entry. Field-level validation (required fields,
+ * Completed Yes/No) stays in validateFeedbackSubmission — called by the route
+ * handler before this, exactly as today; this function only checks `date`.
+ */
+export async function addFeedbackEntry(slug, displayName, { date, label, fields }) {
+  if (!DATE_RE.test(date)) throw new ValidationError('date', 'must be in YYYY-MM-DD format');
 
-export async function addFeedbackEntry(slug, entry) {
-  validateFeedbackEntry(entry);
   const customer = await getCustomer(slug);
-  const supabase = getSupabaseClient();
-
   const existing = await getCustomerFeedback(slug);
-  const entries = [...(existing.entries || []), entry];
+  const template = existing.template;
+  const entryText = formatFeedbackEntry(template, { date, label, fieldValues: fields });
 
-  const { data, error } = await supabase
+  let newContent;
+  if (existing.content.trim() === '') {
+    newContent = `# ${displayName} - Feedback & Progress Log\n\n${entryText}\n`;
+  } else {
+    const separator = existing.content.endsWith('\n\n') ? '' : existing.content.endsWith('\n') ? '\n' : '\n\n';
+    newContent = `${existing.content}${separator}${entryText}\n`;
+  }
+
+  const supabase = getSupabaseClient();
+  const { error } = await supabase
     .from('feedbacks')
     .upsert(
-      { customer_id: customer.id, entries, updated_at: new Date().toISOString() },
+      { customer_id: customer.id, content: newContent, updated_at: new Date().toISOString() },
       { onConflict: 'customer_id' }
-    )
-    .select()
-    .single();
+    );
   if (error) throw dbError(`addFeedbackEntry(${slug})`, error);
-  return data;
+
+  const parsed = parseFeedbackEntries(newContent);
+  return parsed[parsed.length - 1];
 }
 
 export async function updateCustomerNotes(slug, content) {

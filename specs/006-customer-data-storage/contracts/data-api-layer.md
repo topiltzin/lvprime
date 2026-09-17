@@ -88,7 +88,7 @@ if (program) {
 
 #### `async getCustomerFeedback(slug)`
 
-**Purpose**: Retrieve a customer's feedback log
+**Purpose**: Retrieve a customer's feedback log, parsed the same way `app/server/index.js`'s `handleGetCustomer` currently does via `listFeedbackEntries`/`parseFeedbackEntries`
 
 **Parameters**:
 - `slug` (string): Customer identifier
@@ -96,24 +96,14 @@ if (program) {
 **Returns**:
 ```javascript
 {
-  id: UUID,
-  customer_id: UUID,
-  entries: [
-    {
-      date: "YYYY-MM-DD",
-      week: string,
-      how_customer_felt: string,
-      completed: boolean,
-      notes: string,
-      overall_impression: "Easy" | "Moderate" | "Hard"
-    },
-    ...
-  ],
-  updated_at: ISO8601 timestamp
+  content: string,           // raw markdown from the feedbacks.content column
+  entries: [...],            // parseFeedbackEntries(content) — see markdown-parser.js; shape varies per customer's own template, NOT a fixed schema
+  template: { headingLevel, fields: [...] },  // extractFeedbackTemplate(content)
+  updatedAt: ISO8601 timestamp | null
 }
 ```
 
-**Returns**: `{ entries: [] }` if no feedback exists yet
+**Returns**: `{ content: '', entries: [], template: <fallback template>, updatedAt: null }` if no feedback row exists yet
 
 **Throws**: `CustomerNotFoundError` if customer slug invalid
 
@@ -121,11 +111,11 @@ if (program) {
 ```javascript
 const feedback = await getCustomerFeedback('jaqueline-orellano')
 feedback.entries.forEach(entry => {
-  // Render feedback entry in Feedback tab
+  // Render feedback entry in Feedback tab (entry shape per markdown-parser.js parseFeedbackEntries)
 })
 ```
 
-**Performance**: <50ms
+**Performance**: <50ms (parsing is in-process, no extra round trip)
 
 ---
 
@@ -195,37 +185,24 @@ if (nutrition) {
 
 ---
 
-#### `async addFeedbackEntry(slug, entry)`
+#### `async addFeedbackEntry(slug, displayName, { date, label, fields })`
 
-**Purpose**: Add a new feedback entry to a customer's log
+**Purpose**: Append a new feedback entry to a customer's log, matching that customer's own field template exactly — this is the DB-backed replacement for `feedback-writer.js`'s `appendFeedbackEntry(slug, displayName, {date, label, fields})`, same signature and behavior, just reading/writing the `feedbacks` row instead of `feedback.md`
 
 **Parameters**:
 - `slug` (string): Customer identifier
-- `entry` (object):
-  ```javascript
-  {
-    date: "YYYY-MM-DD",  // Required
-    week: string,         // Required (e.g., "Week 1")
-    how_customer_felt: string, // Required
-    completed: boolean,   // Required
-    notes: string,        // Required
-    overall_impression: "Easy" | "Moderate" | "Hard"  // Required
-  }
-  ```
+- `displayName` (string): Customer's display name, used only if this is the very first entry (to write the `# {displayName} - Feedback & Progress Log` header)
+- `date` (string): `YYYY-MM-DD`, required
+- `label` (string | null): Optional heading suffix (e.g., "Piernas A")
+- `fields` (object): Maps this customer's own template field labels (from `getCustomerFeedback(slug).template.fields`, e.g. `"Energía"`, `"Dificultad"`) to submitted values — validated by the existing `validateFeedbackSubmission(template, body)` in `feedback-writer.js` *before* this is called, exactly as today
 
-**Returns**:
-```javascript
-{
-  id: UUID,
-  customer_id: UUID,
-  entries: [...], // Full feedback array including new entry
-  updated_at: ISO8601 timestamp
-}
-```
+**Behavior**: Read current `feedbacks.content` (or `''`), derive `template` via `extractFeedbackTemplate`, format the new entry via `formatFeedbackEntry(template, {date, label, fieldValues: fields})`, append to `content` (writing the `# {displayName}...` header if this is the first entry, matching `feedback-writer.js` exactly), upsert the `feedbacks` row, then return the newly parsed last entry via `parseFeedbackEntries(newContent)`
 
-**Throws**: 
+**Returns**: The newly added entry, as parsed by `parseFeedbackEntries` (same shape `handlePostFeedback`'s `toFeedbackEntryJson` already expects)
+
+**Throws**:
 - `CustomerNotFoundError` if slug invalid
-- `ValidationError` if entry missing required fields
+- `ValidationError` if `date` is not a valid `YYYY-MM-DD` string (field-level required/format validation for `fields` stays in `validateFeedbackSubmission`, called by the route handler before this function, exactly as today)
 
 **Usage**:
 ```javascript
