@@ -454,14 +454,30 @@ export async function handleApiRequest(req, res) {
   const url = new URL(req.url, 'http://localhost');
   const pathname = url.pathname;
 
-  for (const route of ROUTES) {
-    if (route.method !== req.method) continue;
-    const match = pathname.match(route.pattern);
-    if (match) {
-      await route.handler(req, res, match);
+  try {
+    for (const route of ROUTES) {
+      if (route.method !== req.method) continue;
+      const match = pathname.match(route.pattern);
+      if (match) {
+        await route.handler(req, res, match);
+        return;
+      }
+    }
+
+    sendJson(res, 404, { error: 'not_found' });
+  } catch (err) {
+    // Supabase connection/query failures surface here as DatabaseError from
+    // customer-data.js (per T048); translate to a friendly message instead of
+    // letting vite.config.js/serve.js's outer catch return a bare
+    // "internal_error" (T049 — customer-view.js already displays err.message
+    // from the API response in its error banner).
+    if (err.code === 'DATABASE_ERROR') {
+      console.error('Database error:', err.message, err.cause || '');
+      if (!res.headersSent) {
+        sendJson(res, 503, { error: 'unable_to_load', message: 'Unable to load customer data. Please try again.' });
+      }
       return;
     }
+    throw err;
   }
-
-  sendJson(res, 404, { error: 'not_found' });
 }

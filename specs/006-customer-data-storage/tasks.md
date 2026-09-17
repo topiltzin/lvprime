@@ -137,8 +137,8 @@
 ### Implementation for User Story 4
 
 - [ ] T047 [US4] Add `SUPABASE_URL` and `SUPABASE_SECRET_KEY` to the Vercel project's Environment Variables (Production and Preview scopes)
-- [ ] T048 [US4] Add graceful error handling in `app/server/lib/customer-data.js` for Supabase connection failures: catch errors from the client and re-throw as `DatabaseError` with a user-friendly message (per contracts/data-api-layer.md)
-- [ ] T049 [US4] Surface `DatabaseError` in `app/src/views/customer-view.js` / `app/src/components/tab-container.js` as a toast message ("Unable to load customer data. Please try again.") instead of an unhandled exception
+- [X] T048 [US4] Add graceful error handling in `app/server/lib/customer-data.js` for Supabase connection failures: catch errors from the client and re-throw as `DatabaseError` with a user-friendly message (per contracts/data-api-layer.md)
+- [X] T049 [US4] Surface `DatabaseError` in `app/src/views/customer-view.js` / `app/src/components/tab-container.js` as a toast message ("Unable to load customer data. Please try again.") instead of an unhandled exception
 - [ ] T050 [US4] Deploy the app to a Vercel preview environment and verify `jaqueline-orellano` profile loads all four tabs correctly from Supabase
 - [ ] T051 [US4] Trigger a redeploy on Vercel (e.g., empty commit or redeploy button) and re-verify the same customer data still loads correctly with no data loss (per quickstart.md Scenario 5)
 - [ ] T052 [US4] Measure and record customer data load time on the Vercel preview deployment, confirming it meets the <500ms target (per spec SC-004)

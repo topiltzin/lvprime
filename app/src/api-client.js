@@ -29,7 +29,7 @@ async function request(path, options = {}) {
 
   if (!res.ok) {
     throw new ApiError(
-      body?.error || `Request failed (${res.status})`,
+      body?.message || body?.error || `Request failed (${res.status})`,
       res.status,
       body?.fields || null
     );
