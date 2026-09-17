@@ -47,16 +47,16 @@
 
 ### Implementation for User Story 1
 
-- [ ] T010 [US1] Create migration script skeleton in `app/server/migrations/migrate-data.js` that scans the `customers/` directory for subdirectories
-- [ ] T011 [US1] Implement customer record creation in `migrate-data.js`: insert into `customers` table with `slug` (directory name), `name` (derived from slug, title-cased)
-- [ ] T012 [US1] Implement `program.md` migration in `migrate-data.js`: read file content and insert into `programs` table (`customer_id`, `content` as TEXT); skip if `content` exceeds 500KB and log a warning (per data-model.md Program validation rules: "content MUST NOT exceed 500KB")
-- [ ] T013 [US1] Implement `notes.md` migration in `migrate-data.js`: read file content and insert into `notes` table (`customer_id`, `content` as TEXT); enforce same 500KB limit as T012
-- [ ] T014 [US1] Implement `nutrition_plan.md` migration in `migrate-data.js`: read file content (skip customers without this file) and insert into `nutrition_plans` table (`customer_id`, `content` as TEXT); enforce the 100KB limit (per specs/005-nutrition-plan-tab FR-008, not the 500KB used for programs/notes)
-- [ ] T015 [US1] Implement `feedback.md` migration in `migrate-data.js`: read the raw file content as-is (no parsing/reshaping) and insert into `feedbacks` table as `content` TEXT (per corrected data-model.md Feedback entity — freeform per-customer template, not a fixed JSONB shape); default to `content: ''` if no file exists
-- [ ] T016 [US1] Verify migrated feedback content round-trips through `parseFeedbackEntries`/`extractFeedbackTemplate` (from `markdown-parser.js`) in `migrate-data.js`'s post-migration check: run both functions against each migrated customer's `feedbacks.content` and confirm entry count matches `parseFeedbackEntries` run against the original file (sanity check only — these are pure functions with no filesystem dependency, so behavior is identical against DB-sourced text)
-- [ ] T017 [US1] Add post-migration verification step in `migrate-data.js`: compare row counts (`customers`, `programs`, `notes`, `nutrition_plans`, `feedbacks`) against the number of source files/directories and print a summary report
-- [ ] T018 [US1] Add backup safeguard in `migrate-data.js`: refuse to run if target Supabase tables already contain rows for a customer slug (idempotency guard), to avoid duplicate migration
-- [ ] T019 [US1] Run `node server/migrations/migrate-data.js` against the real `customers/` directory (including `jaqueline-orellano`) and confirm the summary report shows zero errors and matching row counts
+- [X] T010 [US1] Create migration script skeleton in `app/server/migrations/migrate-data.js` that scans the `customers/` directory for subdirectories
+- [X] T011 [US1] Implement customer record creation in `migrate-data.js`: insert into `customers` table with `slug` (directory name), `name` (derived from slug, title-cased)
+- [X] T012 [US1] Implement `program.md` migration in `migrate-data.js`: read file content and insert into `programs` table (`customer_id`, `content` as TEXT); skip if `content` exceeds 500KB and log a warning (per data-model.md Program validation rules: "content MUST NOT exceed 500KB")
+- [X] T013 [US1] Implement `notes.md` migration in `migrate-data.js`: read file content and insert into `notes` table (`customer_id`, `content` as TEXT); enforce same 500KB limit as T012
+- [X] T014 [US1] Implement `nutrition_plan.md` migration in `migrate-data.js`: read file content (skip customers without this file) and insert into `nutrition_plans` table (`customer_id`, `content` as TEXT); enforce the 100KB limit (per specs/005-nutrition-plan-tab FR-008, not the 500KB used for programs/notes)
+- [X] T015 [US1] Implement `feedback.md` migration in `migrate-data.js`: read the raw file content as-is (no parsing/reshaping) and insert into `feedbacks` table as `content` TEXT (per corrected data-model.md Feedback entity — freeform per-customer template, not a fixed JSONB shape); default to `content: ''` if no file exists
+- [X] T016 [US1] Verify migrated feedback content round-trips through `parseFeedbackEntries`/`extractFeedbackTemplate` (from `markdown-parser.js`) in `migrate-data.js`'s post-migration check: run both functions against each migrated customer's `feedbacks.content` and confirm entry count matches `parseFeedbackEntries` run against the original file (sanity check only — these are pure functions with no filesystem dependency, so behavior is identical against DB-sourced text)
+- [X] T017 [US1] Add post-migration verification step in `migrate-data.js`: compare row counts (`customers`, `programs`, `notes`, `nutrition_plans`, `feedbacks`) against the number of source files/directories and print a summary report
+- [X] T018 [US1] Add backup safeguard in `migrate-data.js`: refuse to run if target Supabase tables already contain rows for a customer slug (idempotency guard), to avoid duplicate migration
+- [X] T019 [US1] Run `node server/migrations/migrate-data.js` against the real `customers/` directory (including `jaqueline-orellano`) and confirm the summary report shows zero errors and matching row counts
 
 **Checkpoint**: All existing customer data now exists in Supabase; filesystem data remains untouched as backup
 
