@@ -104,7 +104,7 @@ node server/migrations/migrate-data.js
 
 **Setup**:
 1. Migration complete (Scenario 2)
-2. App has new data access layer (`app/src/lib/customer-data.js`)
+2. App has new data access layer (`app/server/lib/customer-data.js`)
 3. Dev server running: `npm run dev`
 
 **Test in Browser**:

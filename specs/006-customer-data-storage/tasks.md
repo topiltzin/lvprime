@@ -16,10 +16,10 @@
 
 **Purpose**: Project initialization and Supabase project provisioning
 
-- [ ] T001 Create Supabase project (or use existing) and record project URL + service role key
-- [ ] T002 Install `@supabase/supabase-js` dependency in `app/package.json`
-- [ ] T003 [P] Add `SUPABASE_URL` and `SUPABASE_SECRET_KEY` placeholders to `app/.env.example`
-- [ ] T004 [P] Verify `.env.local` is excluded via `app/.gitignore` (never commit real credentials)
+- [X] T001 Create Supabase project (or use existing) and record project URL + service role key
+- [X] T002 Install `@supabase/supabase-js` dependency in `app/package.json`
+- [X] T003 [P] Add `SUPABASE_URL` and `SUPABASE_SECRET_KEY` placeholders to `app/.env.example`
+- [X] T004 [P] Verify `.env.local` is excluded via `app/.gitignore` (never commit real credentials)
 
 ---
 
@@ -29,11 +29,11 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T005 Execute the "Full Schema SQL" block from `specs/006-customer-data-storage/contracts/database-schema.md` in Supabase SQL Editor to create all 7 tables (`customers`, `programs`, `feedbacks`, `notes`, `nutrition_plans`, `sync_events`, `offline_queue_entries`) with their indexes, foreign keys, and CHECK constraints
-- [ ] T006 Run the verification query from `contracts/database-schema.md` and confirm all 7 tables exist via Supabase dashboard
-- [ ] T007 Create Supabase client initialization in `app/src/lib/database-client.js` exporting `supabase` client built from `process.env.SUPABASE_URL` and `process.env.SUPABASE_SECRET_KEY` (per contracts/data-api-layer.md)
-- [ ] T008 [P] Create custom error classes `CustomerNotFoundError`, `ValidationError`, `DatabaseError` in `app/src/lib/customer-data.js` (per contracts/data-api-layer.md error handling section)
-- [ ] T009 [P] Add slug validation helper in `app/src/lib/customer-data.js` enforcing regex `^[a-z0-9]([a-z0-9-]*[a-z0-9])?$`, 3-100 characters (per contracts/database-schema.md customers table constraints)
+- [X] T005 Execute the "Full Schema SQL" block from `specs/006-customer-data-storage/contracts/database-schema.md` in Supabase SQL Editor to create all 7 tables (`customers`, `programs`, `feedbacks`, `notes`, `nutrition_plans`, `sync_events`, `offline_queue_entries`) with their indexes, foreign keys, and CHECK constraints
+- [X] T006 Run the verification query from `contracts/database-schema.md` and confirm all 7 tables exist via Supabase dashboard
+- [ ] T007 Create Supabase client initialization in `app/server/lib/database-client.js` exporting `supabase` client built from `process.env.SUPABASE_URL` and `process.env.SUPABASE_SECRET_KEY` (per contracts/data-api-layer.md)
+- [ ] T008 [P] Create custom error classes `CustomerNotFoundError`, `ValidationError`, `DatabaseError` in `app/server/lib/customer-data.js` (per contracts/data-api-layer.md error handling section)
+- [ ] T009 [P] Add slug validation helper in `app/server/lib/customer-data.js` enforcing regex `^[a-z0-9]([a-z0-9-]*[a-z0-9])?$`, 3-100 characters (per contracts/database-schema.md customers table constraints)
 
 **Checkpoint**: Database schema live, client connects, error classes and validation helpers ready — user story implementation can now begin
 
@@ -70,11 +70,11 @@
 
 ### Implementation for User Story 2
 
-- [ ] T020 [P] [US2] Implement `getCustomer(slug)` in `app/src/lib/customer-data.js`: query `customers` table by `slug`, throw `CustomerNotFoundError` if no row found (per contracts/data-api-layer.md)
-- [ ] T021 [P] [US2] Implement `getCustomerProgram(slug)` in `app/src/lib/customer-data.js`: resolve customer via `getCustomer`, query `programs` table by `customer_id`, return `null` if no row exists (per contracts/data-api-layer.md)
-- [ ] T022 [P] [US2] Implement `getCustomerFeedback(slug)` in `app/src/lib/customer-data.js`: resolve customer via `getCustomer`, query `feedbacks` table by `customer_id`, return `{ entries: [] }` if no row exists (per contracts/data-api-layer.md)
-- [ ] T023 [P] [US2] Implement `getCustomerNotes(slug)` in `app/src/lib/customer-data.js`: resolve customer via `getCustomer`, query `notes` table by `customer_id`, return `null` if no row exists (per contracts/data-api-layer.md)
-- [ ] T024 [P] [US2] Implement `getCustomerNutritionPlan(slug)` in `app/src/lib/customer-data.js`: resolve customer via `getCustomer`, query `nutrition_plans` table by `customer_id`, return `null` if no row exists (per contracts/data-api-layer.md)
+- [ ] T020 [P] [US2] Implement `getCustomer(slug)` in `app/server/lib/customer-data.js`: query `customers` table by `slug`, throw `CustomerNotFoundError` if no row found (per contracts/data-api-layer.md)
+- [ ] T021 [P] [US2] Implement `getCustomerProgram(slug)` in `app/server/lib/customer-data.js`: resolve customer via `getCustomer`, query `programs` table by `customer_id`, return `null` if no row exists (per contracts/data-api-layer.md)
+- [ ] T022 [P] [US2] Implement `getCustomerFeedback(slug)` in `app/server/lib/customer-data.js`: resolve customer via `getCustomer`, query `feedbacks` table by `customer_id`, return `{ entries: [] }` if no row exists (per contracts/data-api-layer.md)
+- [ ] T023 [P] [US2] Implement `getCustomerNotes(slug)` in `app/server/lib/customer-data.js`: resolve customer via `getCustomer`, query `notes` table by `customer_id`, return `null` if no row exists (per contracts/data-api-layer.md)
+- [ ] T024 [P] [US2] Implement `getCustomerNutritionPlan(slug)` in `app/server/lib/customer-data.js`: resolve customer via `getCustomer`, query `nutrition_plans` table by `customer_id`, return `null` if no row exists (per contracts/data-api-layer.md)
 - [ ] T025 [US2] Modify `handleGetCustomer` and `handleGetCustomers` in `app/server/index.js` to replace `listCustomers`/`reindexIfStale`/`fs.readFileSync` calls with `getCustomer`, `getCustomerProgram`, `getCustomerFeedback`, `getCustomerNotes`, `getCustomerNutritionPlan` from `customer-data.js`, preserving the existing response shapes (`toCustomerSummary`, the `{ slug, displayName, program, notes, nutrition, feedback, attachments }` object)
 - [ ] T026 [US2] Modify `handleGetNutrition` in `app/server/index.js` (`GET /api/customers/:slug/nutrition`) to use `getCustomerNutritionPlan` instead of `fs.readFileSync`/`fs.existsSync` on `nutrition_plan.md`, preserving the existing response shape `{ content, isEmpty, lastModified }` and the 413 "file too large" behavior (now enforced via the 500KB check in `getCustomerNutritionPlan`)
 - [ ] T027 [US2] Update `app/src/views/customer-view.js` if response shapes from `serve.js` changed, ensuring `data.program`, `data.feedback`, `data.notes`, `data.nutrition` are populated identically to the pre-migration format
@@ -93,10 +93,10 @@
 
 ### Implementation for User Story 3
 
-- [ ] T030 [P] [US3] Implement `addFeedbackEntry(slug, entry)` in `app/src/lib/customer-data.js`: validate `entry` has required fields `date` (YYYY-MM-DD), `week`, `how_customer_felt`, `completed` (boolean), `notes`, `overall_impression` (one of `Easy`, `Moderate`, `Hard`) throwing `ValidationError` on missing/invalid fields (per contracts/data-api-layer.md); append to existing `entries` JSONB array and update the `feedbacks` row (create the row first if none exists, per data-model.md default `'[]'::jsonb`)
-- [ ] T031 [P] [US3] Implement `updateCustomerNotes(slug, content)` in `app/src/lib/customer-data.js`: validate `content` is non-empty and does not exceed 500KB (per data-model.md Notes validation: "content MUST NOT exceed 500KB"), throwing `ValidationError` otherwise; upsert the `notes` row for the customer
-- [ ] T032 [P] [US3] Implement `updateCustomerProgram(slug, content)` in `app/src/lib/customer-data.js`: validate `content` is non-empty and does not exceed 500KB (per data-model.md Program validation), throwing `ValidationError` otherwise; upsert the `programs` row for the customer
-- [ ] T033 [P] [US3] Implement `updateCustomerNutritionPlan(slug, content)` in `app/src/lib/customer-data.js`: validate `content` is non-empty and does not exceed 500KB (per data-model.md NutritionPlan validation), throwing `ValidationError` otherwise; upsert the `nutrition_plans` row for the customer
+- [ ] T030 [P] [US3] Implement `addFeedbackEntry(slug, entry)` in `app/server/lib/customer-data.js`: validate `entry` has required fields `date` (YYYY-MM-DD), `week`, `how_customer_felt`, `completed` (boolean), `notes`, `overall_impression` (one of `Easy`, `Moderate`, `Hard`) throwing `ValidationError` on missing/invalid fields (per contracts/data-api-layer.md); append to existing `entries` JSONB array and update the `feedbacks` row (create the row first if none exists, per data-model.md default `'[]'::jsonb`)
+- [ ] T031 [P] [US3] Implement `updateCustomerNotes(slug, content)` in `app/server/lib/customer-data.js`: validate `content` is non-empty and does not exceed 500KB (per data-model.md Notes validation: "content MUST NOT exceed 500KB"), throwing `ValidationError` otherwise; upsert the `notes` row for the customer
+- [ ] T032 [P] [US3] Implement `updateCustomerProgram(slug, content)` in `app/server/lib/customer-data.js`: validate `content` is non-empty and does not exceed 500KB (per data-model.md Program validation), throwing `ValidationError` otherwise; upsert the `programs` row for the customer
+- [ ] T033 [P] [US3] Implement `updateCustomerNutritionPlan(slug, content)` in `app/server/lib/customer-data.js`: validate `content` is non-empty and does not exceed 500KB (per data-model.md NutritionPlan validation), throwing `ValidationError` otherwise; upsert the `nutrition_plans` row for the customer
 - [ ] T034 [US3] Modify `handlePostFeedback` in `app/server/index.js` (`POST /api/customers/:slug/feedback`) to call `addFeedbackEntry` from `customer-data.js` instead of `appendFeedbackEntry` (from `feedback-writer.js`, which writes to `feedback.md`), keeping the existing `validateFeedbackSubmission`/`getFeedbackTemplate` validation step and response shape (`toFeedbackEntryJson`)
 - [ ] T035 [US3] Wire the existing feedback submission form (in `app/src/components/feedback-entry.js` or equivalent) to call the new feedback POST endpoint instead of any prior filesystem-backed endpoint
 - [ ] T036 [US3] Manually test in browser: submit a new feedback entry for `jaqueline-orellano`, reload the page, and confirm the entry appears and is present in the `feedbacks.entries` JSONB column in Supabase
@@ -113,11 +113,11 @@
 
 ### Implementation for Sync Migration
 
-- [ ] T037 Implement `syncCoachWrite(slug, fileType, { currentVersion, content, contentHash })` in `app/src/lib/customer-data.js` per contracts/data-api-layer.md: verify `contentHash` via `hash-utils.js` `verifyContentHash`, detect conflict via version comparison, write to `programs`/`notes` row (`content`, `version = serverVersion + 1`, `content_hash`, `last_writer: 'coach'`, `sync_status: 'synced'`), and insert a `sync_events` row
-- [ ] T038 Implement `getSyncState(slug, fileType)` in `app/src/lib/customer-data.js`: query `programs` or `notes` by `customer_id` and return `{ version, syncStatus, lastWriter, contentHash, updatedAt }`, or `null` if no row exists
-- [ ] T039 [P] Implement `queueOfflineChange(slug, fileType, entry)` in `app/src/lib/customer-data.js`: validate `fileType` is `'program'` or `'notes'`, `sequence` starts at 1 and increments without gaps per (customer, fileType) — replicate the exact error messages from `offline-queue.js` ("Sequence gap: expected N+1, got X", "First sequence must be 1, got X"), `content_hash` matches `^[a-f0-9]{64}$`, `content_size_bytes > 0`, `timestamp` is valid ISO8601; insert into `offline_queue_entries` and set the corresponding row's `sync_status = 'pending'`
-- [ ] T040 [P] Implement `getOfflineQueue(slug, fileType)` and `clearOfflineQueue(slug, fileType)` in `app/src/lib/customer-data.js` per contracts/data-api-layer.md
-- [ ] T041 [P] Implement `recordSyncEvent(slug, fileType, eventType, metadata)` and `getRecentSyncEvents(slug, limit)` in `app/src/lib/customer-data.js` per contracts/data-api-layer.md
+- [ ] T037 Implement `syncCoachWrite(slug, fileType, { currentVersion, content, contentHash })` in `app/server/lib/customer-data.js` per contracts/data-api-layer.md: verify `contentHash` via `hash-utils.js` `verifyContentHash`, detect conflict via version comparison, write to `programs`/`notes` row (`content`, `version = serverVersion + 1`, `content_hash`, `last_writer: 'coach'`, `sync_status: 'synced'`), and insert a `sync_events` row
+- [ ] T038 Implement `getSyncState(slug, fileType)` in `app/server/lib/customer-data.js`: query `programs` or `notes` by `customer_id` and return `{ version, syncStatus, lastWriter, contentHash, updatedAt }`, or `null` if no row exists
+- [ ] T039 [P] Implement `queueOfflineChange(slug, fileType, entry)` in `app/server/lib/customer-data.js`: validate `fileType` is `'program'` or `'notes'`, `sequence` starts at 1 and increments without gaps per (customer, fileType) — replicate the exact error messages from `offline-queue.js` ("Sequence gap: expected N+1, got X", "First sequence must be 1, got X"), `content_hash` matches `^[a-f0-9]{64}$`, `content_size_bytes > 0`, `timestamp` is valid ISO8601; insert into `offline_queue_entries` and set the corresponding row's `sync_status = 'pending'`
+- [ ] T040 [P] Implement `getOfflineQueue(slug, fileType)` and `clearOfflineQueue(slug, fileType)` in `app/server/lib/customer-data.js` per contracts/data-api-layer.md
+- [ ] T041 [P] Implement `recordSyncEvent(slug, fileType, eventType, metadata)` and `getRecentSyncEvents(slug, limit)` in `app/server/lib/customer-data.js` per contracts/data-api-layer.md
 - [ ] T042 Modify `handleSyncUpload` in `app/server/index.js` to call `syncCoachWrite` instead of `fs.writeFileSync` + `syncState.updateSyncMetadata`; keep the existing request/response JSON shape unchanged so `app/src/lib/status.js` and any client callers don't need changes
 - [ ] T043 Modify `handleSyncDownload` in `app/server/index.js` to read content via `getCustomerProgram`/`getCustomerNotes` (T021/existing) and version/hash via `getSyncState` instead of `fs.readFileSync` + `syncState.getSyncState`
 - [ ] T044 Modify `handleSyncStatus` in `app/server/index.js` to call `getSyncState` for `program`/`notes` and `getCustomerFeedback` (for entry count) instead of `syncState.getSyncState` + `fs.readFileSync`
@@ -137,7 +137,7 @@
 ### Implementation for User Story 4
 
 - [ ] T047 [US4] Add `SUPABASE_URL` and `SUPABASE_SECRET_KEY` to the Vercel project's Environment Variables (Production and Preview scopes)
-- [ ] T048 [US4] Add graceful error handling in `app/src/lib/customer-data.js` for Supabase connection failures: catch errors from the client and re-throw as `DatabaseError` with a user-friendly message (per contracts/data-api-layer.md)
+- [ ] T048 [US4] Add graceful error handling in `app/server/lib/customer-data.js` for Supabase connection failures: catch errors from the client and re-throw as `DatabaseError` with a user-friendly message (per contracts/data-api-layer.md)
 - [ ] T049 [US4] Surface `DatabaseError` in `app/src/views/customer-view.js` / `app/src/components/tab-container.js` as a toast message ("Unable to load customer data. Please try again.") instead of an unhandled exception
 - [ ] T050 [US4] Deploy the app to a Vercel preview environment and verify `jaqueline-orellano` profile loads all four tabs correctly from Supabase
 - [ ] T051 [US4] Trigger a redeploy on Vercel (e.g., empty commit or redeploy button) and re-verify the same customer data still loads correctly with no data loss (per quickstart.md Scenario 5)
@@ -179,7 +179,7 @@
 - **US1** (Migration): No dependencies on other stories - foundational data must exist before US2/US3 can be meaningfully validated
 - **US2** (Read): DAL functions independent of US1/US3 code, but validation requires migrated data (US1)
 - **US3** (Write): DAL functions independent of US1/US2 code, but validation benefits from US2's read functions to confirm writes
-- **Sync Migration**: Independent of US1/US2/US3 DAL functions (different tables/columns), but shares `app/src/lib/customer-data.js` as a file, so coordinate merges
+- **Sync Migration**: Independent of US1/US2/US3 DAL functions (different tables/columns), but shares `app/server/lib/customer-data.js` as a file, so coordinate merges
 - **US4** (Vercel/Persistence): Integration validation story - depends on US1 + US2 + US3 + Sync Migration all being functional
 
 ### Within Each User Story
@@ -198,26 +198,26 @@ Task: "Add SUPABASE_URL and SUPABASE_SECRET_KEY placeholders to app/.env.example
 Task: "Verify .env.local is excluded via app/.gitignore"
 
 # Phase 2 Foundational — parallel after T007:
-Task: "Create custom error classes in app/src/lib/customer-data.js"
-Task: "Add slug validation helper in app/src/lib/customer-data.js"
+Task: "Create custom error classes in app/server/lib/customer-data.js"
+Task: "Add slug validation helper in app/server/lib/customer-data.js"
 
 # Phase 4 US2 — parallel DAL functions:
-Task: "Implement getCustomer(slug) in app/src/lib/customer-data.js"
-Task: "Implement getCustomerProgram(slug) in app/src/lib/customer-data.js"
-Task: "Implement getCustomerFeedback(slug) in app/src/lib/customer-data.js"
-Task: "Implement getCustomerNotes(slug) in app/src/lib/customer-data.js"
-Task: "Implement getCustomerNutritionPlan(slug) in app/src/lib/customer-data.js"
+Task: "Implement getCustomer(slug) in app/server/lib/customer-data.js"
+Task: "Implement getCustomerProgram(slug) in app/server/lib/customer-data.js"
+Task: "Implement getCustomerFeedback(slug) in app/server/lib/customer-data.js"
+Task: "Implement getCustomerNotes(slug) in app/server/lib/customer-data.js"
+Task: "Implement getCustomerNutritionPlan(slug) in app/server/lib/customer-data.js"
 
 # Phase 5 US3 — parallel DAL functions:
-Task: "Implement addFeedbackEntry(slug, entry) in app/src/lib/customer-data.js"
-Task: "Implement updateCustomerNotes(slug, content) in app/src/lib/customer-data.js"
-Task: "Implement updateCustomerProgram(slug, content) in app/src/lib/customer-data.js"
-Task: "Implement updateCustomerNutritionPlan(slug, content) in app/src/lib/customer-data.js"
+Task: "Implement addFeedbackEntry(slug, entry) in app/server/lib/customer-data.js"
+Task: "Implement updateCustomerNotes(slug, content) in app/server/lib/customer-data.js"
+Task: "Implement updateCustomerProgram(slug, content) in app/server/lib/customer-data.js"
+Task: "Implement updateCustomerNutritionPlan(slug, content) in app/server/lib/customer-data.js"
 
 # Phase 6 Sync Migration — parallel:
-Task: "Implement queueOfflineChange(slug, fileType, entry) in app/src/lib/customer-data.js"
-Task: "Implement getOfflineQueue/clearOfflineQueue in app/src/lib/customer-data.js"
-Task: "Implement recordSyncEvent/getRecentSyncEvents in app/src/lib/customer-data.js"
+Task: "Implement queueOfflineChange(slug, fileType, entry) in app/server/lib/customer-data.js"
+Task: "Implement getOfflineQueue/clearOfflineQueue in app/server/lib/customer-data.js"
+Task: "Implement recordSyncEvent/getRecentSyncEvents in app/server/lib/customer-data.js"
 
 # Phase 8 Polish — parallel:
 Task: "Add unit tests in app/tests/unit/database.test.js"
@@ -280,8 +280,8 @@ git commit -m "polish(customer-data): tests, cleanup, and documentation"
 ## File Summary
 
 **Files to Create**:
-- `app/src/lib/database-client.js` — Supabase client initialization
-- `app/src/lib/customer-data.js` — Data access layer (all CRUD + sync/offline-queue functions + error classes)
+- `app/server/lib/database-client.js` — Supabase client initialization
+- `app/server/lib/customer-data.js` — Data access layer (all CRUD + sync/offline-queue functions + error classes)
 - `app/server/migrations/migrate-data.js` — One-time filesystem → Supabase migration script
 - `app/tests/unit/database.test.js` — Unit tests for DAL
 - `app/tests/integration/customer-data.test.js` — Integration tests against Supabase

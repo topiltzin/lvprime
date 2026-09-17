@@ -5,9 +5,12 @@ build/
 *.log
 .env
 .env.*
+!.env.example
 
 # App-local data (rebuildable SQLite index cache — never committed)
 app/data/
+app/.env.*
+!app/.env.example
 
 # Editor/OS
 .DS_Store

@@ -71,7 +71,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
 **Pattern**:
 ```javascript
-// app/src/lib/customer-data.js exports:
+// app/server/lib/customer-data.js exports:
 export async function getCustomer(slug) { /* ... */ }
 export async function getCustomerProgram(slug) { /* ... */ }
 export async function addFeedback(slug, entry) { /* ... */ }

@@ -4,7 +4,7 @@
 
 **Version**: 1.0  
 **Date**: 2026-09-17  
-**Location**: `app/src/lib/customer-data.js`
+**Location**: `app/server/lib/customer-data.js`
 
 ---
 
