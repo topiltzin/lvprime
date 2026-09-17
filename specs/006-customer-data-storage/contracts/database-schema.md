@@ -2,7 +2,7 @@
 
 **Purpose**: Define the exact structure of PostgreSQL tables for customer data storage on Supabase
 
-**Version**: 1.1 (added version/hash/sync_status columns + sync_events/offline_queue_entries tables to absorb specs/004-server-data-sync)
+**Version**: 1.2 (extended Coach Local Sync — version/hash/sync_status columns — to nutrition_plans; sync_events.file_type now allows 'nutrition_plan')
 **Date**: 2026-09-17
 
 ---
@@ -70,6 +70,10 @@ CREATE TABLE nutrition_plans (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
   content TEXT NOT NULL,
+  version INTEGER NOT NULL DEFAULT 0,
+  content_hash VARCHAR(64),
+  last_writer VARCHAR(20) CHECK (last_writer IN ('coach','customer')),
+  sync_status VARCHAR(20) NOT NULL DEFAULT 'synced' CHECK (sync_status IN ('synced','pending','conflicted')),
   updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
   UNIQUE(customer_id)
 );
@@ -78,7 +82,7 @@ CREATE INDEX idx_nutrition_plans_customer_id ON nutrition_plans(customer_id);
 CREATE TABLE sync_events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
-  file_type VARCHAR(20) NOT NULL CHECK (file_type IN ('program','feedback','notes')),
+  file_type VARCHAR(20) NOT NULL CHECK (file_type IN ('program','feedback','notes','nutrition_plan')),
   event_type VARCHAR(20) NOT NULL CHECK (event_type IN ('sync_start','sync_success','sync_conflict','sync_error')),
   source VARCHAR(20) CHECK (source IN ('coach','customer')),
   version_from INTEGER,
@@ -112,6 +116,22 @@ SELECT table_name FROM information_schema.tables
 WHERE table_schema = 'public'
 ORDER BY table_name;
 -- Expect: customers, feedbacks, notes, nutrition_plans, offline_queue_entries, programs, sync_events
+```
+
+### Migrating an existing project (schema v1.0 → v1.1)
+
+If your `nutrition_plans` table predates the sync columns above (i.e. it only has `id`, `customer_id`, `content`, `updated_at`), run this once in the SQL Editor instead of the full block:
+
+```sql
+ALTER TABLE nutrition_plans
+  ADD COLUMN version INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN content_hash VARCHAR(64),
+  ADD COLUMN last_writer VARCHAR(20) CHECK (last_writer IN ('coach','customer')),
+  ADD COLUMN sync_status VARCHAR(20) NOT NULL DEFAULT 'synced' CHECK (sync_status IN ('synced','pending','conflicted'));
+
+ALTER TABLE sync_events DROP CONSTRAINT IF EXISTS sync_events_file_type_check;
+ALTER TABLE sync_events ADD CONSTRAINT sync_events_file_type_check
+  CHECK (file_type IN ('program','feedback','notes','nutrition_plan'));
 ```
 
 ---
@@ -283,12 +303,18 @@ CREATE TABLE nutrition_plans (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
   content TEXT NOT NULL,
+  version INTEGER NOT NULL DEFAULT 0,
+  content_hash VARCHAR(64),
+  last_writer VARCHAR(20) CHECK (last_writer IN ('coach','customer')),
+  sync_status VARCHAR(20) NOT NULL DEFAULT 'synced' CHECK (sync_status IN ('synced','pending','conflicted')),
   updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
   UNIQUE(customer_id)
 );
 
 CREATE INDEX idx_nutrition_plans_customer_id ON nutrition_plans(customer_id);
 ```
+
+Same version/content_hash/last_writer/sync_status columns as `programs`/`notes` — `nutrition_plan` is a first-class Coach Local Sync file type (see `POST /api/sync/upload`).
 
 **Constraints**:
 - `customer_id`: FK to customers.id; cascade delete if customer removed

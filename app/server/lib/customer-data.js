@@ -361,18 +361,19 @@ export async function updateCustomerNutritionPlan(slug, content) {
 
 // ---- Sync & offline queue functions (absorbs sync-engine.js/sync-state.js/offline-queue.js) ----
 
-const SYNC_TABLE_BY_FILE_TYPE = { program: 'programs', notes: 'notes' };
+const SYNC_TABLE_BY_FILE_TYPE = { program: 'programs', notes: 'notes', nutrition_plan: 'nutrition_plans' };
 
 function assertSyncFileType(fileType) {
   if (!SYNC_TABLE_BY_FILE_TYPE[fileType]) {
-    throw new ValidationError('fileType', `must be 'program' or 'notes', got "${fileType}"`);
+    throw new ValidationError('fileType', `must be 'program', 'notes', or 'nutrition_plan', got "${fileType}"`);
   }
 }
 
 /**
- * Coach uploads a new program/notes version. Implements the same
- * "coach-always-wins" conflict resolution as sync-engine.js's resolveCoachSync,
- * backed by the programs/notes version column instead of a JSON file.
+ * Coach uploads a new program/notes/nutrition_plan version. Implements the
+ * same "coach-always-wins" conflict resolution as sync-engine.js's
+ * resolveCoachSync, backed by the target table's version column instead of
+ * a JSON file.
  */
 export async function syncCoachWrite(slug, fileType, { currentVersion, content, contentHash }) {
   assertSyncFileType(fileType);

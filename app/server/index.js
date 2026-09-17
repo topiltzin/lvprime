@@ -260,10 +260,10 @@ async function handleSyncUpload(req, res) {
     }
 
     // Validate file_type
-    if (!['program', 'notes'].includes(file_type)) {
+    if (!['program', 'notes', 'nutrition_plan'].includes(file_type)) {
       return sendJson(res, 422, {
         error: 'validation_failed',
-        fields: { file_type: `must be 'program' or 'notes'` }
+        fields: { file_type: `must be 'program', 'notes', or 'nutrition_plan'` }
       });
     }
 
@@ -338,7 +338,12 @@ async function handleSyncDownload(req, res) {
       return;
     }
 
-    const row = file_type === 'program' ? await getCustomerProgram(customer_id) : await getCustomerNotes(customer_id);
+    const row =
+      file_type === 'program'
+        ? await getCustomerProgram(customer_id)
+        : file_type === 'nutrition_plan'
+          ? await getCustomerNutritionPlan(customer_id)
+          : await getCustomerNotes(customer_id);
     if (!row) {
       return sendJson(res, 404, { error: 'not_found', message: 'File missing from database' });
     }
