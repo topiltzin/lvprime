@@ -138,7 +138,7 @@ export async function getNutritionPlan(slug) { /* ... */ }
 **Setup**:
 ```
 SUPABASE_URL=https://xxxxx.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJx... (server-side only)
+SUPABASE_SECRET_KEY=eyJx... (server-side only)
 ```
 
 ---

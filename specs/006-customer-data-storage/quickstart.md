@@ -17,7 +17,7 @@
    
    # Add Supabase credentials
    SUPABASE_URL=https://[PROJECT-ID].supabase.co
-   SUPABASE_SERVICE_ROLE_KEY=eyJx...
+   SUPABASE_SECRET_KEY=eyJx...
    ```
 4. **Node Dependencies**:
    ```bash
@@ -43,7 +43,7 @@
 # Run in Node.js REPL or test script:
 node -e "
 const { createClient } = require('@supabase/supabase-js');
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SECRET_KEY);
 
 (async () => {
   const { data, error } = await supabase.from('customers').select('*');

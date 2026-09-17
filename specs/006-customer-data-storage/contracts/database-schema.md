@@ -13,7 +13,7 @@
 **Connection Method**: `@supabase/supabase-js` client library  
 **Environment Variables**:
 - `SUPABASE_URL`: Project URL (e.g., `https://xxxxx.supabase.co`)
-- `SUPABASE_SERVICE_ROLE_KEY`: Secret API key for backend operations (never expose to browser)
+- `SUPABASE_SECRET_KEY`: Secret API key for backend operations (never expose to browser)
 
 ---
 
@@ -361,4 +361,4 @@ For now: RLS disabled; access controlled at application layer.
 
 **Rate Limiting**: Free tier: 50,000 requests/month; upgrade as needed
 
-**No direct Postgres connection needed**: The app uses `@supabase/supabase-js`, which talks to Supabase over its REST API (PostgREST) using `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` (Settings → API). The raw `postgresql://postgres:[PASSWORD]@db.xxx.supabase.co:5432/postgres` connection string is only needed if connecting a third-party SQL client directly (e.g., to run the schema SQL above via `psql` instead of the SQL Editor) — the app itself never uses it.
+**No direct Postgres connection needed**: The app uses `@supabase/supabase-js`, which talks to Supabase over its REST API (PostgREST) using `SUPABASE_URL` + `SUPABASE_SECRET_KEY` (Settings → API). The raw `postgresql://postgres:[PASSWORD]@db.xxx.supabase.co:5432/postgres` connection string is only needed if connecting a third-party SQL client directly (e.g., to run the schema SQL above via `psql` instead of the SQL Editor) — the app itself never uses it.

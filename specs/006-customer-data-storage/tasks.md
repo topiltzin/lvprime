@@ -18,7 +18,7 @@
 
 - [ ] T001 Create Supabase project (or use existing) and record project URL + service role key
 - [ ] T002 Install `@supabase/supabase-js` dependency in `app/package.json`
-- [ ] T003 [P] Add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` placeholders to `app/.env.example`
+- [ ] T003 [P] Add `SUPABASE_URL` and `SUPABASE_SECRET_KEY` placeholders to `app/.env.example`
 - [ ] T004 [P] Verify `.env.local` is excluded via `app/.gitignore` (never commit real credentials)
 
 ---
@@ -31,7 +31,7 @@
 
 - [ ] T005 Execute the "Full Schema SQL" block from `specs/006-customer-data-storage/contracts/database-schema.md` in Supabase SQL Editor to create all 7 tables (`customers`, `programs`, `feedbacks`, `notes`, `nutrition_plans`, `sync_events`, `offline_queue_entries`) with their indexes, foreign keys, and CHECK constraints
 - [ ] T006 Run the verification query from `contracts/database-schema.md` and confirm all 7 tables exist via Supabase dashboard
-- [ ] T007 Create Supabase client initialization in `app/src/lib/database-client.js` exporting `supabase` client built from `process.env.SUPABASE_URL` and `process.env.SUPABASE_SERVICE_ROLE_KEY` (per contracts/data-api-layer.md)
+- [ ] T007 Create Supabase client initialization in `app/src/lib/database-client.js` exporting `supabase` client built from `process.env.SUPABASE_URL` and `process.env.SUPABASE_SECRET_KEY` (per contracts/data-api-layer.md)
 - [ ] T008 [P] Create custom error classes `CustomerNotFoundError`, `ValidationError`, `DatabaseError` in `app/src/lib/customer-data.js` (per contracts/data-api-layer.md error handling section)
 - [ ] T009 [P] Add slug validation helper in `app/src/lib/customer-data.js` enforcing regex `^[a-z0-9]([a-z0-9-]*[a-z0-9])?$`, 3-100 characters (per contracts/database-schema.md customers table constraints)
 
@@ -136,7 +136,7 @@
 
 ### Implementation for User Story 4
 
-- [ ] T047 [US4] Add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to the Vercel project's Environment Variables (Production and Preview scopes)
+- [ ] T047 [US4] Add `SUPABASE_URL` and `SUPABASE_SECRET_KEY` to the Vercel project's Environment Variables (Production and Preview scopes)
 - [ ] T048 [US4] Add graceful error handling in `app/src/lib/customer-data.js` for Supabase connection failures: catch errors from the client and re-throw as `DatabaseError` with a user-friendly message (per contracts/data-api-layer.md)
 - [ ] T049 [US4] Surface `DatabaseError` in `app/src/views/customer-view.js` / `app/src/components/tab-container.js` as a toast message ("Unable to load customer data. Please try again.") instead of an unhandled exception
 - [ ] T050 [US4] Deploy the app to a Vercel preview environment and verify `jaqueline-orellano` profile loads all four tabs correctly from Supabase
@@ -194,7 +194,7 @@
 
 ```bash
 # Phase 1 Setup — parallel:
-Task: "Add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY placeholders to app/.env.example"
+Task: "Add SUPABASE_URL and SUPABASE_SECRET_KEY placeholders to app/.env.example"
 Task: "Verify .env.local is excluded via app/.gitignore"
 
 # Phase 2 Foundational — parallel after T007:
@@ -288,7 +288,7 @@ git commit -m "polish(customer-data): tests, cleanup, and documentation"
 
 **Files to Modify**:
 - `app/package.json` — Add `@supabase/supabase-js` dependency
-- `app/.env.example` — Add `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
+- `app/.env.example` — Add `SUPABASE_URL`, `SUPABASE_SECRET_KEY`
 - `app/server/index.js` — Replace filesystem/SQLite reads and file writes in `handleGetCustomer`, `handleGetCustomers`, `handleGetNutrition`, `handlePostFeedback`, `handleSyncUpload`, `handleSyncDownload`, `handleSyncStatus` with `customer-data.js` DAL calls
 - `app/server/sync-state.js` — Superseded by `sync_events`/`offline_queue_entries` + `programs`/`notes` columns; retire per T057
 - `app/server/offline-queue.js` — Superseded by `offline_queue_entries` table; retire per T057
@@ -320,7 +320,7 @@ git commit -m "polish(customer-data): tests, cleanup, and documentation"
 **Total Task Count**: 59 tasks
 **Estimated Effort**: 14-20 hours (sequential) / 7-10 hours (parallel team of 2-3)
 **Status**: Blocked on Supabase project credentials (T001) — see conversation for setup instructions; all design docs ready
-**Next**: User creates Supabase project + runs schema SQL from contracts/database-schema.md, provides `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` via `app/.env.local`, then begin Phase 1 (Setup) and Phase 2 (Foundational)
+**Next**: User creates Supabase project + runs schema SQL from contracts/database-schema.md, provides `SUPABASE_URL`/`SUPABASE_SECRET_KEY` via `app/.env.local`, then begin Phase 1 (Setup) and Phase 2 (Foundational)
 
 ---
 

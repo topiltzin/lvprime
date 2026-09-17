@@ -417,13 +417,13 @@ const { data, error } = await supabaseClient
 ```javascript
 export const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_SECRET_KEY
 )
 ```
 
 **Environment Requirements**:
 - `SUPABASE_URL`: Supabase project URL
-- `SUPABASE_SERVICE_ROLE_KEY`: Secret API key (backend only)
+- `SUPABASE_SECRET_KEY`: Secret API key (backend only)
 
 ---
 
