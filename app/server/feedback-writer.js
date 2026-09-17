@@ -1,6 +1,8 @@
-import fs from 'node:fs';
-import { extractFeedbackTemplate, formatFeedbackEntry, parseFeedbackEntries } from './markdown-parser.js';
-import { customerPaths } from './customers-repo.js';
+// appendFeedbackEntry/getFeedbackTemplate (fs.readFileSync/writeFileSync
+// against feedback.md) were removed here as part of specs/006-customer-data-
+// storage: superseded by app/server/lib/customer-data.js's addFeedbackEntry/
+// getCustomerFeedback, which do the same thing against Supabase. This file
+// now only holds the pure validation function, which has no fs dependency.
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -43,50 +45,4 @@ export function validateFeedbackSubmission(template, body) {
     return { valid: false, fields };
   }
   return { valid: true };
-}
-
-/**
- * Appends a validated feedback entry to customers/:slug/feedback.md, matching
- * that file's own existing entry template exactly (spec FR-008). Creates the
- * file with a minimal header if it does not exist yet (spec edge case).
- */
-export function appendFeedbackEntry(slug, displayName, { date, label, fields }) {
-  const { feedback: feedbackPath } = customerPaths(slug);
-  let existingText = '';
-  try {
-    existingText = fs.readFileSync(feedbackPath, 'utf8');
-  } catch {
-    existingText = '';
-  }
-
-  const template = extractFeedbackTemplate(existingText);
-  const entryText = formatFeedbackEntry(template, { date, label, fieldValues: fields });
-
-  let newText;
-  if (existingText.trim() === '') {
-    newText = `# ${displayName} - Feedback & Progress Log\n\n${entryText}\n`;
-  } else {
-    const separator = existingText.endsWith('\n\n')
-      ? ''
-      : existingText.endsWith('\n')
-        ? '\n'
-        : '\n\n';
-    newText = `${existingText}${separator}${entryText}\n`;
-  }
-
-  fs.writeFileSync(feedbackPath, newText, 'utf8');
-
-  const parsed = parseFeedbackEntries(newText);
-  return parsed[parsed.length - 1];
-}
-
-export function getFeedbackTemplate(slug) {
-  const { feedback: feedbackPath } = customerPaths(slug);
-  let text = '';
-  try {
-    text = fs.readFileSync(feedbackPath, 'utf8');
-  } catch {
-    text = '';
-  }
-  return extractFeedbackTemplate(text);
 }

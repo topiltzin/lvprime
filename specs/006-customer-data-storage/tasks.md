@@ -121,7 +121,7 @@
 - [X] T042 Modify `handleSyncUpload` in `app/server/index.js` to call `syncCoachWrite` instead of `fs.writeFileSync` + `syncState.updateSyncMetadata`; keep the existing request/response JSON shape unchanged so `app/src/lib/status.js` and any client callers don't need changes
 - [X] T043 Modify `handleSyncDownload` in `app/server/index.js` to read content via `getCustomerProgram`/`getCustomerNotes` (T021/existing) and version/hash via `getSyncState` instead of `fs.readFileSync` + `syncState.getSyncState`
 - [X] T044 Modify `handleSyncStatus` in `app/server/index.js` to call `getSyncState` for `program`/`notes` and `getCustomerFeedback` (for entry count) instead of `syncState.getSyncState` + `fs.readFileSync`
-- [ ] T045 Retire `server/sync-state.js` and `server/offline-queue.js`'s file-backed implementations once T042-T044 are verified working (keep `sync-engine.js`'s pure functions `detectVersionMismatch`/`resolveCoachSync`/`resolveFeedbackConflict` — those have no filesystem dependency and can stay as-is or be inlined into `customer-data.js`)
+- [X] T045 Retire `server/sync-state.js` and `server/offline-queue.js`'s file-backed implementations once T042-T044 are verified working (keep `sync-engine.js`'s pure functions `detectVersionMismatch`/`resolveCoachSync`/`resolveFeedbackConflict` — those have no filesystem dependency and can stay as-is or be inlined into `customer-data.js`)
 - [X] T046 Manually test: submit two sequential `POST /api/sync/upload` calls for the same customer/program with the second using a stale `current_version`; confirm `conflicted: true` in the response and a matching `sync_conflict` row in the `sync_events` table
 
 **Checkpoint**: The existing Coach Local Sync feature (specs/004-server-data-sync) now runs entirely on Supabase and survives Vercel cold starts and redeployments
@@ -155,7 +155,7 @@
 - [ ] T054 [P] Add integration tests against a Supabase test project in `app/tests/integration/customer-data.test.js` covering `getCustomer`, `addFeedbackEntry`, `updateCustomerNotes`, and `syncCoachWrite`
 - [ ] T055 [P] Add data integrity validation test comparing filesystem source files to migrated database rows (per quickstart.md Scenario 8)
 - [ ] T056 Run the full `quickstart.md` validation suite (Scenarios 1-8) end-to-end and record results
-- [ ] T057 Remove or comment out now-unused filesystem read/write code paths in `app/server/index.js`, `app/server/customers-repo.js`, `app/server/feedback-writer.js`, `app/server/sync-state.js`, and `app/server/offline-queue.js` once migration is verified stable
+- [X] T057 Remove or comment out now-unused filesystem read/write code paths in `app/server/index.js`, `app/server/customers-repo.js`, `app/server/feedback-writer.js`, `app/server/sync-state.js`, and `app/server/offline-queue.js` once migration is verified stable
 - [ ] T058 [P] Document Supabase environment variable setup and migration steps for future deployments in `app/README.md` or `CLAUDE.md`
 - [ ] T059 Retain the `customers/` filesystem directory as a 30-day backup (per spec Assumption 7); add a dated reminder/note for its eventual removal
 
