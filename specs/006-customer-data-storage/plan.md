@@ -10,6 +10,8 @@
 
 Migrate the Lili Trainer app from filesystem-based customer data storage (markdown files in `/customers/` directory) to Supabase PostgreSQL database to enable serverless deployment on Vercel. This requires: (1) designing a PostgreSQL schema that maps the current markdown file structure, (2) building a data access layer to abstract database reads/writes from the application, (3) creating a one-time migration script to transfer existing customer data, and (4) updating all app endpoints to use the database instead of the filesystem. The migration maintains zero regression—coaches see no change in functionality or data format, only persistence now works across Vercel redeployments.
 
+**Scope revision (2026-09-17)**: Discovered during implementation that the codebase already has a "Coach Local Sync" feature (`specs/004-server-data-sync`) with its own state store — `server/sync-state.js` persists version numbers, content hashes, and an offline-change queue to a local JSON file (`server/data/sync-state.json`) plus an in-memory object. This store has the exact same Vercel-incompatibility problem as the customer `.md` files (doesn't survive stateless serverless functions or redeployments). Per user decision, this migration's scope now includes absorbing that sync state into Supabase (`programs`/`notes` gain `version`/`content_hash`/`last_writer`/`sync_status` columns; two new tables `sync_events` and `offline_queue_entries` replace the JSON file) rather than leaving it as a second, still-broken storage mechanism. See data-model.md and contracts/ for the updated schema, and tasks.md Phase 6 for the migration tasks.
+
 ## Technical Context
 
 **Language/Version**: JavaScript (ES2022+), Node.js 22.5.0+

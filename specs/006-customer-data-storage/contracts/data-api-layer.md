@@ -244,6 +244,8 @@ const updatedFeedback = await addFeedbackEntry('jaqueline-orellano', {
 
 ---
 
+> **Note on program/notes writes**: `updateCustomerNotes`/`updateCustomerProgram` below do an unconditional overwrite with no version check — use them only for non-sync write paths (e.g., the migration script in Phase 3, or a future admin edit tool). The actual coach sync upload endpoint (`POST /api/sync/upload`) MUST use `syncCoachWrite` (see "Sync & Offline Queue Functions" below) instead, since program/notes are version-tracked and conflict-checked per specs/004-server-data-sync.
+
 #### `async updateCustomerNotes(slug, content)`
 
 **Purpose**: Update (replace) a customer's coaching notes
@@ -422,6 +424,108 @@ export const supabase = createClient(
 **Environment Requirements**:
 - `SUPABASE_URL`: Supabase project URL
 - `SUPABASE_SERVICE_ROLE_KEY`: Secret API key (backend only)
+
+---
+
+## Sync & Offline Queue Functions (replaces sync-engine.js / sync-state.js / offline-queue.js)
+
+These functions absorb the "Coach Local Sync" feature (specs/004-server-data-sync), moving its JSON-file-backed, in-memory state (`server/sync-state.js`, which does not survive Vercel cold starts) onto the `programs`/`notes` `version`/`content_hash`/`sync_status` columns plus the new `sync_events` and `offline_queue_entries` tables.
+
+#### `async syncCoachWrite(slug, fileType, { currentVersion, content, contentHash })`
+
+**Purpose**: Coach uploads a new program/notes version; implements the same "coach-always-wins" conflict resolution as `sync-engine.js`'s `resolveCoachSync`
+
+**Parameters**:
+- `slug` (string): Customer identifier
+- `fileType` ('program' | 'notes')
+- `currentVersion` (number): Version the coach's client last saw
+- `content` (string): New file content
+- `contentHash` (string): SHA256 hex of `content`, verified server-side (per `hash-utils.js` `verifyContentHash`)
+
+**Behavior** (mirrors `sync-engine.js` + `server/index.js` `handleSyncUpload`):
+1. Verify `contentHash` matches `computeContentHash(content)`; throw `ValidationError` if mismatched
+2. Read the current row's `version` (0 if row doesn't exist yet)
+3. Detect conflict: `conflicted = currentVersion !== serverVersion` (per `detectVersionMismatch`)
+4. Write `content`, set `version = serverVersion + 1`, `content_hash`, `last_writer = 'coach'`, `sync_status = 'synced'`
+5. Insert a `sync_events` row (`event_type: 'sync_success'`, plus `sync_events` row with `event_type: 'sync_conflict'` if `conflicted`)
+
+**Returns**:
+```javascript
+{
+  status: 'synced',
+  newVersion: number,
+  conflicted: boolean,
+  serverVersion: number, // version before this write
+}
+```
+
+**Performance**: <150ms (read + write + audit log insert)
+
+---
+
+#### `async getSyncState(slug, fileType)`
+
+**Purpose**: Retrieve current sync status for a program/notes file (replaces `sync-state.js` `getSyncState`)
+
+**Returns**:
+```javascript
+{
+  version: number,
+  syncStatus: 'synced' | 'pending' | 'conflicted',
+  lastWriter: 'coach' | 'customer' | null,
+  contentHash: string | null,
+  updatedAt: ISO8601 timestamp
+}
+```
+
+**Returns**: `null` if no row exists yet (matches current `getSyncState` behavior)
+
+---
+
+#### `async queueOfflineChange(slug, fileType, entry)`
+
+**Purpose**: Persist a coach change made while offline (replaces `offline-queue.js` `queueChange`)
+
+**Parameters**:
+- `entry`: `{ sequence, timestamp, action, content_hash, content_size_bytes, description }` — same shape and validation rules as `offline-queue.js`: `fileType` must be `'program'` or `'notes'`; `sequence` must start at 1 and increment without gaps per (slug, fileType); `content_hash` must match `^[a-f0-9]{64}$`; `content_size_bytes` must be `> 0`; `timestamp` must be valid ISO8601
+
+**Throws**: `ValidationError` on any violated constraint (same messages as `offline-queue.js`)
+
+**Behavior**: Inserts a row into `offline_queue_entries`; sets the corresponding `programs`/`notes` row's `sync_status = 'pending'`
+
+---
+
+#### `async getOfflineQueue(slug, fileType)`
+
+**Purpose**: Retrieve queued offline entries in sequence order (replaces `offline-queue.js` `getQueue`)
+
+**Returns**: Array of queue entries ordered by `sequence ASC`, or `[]` if none
+
+---
+
+#### `async clearOfflineQueue(slug, fileType)`
+
+**Purpose**: Delete all queued entries after a successful flush (replaces `offline-queue.js` `clearQueue`)
+
+**Behavior**: `DELETE FROM offline_queue_entries WHERE customer_id = ... AND file_type = ...`
+
+---
+
+#### `async recordSyncEvent(slug, fileType, eventType, metadata)`
+
+**Purpose**: Append an audit-log row (replaces `sync-state.js` `recordSyncEvent`)
+
+**Parameters**: `eventType` one of `'sync_start' | 'sync_success' | 'sync_conflict' | 'sync_error'`; `metadata` may include `source`, `versionFrom`, `versionTo`, `conflictDescription`, `errorMessage`, `contentHash`
+
+**Behavior**: Insert-only row into `sync_events`; never throws on missing optional fields (all nullable)
+
+---
+
+#### `async getRecentSyncEvents(slug, limit = 10)`
+
+**Purpose**: Retrieve recent sync audit events (replaces `sync-state.js` `getRecentSyncEvents`)
+
+**Returns**: Array of `sync_events` rows ordered by `created_at DESC`, limited to `limit`
 
 ---
 

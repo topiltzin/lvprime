@@ -29,8 +29,8 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T005 Execute PostgreSQL DDL from `specs/006-customer-data-storage/contracts/database-schema.md` in Supabase SQL Editor to create `customers`, `programs`, `feedbacks`, `notes`, `nutrition_plans` tables with their indexes and foreign keys
-- [ ] T006 Verify all 5 tables and their indexes (`idx_customers_slug`, `idx_programs_customer_id`, `idx_feedbacks_customer_id`, `idx_notes_customer_id`, `idx_nutrition_plans_customer_id`) exist via Supabase dashboard
+- [ ] T005 Execute the "Full Schema SQL" block from `specs/006-customer-data-storage/contracts/database-schema.md` in Supabase SQL Editor to create all 7 tables (`customers`, `programs`, `feedbacks`, `notes`, `nutrition_plans`, `sync_events`, `offline_queue_entries`) with their indexes, foreign keys, and CHECK constraints
+- [ ] T006 Run the verification query from `contracts/database-schema.md` and confirm all 7 tables exist via Supabase dashboard
 - [ ] T007 Create Supabase client initialization in `app/src/lib/database-client.js` exporting `supabase` client built from `process.env.SUPABASE_URL` and `process.env.SUPABASE_SERVICE_ROLE_KEY` (per contracts/data-api-layer.md)
 - [ ] T008 [P] Create custom error classes `CustomerNotFoundError`, `ValidationError`, `DatabaseError` in `app/src/lib/customer-data.js` (per contracts/data-api-layer.md error handling section)
 - [ ] T009 [P] Add slug validation helper in `app/src/lib/customer-data.js` enforcing regex `^[a-z0-9]([a-z0-9-]*[a-z0-9])?$`, 3-100 characters (per contracts/database-schema.md customers table constraints)
@@ -75,8 +75,8 @@
 - [ ] T022 [P] [US2] Implement `getCustomerFeedback(slug)` in `app/src/lib/customer-data.js`: resolve customer via `getCustomer`, query `feedbacks` table by `customer_id`, return `{ entries: [] }` if no row exists (per contracts/data-api-layer.md)
 - [ ] T023 [P] [US2] Implement `getCustomerNotes(slug)` in `app/src/lib/customer-data.js`: resolve customer via `getCustomer`, query `notes` table by `customer_id`, return `null` if no row exists (per contracts/data-api-layer.md)
 - [ ] T024 [P] [US2] Implement `getCustomerNutritionPlan(slug)` in `app/src/lib/customer-data.js`: resolve customer via `getCustomer`, query `nutrition_plans` table by `customer_id`, return `null` if no row exists (per contracts/data-api-layer.md)
-- [ ] T025 [US2] Modify `app/server/serve.js` to replace filesystem reads in the customer data GET endpoint(s) with calls to `getCustomer`, `getCustomerProgram`, `getCustomerFeedback`, `getCustomerNotes`, `getCustomerNutritionPlan` from `customer-data.js`
-- [ ] T026 [US2] Modify `app/server/serve.js` nutrition endpoint (`GET /api/customer/:slug/nutrition`) to use `getCustomerNutritionPlan` instead of reading `nutrition_plan.md` from disk, preserving the existing response shape `{ content, isEmpty, lastModified }`
+- [ ] T025 [US2] Modify `handleGetCustomer` and `handleGetCustomers` in `app/server/index.js` to replace `listCustomers`/`reindexIfStale`/`fs.readFileSync` calls with `getCustomer`, `getCustomerProgram`, `getCustomerFeedback`, `getCustomerNotes`, `getCustomerNutritionPlan` from `customer-data.js`, preserving the existing response shapes (`toCustomerSummary`, the `{ slug, displayName, program, notes, nutrition, feedback, attachments }` object)
+- [ ] T026 [US2] Modify `handleGetNutrition` in `app/server/index.js` (`GET /api/customers/:slug/nutrition`) to use `getCustomerNutritionPlan` instead of `fs.readFileSync`/`fs.existsSync` on `nutrition_plan.md`, preserving the existing response shape `{ content, isEmpty, lastModified }` and the 413 "file too large" behavior (now enforced via the 500KB check in `getCustomerNutritionPlan`)
 - [ ] T027 [US2] Update `app/src/views/customer-view.js` if response shapes from `serve.js` changed, ensuring `data.program`, `data.feedback`, `data.notes`, `data.nutrition` are populated identically to the pre-migration format
 - [ ] T028 [US2] Verify `app/src/components/tab-container.js` renders Program, Nutrition Plan, Feedback, and Notes tabs unchanged (no code changes expected here unless data shape changed in T027)
 - [ ] T029 [US2] Manually test in browser: load `jaqueline-orellano` profile and confirm all four tabs show content matching the pre-migration filesystem files
@@ -97,7 +97,7 @@
 - [ ] T031 [P] [US3] Implement `updateCustomerNotes(slug, content)` in `app/src/lib/customer-data.js`: validate `content` is non-empty and does not exceed 500KB (per data-model.md Notes validation: "content MUST NOT exceed 500KB"), throwing `ValidationError` otherwise; upsert the `notes` row for the customer
 - [ ] T032 [P] [US3] Implement `updateCustomerProgram(slug, content)` in `app/src/lib/customer-data.js`: validate `content` is non-empty and does not exceed 500KB (per data-model.md Program validation), throwing `ValidationError` otherwise; upsert the `programs` row for the customer
 - [ ] T033 [P] [US3] Implement `updateCustomerNutritionPlan(slug, content)` in `app/src/lib/customer-data.js`: validate `content` is non-empty and does not exceed 500KB (per data-model.md NutritionPlan validation), throwing `ValidationError` otherwise; upsert the `nutrition_plans` row for the customer
-- [ ] T034 [US3] Add/update POST endpoint in `app/server/serve.js` for feedback submission (e.g., `POST /api/customer/:slug/feedback`) that calls `addFeedbackEntry` and returns the updated feedback list
+- [ ] T034 [US3] Modify `handlePostFeedback` in `app/server/index.js` (`POST /api/customers/:slug/feedback`) to call `addFeedbackEntry` from `customer-data.js` instead of `appendFeedbackEntry` (from `feedback-writer.js`, which writes to `feedback.md`), keeping the existing `validateFeedbackSubmission`/`getFeedbackTemplate` validation step and response shape (`toFeedbackEntryJson`)
 - [ ] T035 [US3] Wire the existing feedback submission form (in `app/src/components/feedback-entry.js` or equivalent) to call the new feedback POST endpoint instead of any prior filesystem-backed endpoint
 - [ ] T036 [US3] Manually test in browser: submit a new feedback entry for `jaqueline-orellano`, reload the page, and confirm the entry appears and is present in the `feedbacks.entries` JSONB column in Supabase
 
@@ -105,7 +105,30 @@
 
 ---
 
-## Phase 6: User Story 4 - Ensure Vercel Compatibility & Persistence (Priority: P1)
+## Phase 6: Sync System Migration (Absorbs specs/004-server-data-sync into Supabase)
+
+**Goal**: Replace `server/sync-state.js`'s JSON-file-backed, in-memory store and `server/offline-queue.js`'s file-embedded queue with the `programs`/`notes` version columns plus the new `sync_events` and `offline_queue_entries` tables — required because the JSON file (`server/data/sync-state.json`) does not survive Vercel's stateless serverless functions any more than the customer `.md` files do
+
+**Independent Test**: Submit a coach sync upload for `program` with a stale `current_version`; confirm the response reports `conflicted: true`, the `programs` row's `version` increments by exactly 1, and a `sync_conflict` row appears in `sync_events`
+
+### Implementation for Sync Migration
+
+- [ ] T037 Implement `syncCoachWrite(slug, fileType, { currentVersion, content, contentHash })` in `app/src/lib/customer-data.js` per contracts/data-api-layer.md: verify `contentHash` via `hash-utils.js` `verifyContentHash`, detect conflict via version comparison, write to `programs`/`notes` row (`content`, `version = serverVersion + 1`, `content_hash`, `last_writer: 'coach'`, `sync_status: 'synced'`), and insert a `sync_events` row
+- [ ] T038 Implement `getSyncState(slug, fileType)` in `app/src/lib/customer-data.js`: query `programs` or `notes` by `customer_id` and return `{ version, syncStatus, lastWriter, contentHash, updatedAt }`, or `null` if no row exists
+- [ ] T039 [P] Implement `queueOfflineChange(slug, fileType, entry)` in `app/src/lib/customer-data.js`: validate `fileType` is `'program'` or `'notes'`, `sequence` starts at 1 and increments without gaps per (customer, fileType) — replicate the exact error messages from `offline-queue.js` ("Sequence gap: expected N+1, got X", "First sequence must be 1, got X"), `content_hash` matches `^[a-f0-9]{64}$`, `content_size_bytes > 0`, `timestamp` is valid ISO8601; insert into `offline_queue_entries` and set the corresponding row's `sync_status = 'pending'`
+- [ ] T040 [P] Implement `getOfflineQueue(slug, fileType)` and `clearOfflineQueue(slug, fileType)` in `app/src/lib/customer-data.js` per contracts/data-api-layer.md
+- [ ] T041 [P] Implement `recordSyncEvent(slug, fileType, eventType, metadata)` and `getRecentSyncEvents(slug, limit)` in `app/src/lib/customer-data.js` per contracts/data-api-layer.md
+- [ ] T042 Modify `handleSyncUpload` in `app/server/index.js` to call `syncCoachWrite` instead of `fs.writeFileSync` + `syncState.updateSyncMetadata`; keep the existing request/response JSON shape unchanged so `app/src/lib/status.js` and any client callers don't need changes
+- [ ] T043 Modify `handleSyncDownload` in `app/server/index.js` to read content via `getCustomerProgram`/`getCustomerNotes` (T021/existing) and version/hash via `getSyncState` instead of `fs.readFileSync` + `syncState.getSyncState`
+- [ ] T044 Modify `handleSyncStatus` in `app/server/index.js` to call `getSyncState` for `program`/`notes` and `getCustomerFeedback` (for entry count) instead of `syncState.getSyncState` + `fs.readFileSync`
+- [ ] T045 Retire `server/sync-state.js` and `server/offline-queue.js`'s file-backed implementations once T042-T044 are verified working (keep `sync-engine.js`'s pure functions `detectVersionMismatch`/`resolveCoachSync`/`resolveFeedbackConflict` — those have no filesystem dependency and can stay as-is or be inlined into `customer-data.js`)
+- [ ] T046 Manually test: submit two sequential `POST /api/sync/upload` calls for the same customer/program with the second using a stale `current_version`; confirm `conflicted: true` in the response and a matching `sync_conflict` row in the `sync_events` table
+
+**Checkpoint**: The existing Coach Local Sync feature (specs/004-server-data-sync) now runs entirely on Supabase and survives Vercel cold starts and redeployments
+
+---
+
+## Phase 7: User Story 4 - Ensure Vercel Compatibility & Persistence (Priority: P1)
 
 **Goal**: Verify customer data persists across Vercel deployments, cold starts, and serverless function invocations
 
@@ -113,28 +136,28 @@
 
 ### Implementation for User Story 4
 
-- [ ] T037 [US4] Add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to the Vercel project's Environment Variables (Production and Preview scopes)
-- [ ] T038 [US4] Add graceful error handling in `app/src/lib/customer-data.js` for Supabase connection failures: catch errors from the client and re-throw as `DatabaseError` with a user-friendly message (per contracts/data-api-layer.md)
-- [ ] T039 [US4] Surface `DatabaseError` in `app/src/views/customer-view.js` / `app/src/components/tab-container.js` as a toast message ("Unable to load customer data. Please try again.") instead of an unhandled exception
-- [ ] T040 [US4] Deploy the app to a Vercel preview environment and verify `jaqueline-orellano` profile loads all four tabs correctly from Supabase
-- [ ] T041 [US4] Trigger a redeploy on Vercel (e.g., empty commit or redeploy button) and re-verify the same customer data still loads correctly with no data loss (per quickstart.md Scenario 5)
-- [ ] T042 [US4] Measure and record customer data load time on the Vercel preview deployment, confirming it meets the <500ms target (per spec SC-004)
+- [ ] T047 [US4] Add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to the Vercel project's Environment Variables (Production and Preview scopes)
+- [ ] T048 [US4] Add graceful error handling in `app/src/lib/customer-data.js` for Supabase connection failures: catch errors from the client and re-throw as `DatabaseError` with a user-friendly message (per contracts/data-api-layer.md)
+- [ ] T049 [US4] Surface `DatabaseError` in `app/src/views/customer-view.js` / `app/src/components/tab-container.js` as a toast message ("Unable to load customer data. Please try again.") instead of an unhandled exception
+- [ ] T050 [US4] Deploy the app to a Vercel preview environment and verify `jaqueline-orellano` profile loads all four tabs correctly from Supabase
+- [ ] T051 [US4] Trigger a redeploy on Vercel (e.g., empty commit or redeploy button) and re-verify the same customer data still loads correctly with no data loss (per quickstart.md Scenario 5)
+- [ ] T052 [US4] Measure and record customer data load time on the Vercel preview deployment, confirming it meets the <500ms target (per spec SC-004)
 
 **Checkpoint**: App is verified to work correctly when deployed on Vercel with persistent Supabase-backed storage
 
 ---
 
-## Phase 7: Polish & Cross-Cutting Concerns
+## Phase 8: Polish & Cross-Cutting Concerns
 
 **Purpose**: Testing, validation, and cleanup affecting all user stories
 
-- [ ] T043 [P] Add unit tests for `customer-data.js` DAL functions (mocking the Supabase client) in `app/tests/unit/database.test.js`
-- [ ] T044 [P] Add integration tests against a Supabase test project in `app/tests/integration/customer-data.test.js` covering `getCustomer`, `addFeedbackEntry`, and `updateCustomerNotes`
-- [ ] T045 [P] Add data integrity validation test comparing filesystem source files to migrated database rows (per quickstart.md Scenario 8)
-- [ ] T046 Run the full `quickstart.md` validation suite (Scenarios 1-8) end-to-end and record results
-- [ ] T047 Remove or comment out now-unused filesystem read/write code paths in `app/server/serve.js` once migration is verified stable
-- [ ] T048 [P] Document Supabase environment variable setup and migration steps for future deployments in `app/README.md` or `CLAUDE.md`
-- [ ] T049 Retain the `customers/` filesystem directory as a 30-day backup (per spec Assumption 7); add a dated reminder/note for its eventual removal
+- [ ] T053 [P] Add unit tests for `customer-data.js` DAL functions (mocking the Supabase client) in `app/tests/unit/database.test.js`, including `syncCoachWrite` conflict detection
+- [ ] T054 [P] Add integration tests against a Supabase test project in `app/tests/integration/customer-data.test.js` covering `getCustomer`, `addFeedbackEntry`, `updateCustomerNotes`, and `syncCoachWrite`
+- [ ] T055 [P] Add data integrity validation test comparing filesystem source files to migrated database rows (per quickstart.md Scenario 8)
+- [ ] T056 Run the full `quickstart.md` validation suite (Scenarios 1-8) end-to-end and record results
+- [ ] T057 Remove or comment out now-unused filesystem read/write code paths in `app/server/index.js`, `app/server/customers-repo.js`, `app/server/feedback-writer.js`, `app/server/sync-state.js`, and `app/server/offline-queue.js` once migration is verified stable
+- [ ] T058 [P] Document Supabase environment variable setup and migration steps for future deployments in `app/README.md` or `CLAUDE.md`
+- [ ] T059 Retain the `customers/` filesystem directory as a 30-day backup (per spec Assumption 7); add a dated reminder/note for its eventual removal
 
 ---
 
@@ -147,22 +170,25 @@
 - **User Story 1 (Phase 3)**: Depends on Foundational only - can start immediately after Phase 2
 - **User Story 2 (Phase 4)**: Depends on Foundational; DAL read functions (T020-T024) can be built in parallel with US1, but full independent testing (T029) requires migrated data from US1
 - **User Story 3 (Phase 5)**: Depends on Foundational; DAL write functions (T030-T033) can be built in parallel with US1/US2, but full independent testing (T036) benefits from US2's read path to verify persistence
-- **User Story 4 (Phase 6)**: Depends on US1, US2, and US3 being functionally complete (needs real read/write paths to validate against a live Vercel deployment)
-- **Polish (Phase 7)**: Depends on all user stories being complete
+- **Sync System Migration (Phase 6)**: Depends on Foundational (needs `programs`/`notes` version columns and `sync_events`/`offline_queue_entries` tables from T005); can proceed in parallel with US1-US3 since it touches different functions, but T042-T044 modify `server/index.js` handlers that are separate from the US2/US3 GET/POST handlers
+- **User Story 4 (Phase 7)**: Depends on US1, US2, US3, AND Phase 6 all being functionally complete (needs the full read/write/sync surface working to validate against a live Vercel deployment)
+- **Polish (Phase 8)**: Depends on all prior phases being complete
 
 ### User Story Dependencies
 
 - **US1** (Migration): No dependencies on other stories - foundational data must exist before US2/US3 can be meaningfully validated
 - **US2** (Read): DAL functions independent of US1/US3 code, but validation requires migrated data (US1)
 - **US3** (Write): DAL functions independent of US1/US2 code, but validation benefits from US2's read functions to confirm writes
-- **US4** (Vercel/Persistence): Integration validation story - depends on US1 + US2 + US3 all being functional
+- **Sync Migration**: Independent of US1/US2/US3 DAL functions (different tables/columns), but shares `app/src/lib/customer-data.js` as a file, so coordinate merges
+- **US4** (Vercel/Persistence): Integration validation story - depends on US1 + US2 + US3 + Sync Migration all being functional
 
 ### Within Each User Story
 
 - US1: T010 → T011 → T012/T013/T014/T015 (can proceed in sequence per file) → T016 → T017 → T018 → T019
 - US2: T020-T024 can run in parallel [P] (different functions, same file but independent logic) → T025 → T026 → T027 → T028 → T029
 - US3: T030-T033 can run in parallel [P] → T034 → T035 → T036
-- US4: T037 → T038 → T039 → T040 → T041 → T042
+- Sync Migration: T037 → T038 → T039/T040/T041 (can proceed in parallel [P]) → T042 → T043 → T044 → T045 → T046
+- US4: T047 → T048 → T049 → T050 → T051 → T052
 
 ### Parallel Opportunities
 
@@ -188,7 +214,12 @@ Task: "Implement updateCustomerNotes(slug, content) in app/src/lib/customer-data
 Task: "Implement updateCustomerProgram(slug, content) in app/src/lib/customer-data.js"
 Task: "Implement updateCustomerNutritionPlan(slug, content) in app/src/lib/customer-data.js"
 
-# Phase 7 Polish — parallel:
+# Phase 6 Sync Migration — parallel:
+Task: "Implement queueOfflineChange(slug, fileType, entry) in app/src/lib/customer-data.js"
+Task: "Implement getOfflineQueue/clearOfflineQueue in app/src/lib/customer-data.js"
+Task: "Implement recordSyncEvent/getRecentSyncEvents in app/src/lib/customer-data.js"
+
+# Phase 8 Polish — parallel:
 Task: "Add unit tests in app/tests/unit/database.test.js"
 Task: "Add integration tests in app/tests/integration/customer-data.test.js"
 Task: "Add data integrity validation test"
@@ -207,14 +238,15 @@ Task: "Document Supabase environment variable setup"
 4. **STOP and VALIDATE**: Confirm migrated data matches filesystem source exactly
 5. This alone proves the data model and schema are sound before building read/write paths
 
-### Incremental Delivery ⏱️ 8-12 hours total
+### Incremental Delivery ⏱️ 14-20 hours total
 
 1. Setup + Foundational → schema and client ready
 2. US1 (Migration) → Test independently → all data in Supabase ✓
 3. US2 (Read) → Test independently → app displays DB-backed data ✓
 4. US3 (Write) → Test independently → feedback/notes/program writes persist ✓
-5. US4 (Vercel/Persistence) → Test independently → verified on real Vercel deployment ✓
-6. Polish (tests, cleanup, docs) → Merge ✓
+5. Sync Migration → Test independently → coach sync survives Vercel cold starts ✓
+6. US4 (Vercel/Persistence) → Test independently → verified on real Vercel deployment ✓
+7. Polish (tests, cleanup, docs) → Merge ✓
 
 ### Parallel Team Strategy (2-3 developers)
 
@@ -223,20 +255,22 @@ Task: "Document Supabase environment variable setup"
   - Developer A: US1 (Migration, T010-T019)
   - Developer B: US2 (Read DAL + endpoints, T020-T029) — can build against schema immediately, validate fully once US1 lands
   - Developer C: US3 (Write DAL + endpoints, T030-T036) — same pattern as US2
-- All: US4 (Vercel validation) once US1-US3 merged
-- All: Polish phase (T043-T049) split across team
+- Once US1-US3 land: Developer A or B takes Sync Migration (T037-T046) — touches `customer-data.js` and `server/index.js`, coordinate merges with US2/US3 authors
+- All: US4 (Vercel validation, T047-T052) once Sync Migration merged
+- All: Polish phase (T053-T059) split across team
 
 ---
 
 ## Commit Strategy
 
-Suggest committing after each user story validation:
+Suggest committing after each phase's validation checkpoint:
 
 ```bash
 git commit -m "feat(customer-data): create Supabase schema and DAL scaffolding [Foundational]"
 git commit -m "feat(customer-data): migrate filesystem data to Supabase [US1]"
 git commit -m "feat(customer-data): read customer data from Supabase in app [US2]"
 git commit -m "feat(customer-data): write feedback/notes/program updates to Supabase [US3]"
+git commit -m "feat(customer-data): migrate coach sync system onto Supabase [Sync Migration]"
 git commit -m "test(customer-data): verify Vercel deployment persistence [US4]"
 git commit -m "polish(customer-data): tests, cleanup, and documentation"
 ```
@@ -247,7 +281,7 @@ git commit -m "polish(customer-data): tests, cleanup, and documentation"
 
 **Files to Create**:
 - `app/src/lib/database-client.js` — Supabase client initialization
-- `app/src/lib/customer-data.js` — Data access layer (all CRUD functions + error classes)
+- `app/src/lib/customer-data.js` — Data access layer (all CRUD + sync/offline-queue functions + error classes)
 - `app/server/migrations/migrate-data.js` — One-time filesystem → Supabase migration script
 - `app/tests/unit/database.test.js` — Unit tests for DAL
 - `app/tests/integration/customer-data.test.js` — Integration tests against Supabase
@@ -255,14 +289,15 @@ git commit -m "polish(customer-data): tests, cleanup, and documentation"
 **Files to Modify**:
 - `app/package.json` — Add `@supabase/supabase-js` dependency
 - `app/.env.example` — Add `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
-- `app/server/serve.js` — Replace filesystem reads/writes with DAL calls
-- `app/src/views/customer-view.js` — Adjust data loading if response shape changes
-- `app/src/components/tab-container.js` — Adjust rendering only if data shape changes
-- `app/src/components/feedback-entry.js` (or equivalent) — Wire to new feedback write endpoint
+- `app/server/index.js` — Replace filesystem/SQLite reads and file writes in `handleGetCustomer`, `handleGetCustomers`, `handleGetNutrition`, `handlePostFeedback`, `handleSyncUpload`, `handleSyncDownload`, `handleSyncStatus` with `customer-data.js` DAL calls
+- `app/server/sync-state.js` — Superseded by `sync_events`/`offline_queue_entries` + `programs`/`notes` columns; retire per T057
+- `app/server/offline-queue.js` — Superseded by `offline_queue_entries` table; retire per T057
+- `app/server/customers-repo.js` / `app/server/db.js` — SQLite index cache becomes unnecessary once Supabase is the read path (evaluate for removal in T057; not a hard requirement since it's harmless as a cache)
 
 **Files NOT to Modify** (ensures zero regression):
 - `app/src/components/nutrition-pdf.js` — PDF export unchanged
 - `app/src/components/program-pdf.js` — PDF export unchanged
+- `app/server/sync-engine.js` — Pure functions (`detectVersionMismatch`, `resolveCoachSync`, etc.) have no filesystem dependency; reused as-is by `syncCoachWrite`
 - `app/vite.config.js` — No build config changes needed
 
 **Files Preserved as Backup** (not deleted):
@@ -273,18 +308,19 @@ git commit -m "polish(customer-data): tests, cleanup, and documentation"
 ## Notes
 
 - [P] tasks = can run in parallel (different functions/files, no interdependencies)
-- [Story] label (US1, US2, US3, US4) maps task to specific user story for traceability
-- All 4 user stories are Priority P1 — sequence reflects natural build order (migrate → read → write → verify persistence), not relative importance
-- Constraint values (500KB limits, date formats, enum values, slug regex) are quoted directly from data-model.md and contracts/database-schema.md so they aren't left to implementation-time guessing
-- Commit after each user story validation checkpoint
+- [Story] label (US1, US2, US3, US4) maps task to specific user story for traceability; Foundational/Sync Migration/Polish tasks carry no story label
+- All 4 user stories are Priority P1 — sequence reflects natural build order (migrate → read → write → sync → verify persistence), not relative importance
+- The Sync Migration phase exists because `server/sync-state.js` currently persists to a local JSON file (`server/data/sync-state.json`) and an in-memory object — neither survives Vercel's stateless serverless functions, so this phase is required for true Vercel compatibility, not optional cleanup
+- Constraint values (500KB limits, date formats, enum values, slug regex, sequence/hash rules) are quoted directly from data-model.md and contracts/database-schema.md so they aren't left to implementation-time guessing
+- Commit after each phase's validation checkpoint
 - Stop at any checkpoint to validate independently before proceeding
 
 ---
 
-**Total Task Count**: 49 tasks
-**Estimated Effort**: 8-12 hours (sequential) / 4-6 hours (parallel team of 2-3)
-**Status**: Ready for implementation
-**Next**: Begin with Phase 1 (Setup) and Phase 2 (Foundational)
+**Total Task Count**: 59 tasks
+**Estimated Effort**: 14-20 hours (sequential) / 7-10 hours (parallel team of 2-3)
+**Status**: Blocked on Supabase project credentials (T001) — see conversation for setup instructions; all design docs ready
+**Next**: User creates Supabase project + runs schema SQL from contracts/database-schema.md, provides `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` via `app/.env.local`, then begin Phase 1 (Setup) and Phase 2 (Foundational)
 
 ---
 
