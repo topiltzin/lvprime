@@ -326,8 +326,8 @@ SELECT id, slug, name, created_at FROM customers;
 SELECT content FROM programs 
 WHERE customer_id = (SELECT id FROM customers WHERE slug = 'jaqueline-orellano');
 
--- Check feedback entries
-SELECT entries FROM feedbacks 
+-- Check feedback content (raw markdown, per-customer template — see data-model.md)
+SELECT content FROM feedbacks 
 WHERE customer_id = (SELECT id FROM customers WHERE slug = 'jaqueline-orellano');
 
 -- Count total records per table
@@ -339,11 +339,23 @@ SELECT
 
 ---
 
+## Validation Results (recorded 2026-09-17)
+
+| Scenario | Result | Evidence |
+|----------|--------|----------|
+| 1. Database Schema Setup | ✅ PASS | All 7 tables (including `sync_events`/`offline_queue_entries`, added after the original 5-table design absorbed the sync-engine — see plan.md scope revision) verified reachable via `@supabase/supabase-js` |
+| 2. Data Migration Script | ✅ PASS | `migrate-data.js` run against real `customers/` dir: 3 customers, 3 programs, 2 notes, 1 nutrition plan, 3 feedback logs, 0 warnings, 0 errors. Re-run confirmed idempotency (all 3 skipped) |
+| 3. Read Customer Data from Database in App | ✅ PASS | Verified via real HTTP requests (not just DAL calls) against `server/serve.js`: all 4 tabs render correctly for `jaqueline-orellano` including full program detail, 7 feedback entries with her actual Spanish template, notes, nutrition plan |
+| 4. Add New Feedback Entry via Database | ✅ PASS | `POST /api/customers/test-alice/feedback` persisted and read back correctly; also covered by `tests/integration/customer-data.test.js`'s `addFeedbackEntry` test |
+| 5. Persistence Across Redeployment | ⚠️ PARTIAL | Verified equivalent behavior locally (server process restarted, data reloaded correctly from Supabase — since Supabase, not process memory or local files, is now the store). **True Vercel redeploy verification still needs T051**, which requires the user's Vercel account access |
+| 6. Database Responsiveness on Large Data | ✅ PASS (after a fix) | Initial measurement found customer detail load at 1.0-1.6s, 2-3x over the 500ms target — traced to N+1 redundant customer lookups and sequential (not parallel) queries in `customer-data.js`. Fixed via `getCustomerFullProfile`/`Promise.all`; re-measured at ~260-350ms (detail) and ~300-420ms (list) after connection warm-up. Local-to-remote-Supabase latency over the public internet; a real Vercel-to-Supabase measurement (T052) should be equal or better |
+| 7. Error Handling — Database Unavailable | ✅ PASS | Simulated via invalid `SUPABASE_URL` (DNS failure): confirmed `handleApiRequest` returns HTTP 503 with `{error: 'unable_to_load', message: 'Unable to load customer data. Please try again.'}`, and that `api-client.js` correctly surfaces `body.message` in the UI |
+| 8. Data Integrity After Migration | ✅ PASS | `tests/integration/migration-data-integrity.test.js`: byte-for-byte content match between filesystem and Supabase for all 4 fields, all 3 real customers |
+
+**Still open** (require Vercel account/CLI access this session doesn't have): T047 (Vercel env vars), T050 (deploy to preview), T051 (redeploy + re-verify), T052 (measure load time on the actual Vercel deployment).
+
 ## Next Steps
 
-After all scenarios pass:
-
-1. Run `/speckit-tasks` to generate detailed implementation tasks
-2. Follow implementation phase to add database layer to app
-3. Deploy to Vercel with database connection
-4. Monitor production data access patterns
+1. Set `SUPABASE_URL`/`SUPABASE_SECRET_KEY` in the Vercel project's Environment Variables (T047)
+2. Deploy to a Vercel preview environment and re-run Scenarios 3, 5, and 6 against the live URL (T050-T052)
+3. Monitor production data access patterns
