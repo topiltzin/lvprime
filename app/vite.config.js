@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import { handleApiRequest } from './server/index.js';
 
 // Mounts the local API (server/index.js) into the Vite dev server under /api,
@@ -28,10 +28,18 @@ function localApiPlugin() {
   };
 }
 
-export default defineConfig({
-  root: '.',
-  plugins: [localApiPlugin()],
-  build: {
-    outDir: 'dist',
-  },
+export default defineConfig(({ mode }) => {
+  // Vite only exposes VITE_-prefixed vars to client code (import.meta.env);
+  // it never touches process.env. The API middleware below runs as plain
+  // Node code in this same process, so it needs .env.local's values merged
+  // into process.env explicitly.
+  Object.assign(process.env, loadEnv(mode, process.cwd(), ''));
+
+  return {
+    root: '.',
+    plugins: [localApiPlugin()],
+    build: {
+      outDir: 'dist',
+    },
+  };
 });
