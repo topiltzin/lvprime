@@ -151,9 +151,9 @@
 
 **Purpose**: Testing, validation, and cleanup affecting all user stories
 
-- [ ] T053 [P] Add unit tests for `customer-data.js` DAL functions (mocking the Supabase client) in `app/tests/unit/database.test.js`, including `syncCoachWrite` conflict detection
-- [ ] T054 [P] Add integration tests against a Supabase test project in `app/tests/integration/customer-data.test.js` covering `getCustomer`, `addFeedbackEntry`, `updateCustomerNotes`, and `syncCoachWrite`
-- [ ] T055 [P] Add data integrity validation test comparing filesystem source files to migrated database rows (per quickstart.md Scenario 8)
+- [X] T053 [P] Add unit tests for `customer-data.js` DAL functions (mocking the Supabase client) in `app/tests/unit/database.test.js`, including `syncCoachWrite` conflict detection
+- [X] T054 [P] Add integration tests against a Supabase test project in `app/tests/integration/customer-data.test.js` covering `getCustomer`, `addFeedbackEntry`, `updateCustomerNotes`, and `syncCoachWrite`
+- [X] T055 [P] Add data integrity validation test comparing filesystem source files to migrated database rows (per quickstart.md Scenario 8)
 - [ ] T056 Run the full `quickstart.md` validation suite (Scenarios 1-8) end-to-end and record results
 - [X] T057 Remove or comment out now-unused filesystem read/write code paths in `app/server/index.js`, `app/server/customers-repo.js`, `app/server/feedback-writer.js`, `app/server/sync-state.js`, and `app/server/offline-queue.js` once migration is verified stable
 - [ ] T058 [P] Document Supabase environment variable setup and migration steps for future deployments in `app/README.md` or `CLAUDE.md`

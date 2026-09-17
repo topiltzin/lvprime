@@ -2,6 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { startTestServer, writeCustomer } from './helpers.js';
 
+// Superseded by specs/006-customer-data-storage for tests that need real
+// fixture content (server reads Supabase now, not FITNESS_DASHBOARD_CUSTOMERS_DIR).
+// See tests/integration/customer-data.test.js and
+// tests/integration/migration-data-integrity.test.js for the replacement
+// coverage. The 404-for-unknown-slug test below is unaffected (Supabase
+// correctly reports missing customers regardless of fixture data) and stays
+// enabled.
+const SKIP_REASON = 'superseded — server reads Supabase now, not the fixture filesystem (see file header)';
+
 const PROGRAM = `# Test Customer
 
 **Objetivo:** Build strength
@@ -31,7 +40,7 @@ const FEEDBACK = `# Test Customer - Feedback
 
 const NOTES = `# Coach Notes\n\nCustomer is progressing well.\n`;
 
-test('GET /api/customers/:slug returns program, notes, feedback, and attachments together', async (t) => {
+test('GET /api/customers/:slug returns program, notes, feedback, and attachments together', { skip: SKIP_REASON }, async (t) => {
   const server = await startTestServer((tmpDir) => {
     writeCustomer(tmpDir, 'test-customer', {
       'program.md': PROGRAM,
@@ -83,7 +92,7 @@ test('GET /api/customers/:slug returns 404 for an unknown slug', async (t) => {
   assert.equal(res.status, 404);
 });
 
-test('an existing folder missing all files still returns 200 with empty sections', async (t) => {
+test('an existing folder missing all files still returns 200 with empty sections', { skip: SKIP_REASON }, async (t) => {
   const server = await startTestServer((tmpDir) => {
     writeCustomer(tmpDir, 'empty-customer', {});
   });

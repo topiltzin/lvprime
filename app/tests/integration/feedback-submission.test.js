@@ -4,6 +4,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { startTestServer, writeCustomer } from './helpers.js';
 
+// Superseded by specs/006-customer-data-storage for tests that need a real
+// customer to exist (server checks Supabase now, not the fixture filesystem,
+// so a fixture-only customer 404s instead of reaching the 422 path under
+// test). See tests/integration/customer-data.test.js's addFeedbackEntry
+// coverage for the replacement. The 404-for-unknown-slug test below is
+// unaffected and stays enabled.
+const SKIP_REASON = 'superseded — server checks Supabase now, not the fixture filesystem (see file header)';
+
 const FEEDBACK = `# Test Customer - Feedback
 
 ### Formato de Entrada
@@ -14,7 +22,7 @@ const FEEDBACK = `# Test Customer - Feedback
 \`\`\`
 `;
 
-test('POST with a missing required field returns 422 and leaves feedback.md unchanged', async (t) => {
+test('POST with a missing required field returns 422 and leaves feedback.md unchanged', { skip: SKIP_REASON }, async (t) => {
   const server = await startTestServer((tmpDir) => {
     writeCustomer(tmpDir, 'test-customer', { 'feedback.md': FEEDBACK });
   });
@@ -37,7 +45,7 @@ test('POST with a missing required field returns 422 and leaves feedback.md unch
   assert.equal(after, before, 'feedback.md must be byte-for-byte unchanged after a rejected submission');
 });
 
-test('POST with all fields returns 201, appends a YYYY-MM-DD entry, and is reflected in a subsequent GET', async (t) => {
+test('POST with all fields returns 201, appends a YYYY-MM-DD entry, and is reflected in a subsequent GET', { skip: SKIP_REASON }, async (t) => {
   const server = await startTestServer((tmpDir) => {
     writeCustomer(tmpDir, 'test-customer', { 'feedback.md': FEEDBACK });
   });
