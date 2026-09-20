@@ -1,6 +1,20 @@
 // Hand-drawn inline SVG trend chart — no charting library (research.md §8).
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
+function readChartColors() {
+  const styles = getComputedStyle(document.documentElement);
+  const read = (name, fallback) => {
+    const value = styles.getPropertyValue(name).trim();
+    return value || fallback;
+  };
+  return {
+    completed: read('--chart-completed', read('--accent', '#1f7a4d')),
+    missed: read('--chart-missed', read('--danger', '#c23b22')),
+    label: read('--chart-label', read('--muted', '#6b6b64')),
+    hatch: read('--chart-hatch', '#ffffff'),
+  };
+}
+
 export function renderTrendChart(trend) {
   const wrap = document.createElement('div');
   wrap.className = 'trend-chart';
@@ -13,8 +27,7 @@ export function renderTrendChart(trend) {
   // Completion % is already shown in the stat strip above (renderFeedbackStatStrip) —
   // this chart focuses on the per-session trend, not a repeated summary number.
 
-  const COMPLETED_COLOR = '#1f7a4d';
-  const MISSED_COLOR = '#c23b22';
+  const colors = readChartColors();
   const BAR_WIDTH = 28;
   const BAR_GAP = 20;
   const width = Math.max(240, trend.points.length * (BAR_WIDTH + BAR_GAP));
@@ -44,7 +57,7 @@ export function renderTrendChart(trend) {
   hatchLine.setAttribute('y1', '0');
   hatchLine.setAttribute('x2', '0');
   hatchLine.setAttribute('y2', '6');
-  hatchLine.setAttribute('stroke', '#ffffff');
+  hatchLine.setAttribute('stroke', colors.hatch);
   hatchLine.setAttribute('stroke-width', '2');
   pattern.appendChild(hatchLine);
   defs.appendChild(pattern);
@@ -62,7 +75,7 @@ export function renderTrendChart(trend) {
     rect.setAttribute('width', BAR_WIDTH);
     rect.setAttribute('height', barHeight);
     rect.setAttribute('rx', 4);
-    rect.setAttribute('fill', missed ? MISSED_COLOR : COMPLETED_COLOR);
+    rect.setAttribute('fill', missed ? colors.missed : colors.completed);
     rect.setAttribute('opacity', point.difficultyScore ? '1' : '0.35');
     svg.appendChild(rect);
 
@@ -81,7 +94,7 @@ export function renderTrendChart(trend) {
     label.setAttribute('x', x);
     label.setAttribute('y', height - 8);
     label.setAttribute('font-size', '11');
-    label.setAttribute('fill', '#6b6b64');
+    label.setAttribute('fill', colors.label);
     label.setAttribute('text-anchor', 'middle');
     label.textContent = point.date ? point.date.slice(5) : '?';
     svg.appendChild(label);
@@ -102,8 +115,8 @@ export function renderTrendChart(trend) {
   const legend = document.createElement('div');
   legend.className = 'trend-legend';
   legend.innerHTML = `
-    <span class="trend-legend-item"><span class="trend-swatch" style="background:${COMPLETED_COLOR}"></span>Completed</span>
-    <span class="trend-legend-item"><span class="trend-swatch trend-swatch-missed" style="background:${MISSED_COLOR}"></span>Missed</span>
+    <span class="trend-legend-item"><span class="trend-swatch" style="background:${colors.completed}"></span>Completed</span>
+    <span class="trend-legend-item"><span class="trend-swatch trend-swatch-missed" style="background:${colors.missed}"></span>Missed</span>
   `;
   wrap.appendChild(legend);
 

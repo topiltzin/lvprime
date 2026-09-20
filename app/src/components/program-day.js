@@ -73,20 +73,31 @@ export function renderProgramDay(day) {
   return card;
 }
 
+function prefersReducedMotion() {
+  return typeof window !== 'undefined'
+    && window.matchMedia
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
 /** Sticky day-name chip subnav that jump-scrolls to each day's card (FR-012). */
 export function renderDaySubnav(weeklySchedule) {
   if (weeklySchedule.length <= 1) return null;
 
   const nav = document.createElement('nav');
   nav.className = 'day-subnav';
+  nav.setAttribute('aria-label', 'Program days');
   for (const day of weeklySchedule) {
-    const chip = document.createElement('a');
+    // Buttons (not #day- hash links) so chips don't collide with the hash router.
+    const chip = document.createElement('button');
+    chip.type = 'button';
     chip.className = 'day-chip';
-    chip.href = `#day-${slugifyDay(day.day)}`;
     chip.textContent = day.day;
-    chip.addEventListener('click', (e) => {
-      e.preventDefault();
-      document.getElementById(`day-${slugifyDay(day.day)}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    chip.addEventListener('click', () => {
+      const target = document.getElementById(`day-${slugifyDay(day.day)}`);
+      target?.scrollIntoView({
+        behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+        block: 'start',
+      });
     });
     nav.appendChild(chip);
   }
