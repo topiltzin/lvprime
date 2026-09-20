@@ -50,10 +50,27 @@
   --shadow-rest: 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.06);
 
+  /* Surfaces & interactive accents */
+  --muted-bg: #ebe8e2;
+  --accent-hover: #186a42;
+
+  /* Chart (trend bars — read via getComputedStyle in JS) */
+  --chart-completed: var(--accent);
+  --chart-missed: var(--danger);
+  --chart-label: var(--muted);
+  --chart-hatch: #ffffff;
+
   /* Motion */
   --motion-fast: 150ms;
   --motion-base: 200ms;
   --motion-ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fast: 0ms;
+    --motion-base: 0ms;
+  }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -75,5 +92,7 @@
     --danger-border: #5c261a;
     --warning-deep: #e8b979;
     --warning-tint: #3a2a12;
+    --muted-bg: #2c2a26;
+    --accent-hover: #2fc984;
   }
 }
