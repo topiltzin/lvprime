@@ -24,13 +24,29 @@ function sortByUrgency(customers) {
   });
 }
 
+function renderOverviewSkeleton(container) {
+  container.setAttribute('aria-busy', 'true');
+  container.innerHTML = `
+    <div class="loading-skeleton" aria-hidden="true">
+      <div class="skeleton-block skeleton-header"></div>
+      <div class="customer-list">
+        <div class="skeleton-block skeleton-card"></div>
+        <div class="skeleton-block skeleton-card"></div>
+        <div class="skeleton-block skeleton-card"></div>
+      </div>
+    </div>
+  `;
+}
+
 export async function renderOverview(container) {
-  container.innerHTML = '';
+  renderOverviewSkeleton(container);
 
   let data;
   try {
     data = await getCustomers();
   } catch (err) {
+    container.removeAttribute('aria-busy');
+    container.innerHTML = '';
     const header = document.createElement('div');
     header.className = 'page-header';
     header.innerHTML = '<h1>Clients</h1>';
@@ -41,6 +57,9 @@ export async function renderOverview(container) {
     container.appendChild(banner);
     return;
   }
+
+  container.removeAttribute('aria-busy');
+  container.innerHTML = '';
 
   if (!data.customers.length) {
     const header = document.createElement('div');
@@ -75,12 +94,24 @@ export async function renderOverview(container) {
   }
   container.appendChild(list);
 
+  const noResults = document.createElement('div');
+  noResults.className = 'no-search-results';
+  noResults.setAttribute('aria-hidden', 'true');
+  noResults.setAttribute('role', 'status');
+  noResults.textContent = 'No clients match your search.';
+  container.appendChild(noResults);
+
   const searchInput = header.querySelector('.client-search');
   searchInput.addEventListener('input', () => {
     const query = searchInput.value.trim().toLowerCase();
+    let visible = 0;
     for (const card of list.children) {
       const name = card.querySelector('h2')?.textContent.toLowerCase() || '';
-      card.hidden = query.length > 0 && !name.includes(query);
+      const match = query.length === 0 || name.includes(query);
+      card.hidden = !match;
+      if (match) visible += 1;
     }
+    const showEmpty = query.length > 0 && visible === 0;
+    noResults.setAttribute('aria-hidden', showEmpty ? 'false' : 'true');
   });
 }

@@ -220,10 +220,24 @@ export class TabContainer {
       feedbackData.entries.forEach((entry) => list.appendChild(renderFeedbackEntry(entry)));
       container.appendChild(list);
     } else {
+      const emptyWrap = document.createElement('div');
+      emptyWrap.className = 'empty-state-with-cta';
+
       const emptyMsg = document.createElement('p');
       emptyMsg.className = 'empty-state';
-      emptyMsg.textContent = 'No sessions logged yet. Go to "Add Entry" tab to log your first feedback.';
-      container.appendChild(emptyMsg);
+      emptyMsg.textContent = 'No sessions logged yet. Log a session to start tracking feedback.';
+      emptyWrap.appendChild(emptyMsg);
+
+      if (this.tabElements['add-entry']) {
+        const cta = document.createElement('button');
+        cta.type = 'button';
+        cta.className = 'empty-state-cta';
+        cta.textContent = 'Log Session';
+        cta.addEventListener('click', () => this.setActiveTab('add-entry'));
+        emptyWrap.appendChild(cta);
+      }
+
+      container.appendChild(emptyWrap);
     }
   }
 
@@ -312,7 +326,7 @@ export class TabContainer {
       // Add PDF download button
       const pdfButton = document.createElement('button');
       pdfButton.type = 'button';
-      pdfButton.className = 'nutrition-pdf-download-button';
+      pdfButton.className = 'pdf-download-button';
       pdfButton.textContent = 'Download PDF';
       pdfButton.addEventListener('click', () => {
         try {

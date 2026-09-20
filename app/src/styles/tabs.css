@@ -73,6 +73,12 @@
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .tab-panel {
+    animation: none;
+  }
+}
+
 .tab-content {
   display: flex;
   flex-direction: column;
@@ -171,7 +177,7 @@
 }
 
 .nutrition-body tr:nth-child(even) {
-  background-color: rgba(0, 0, 0, 0.02);
+  background-color: color-mix(in srgb, var(--ink) 4%, transparent);
 }
 
 .nutrition-body code {
@@ -228,26 +234,7 @@
   margin: 24px 0;
 }
 
-/* Nutrition PDF Download Button */
-.nutrition-pdf-download-button {
-  padding: 10px 20px;
-  background-color: var(--accent);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 150ms ease;
-  margin-top: 20px;
+/* Nutrition PDF uses the shared .pdf-download-button (main.css). */
+.tab-content-nutrition .pdf-download-button {
   align-self: flex-start;
-}
-
-.nutrition-pdf-download-button:hover {
-  background-color: var(--accent-dark, #0066cc);
-  opacity: 0.9;
-}
-
-.nutrition-pdf-download-button:active {
-  transform: scale(0.98);
 }

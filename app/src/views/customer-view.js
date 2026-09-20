@@ -152,13 +152,26 @@ function renderAttachments(container, attachments) {
   container.appendChild(section);
 }
 
+function renderCustomerSkeleton(container) {
+  container.setAttribute('aria-busy', 'true');
+  container.innerHTML = `
+    <div class="loading-skeleton" aria-hidden="true">
+      <div class="skeleton-block skeleton-hero"></div>
+      <div class="skeleton-block skeleton-tabs"></div>
+      <div class="skeleton-block skeleton-panel"></div>
+    </div>
+  `;
+}
+
 export async function renderCustomer(container, slug) {
-  container.innerHTML = '';
+  renderCustomerSkeleton(container);
 
   let data;
   try {
     data = await getCustomer(slug);
   } catch (err) {
+    container.removeAttribute('aria-busy');
+    container.innerHTML = '';
     const header = document.createElement('div');
     header.className = 'page-header';
     header.innerHTML = '<a class="back-link" href="#/">&larr; All clients</a>';
@@ -170,6 +183,8 @@ export async function renderCustomer(container, slug) {
     return;
   }
 
+  container.removeAttribute('aria-busy');
+  container.innerHTML = '';
   container.appendChild(renderClientHero(data));
 
   // Build tab configuration and data
