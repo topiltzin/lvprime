@@ -24,6 +24,7 @@ import {
   syncCoachWrite,
   CustomerNotFoundError,
 } from '../lib/customer-data.js';
+import { checkCoverage, formatCoverageReport } from './check-exercise-coverage.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // server/scripts -> server -> app -> repo root -> customers/
@@ -40,6 +41,22 @@ function toDisplayName(slug) {
     .split('-')
     .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
     .join(' ');
+}
+
+/**
+ * Reports exercise-coverage gaps (specs/008-exercise-coverage-backfill) as
+ * part of a program publish's own output (specs/009-publish-coverage-check
+ * FR-001, FR-003). Never throws — a failed check must never turn a
+ * successful publish into a failed one (FR-004); any error is logged as a
+ * warning and swallowed here so callers never need their own try/catch.
+ */
+export async function reportProgramCoverage() {
+  try {
+    const report = await checkCoverage();
+    console.log('\n' + formatCoverageReport(report));
+  } catch (err) {
+    console.warn('Exercise coverage check failed (publish already succeeded):', err.message);
+  }
 }
 
 async function main() {
@@ -77,9 +94,15 @@ async function main() {
     `Published ${slug}/${fileType}: version ${currentVersion} -> ${result.newVersion}` +
       (result.conflicted ? ' (server had a newer version; coach changes applied anyway)' : '')
   );
+
+  if (fileType === 'program') await reportProgramCoverage();
 }
 
-main().catch((err) => {
-  console.error('Publish failed:', err.message);
-  process.exit(1);
-});
+// Guarded so importing reportProgramCoverage() for testing doesn't also run
+// main() (which reads process.argv and would exit the test process).
+if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((err) => {
+    console.error('Publish failed:', err.message);
+    process.exit(1);
+  });
+}
