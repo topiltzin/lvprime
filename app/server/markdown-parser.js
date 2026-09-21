@@ -124,9 +124,13 @@ const FORM_TIP_LINE = /^\s*-\s*(?:Forma|Form tip|Form)\s*:\s*(.+)$/i;
 
 /**
  * Extract structured exercise rows from one training day's Markdown body lines.
- * @returns {Array<{name: string, setsReps: string, rest: string|null, formTip: string|null}>}
+ * @param {Map<string, string>} [videoLinkMap] lowercased/trimmed exercise name -> video URL
+ *   (specs/007-exercise-library-migration/contracts/exercise-video-linking.md). Matching is
+ *   case-insensitive but otherwise exact; a miss (or no map at all) yields videoUrl: null,
+ *   never a thrown error.
+ * @returns {Array<{name: string, setsReps: string, rest: string|null, formTip: string|null, videoUrl: string|null}>}
  */
-function extractExercises(bodyLines) {
+function extractExercises(bodyLines, videoLinkMap) {
   const exercises = [];
   for (let i = 0; i < bodyLines.length; i++) {
     const match = bodyLines[i].match(EXERCISE_LINE);
@@ -151,7 +155,9 @@ function extractExercises(bodyLines) {
       if (tipMatch) formTip = tipMatch[1].trim();
     }
 
-    exercises.push({ name, setsReps, rest, formTip });
+    const videoUrl = videoLinkMap?.get(name.toLowerCase()) ?? null;
+
+    exercises.push({ name, setsReps, rest, formTip, videoUrl });
   }
   return exercises;
 }
@@ -188,8 +194,10 @@ function parseWeeklyProgression(progressionSectionText) {
  * block per day-of-week heading (any heading level whose text starts with a day
  * name, in English or Spanish — covers both existing customer templates), and
  * any "Progresión"/"Progression" section(s).
+ * @param {Map<string, string>} [videoLinkMap] see extractExercises() — optional;
+ *   omitting it (or passing an empty map) makes every exercise's videoUrl null.
  */
-export function parseProgramDetail(programMdText, renderMarkdown) {
+export function parseProgramDetail(programMdText, renderMarkdown, videoLinkMap) {
   const fitnessLevel = matchLabelLine(programMdText, /Nivel|Level/i);
   const sessionDuration = matchLabelLine(programMdText, /Duraci[oó]n|Duration/i);
   const planDuration = matchLabelLine(programMdText, /Duraci[oó]n del Plan/i);
@@ -222,7 +230,7 @@ export function parseProgramDetail(programMdText, renderMarkdown) {
       day,
       focus,
       html: renderMarkdown(bodyLines.join('\n').trim()),
-      exercises: extractExercises(bodyLines),
+      exercises: extractExercises(bodyLines, videoLinkMap),
     });
     i = j - 1;
   }

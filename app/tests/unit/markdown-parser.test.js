@@ -133,6 +133,34 @@ test('parseProgramDetail extracts exercise rows from a real English program (top
   assert.equal(bench.formTip, 'Full range of motion, chest to bar, feet planted');
 });
 
+// specs/007-exercise-library-migration/contracts/exercise-video-linking.md
+test('parseProgramDetail resolves videoUrl case-insensitively against a supplied videoLinkMap', () => {
+  const text = `# Test Program
+
+### Monday - Full Body
+1. **Push-Up** - 3 x 12 - Rest 60s
+2. **Squat** - 3 x 8 - Rest 90s
+`;
+  const videoLinkMap = new Map([
+    ['push-up', 'https://www.youtube.com/watch?v=WDIpL0pjun0'], // lowercase in map, "Push-Up" in program
+  ]);
+  const detail = parseProgramDetail(text, renderMarkdown, videoLinkMap);
+  const [pushUp, squat] = detail.weeklySchedule[0].exercises;
+
+  assert.equal(pushUp.videoUrl, 'https://www.youtube.com/watch?v=WDIpL0pjun0');
+  assert.equal(squat.videoUrl, null, 'no matching map entry must resolve to null, not throw');
+});
+
+test('parseProgramDetail resolves every videoUrl to null when no videoLinkMap is supplied', () => {
+  const text = `# Test Program
+
+### Monday - Full Body
+1. **Push-Up** - 3 x 12 - Rest 60s
+`;
+  const detail = parseProgramDetail(text, renderMarkdown);
+  assert.equal(detail.weeklySchedule[0].exercises[0].videoUrl, null);
+});
+
 test('parseProgramDetail falls back to an empty exercises array (html still populated) for a day with no matching lines', () => {
   const text = `# Test Program
 

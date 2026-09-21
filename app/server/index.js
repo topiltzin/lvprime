@@ -10,6 +10,7 @@ import {
   getCustomerNotes,
   getCustomerNutritionPlan,
   getCustomerFullProfile,
+  getExerciseVideoLinkMap,
   addFeedbackEntry,
   listAllCustomers,
   computeFeedbackTrend,
@@ -70,13 +71,15 @@ async function handleGetCustomers(req, res) {
 }
 
 async function handleGetCustomer(req, res, slug) {
-  let profile;
+  let profile, videoLinkMap;
   try {
     // Runs the 4 related-table queries in parallel instead of resolving the
     // customer 5 times sequentially (per-slug getCustomer* calls) — that was
     // ~9 sequential Supabase round trips and blew past the <500ms target
-    // (spec SC-004).
-    profile = await getCustomerFullProfile(slug);
+    // (spec SC-004). getExerciseVideoLinkMap() isn't customer-scoped, so it
+    // runs alongside rather than inside that per-customer Promise.all
+    // (specs/007-exercise-library-migration plan.md Performance Goals).
+    [profile, videoLinkMap] = await Promise.all([getCustomerFullProfile(slug), getExerciseVideoLinkMap()]);
   } catch (err) {
     if (err instanceof CustomerNotFoundError) {
       sendJson(res, 404, { error: 'customer_not_found' });
@@ -88,7 +91,7 @@ async function handleGetCustomer(req, res, slug) {
 
   let program = { present: !!programRow };
   if (programRow) {
-    const detail = parseProgramDetail(programRow.content, renderMarkdown);
+    const detail = parseProgramDetail(programRow.content, renderMarkdown, videoLinkMap);
     program = { present: true, goal: parseProgramGoal(programRow.content), ...detail };
   }
 

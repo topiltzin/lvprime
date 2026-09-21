@@ -563,4 +563,71 @@ export async function getRecentSyncEvents(slug, limit = 10) {
   return data || [];
 }
 
+// ---- Exercise library (specs/007-exercise-library-migration) ----
+
+const EXERCISE_NAME_MAX = 255;
+const VIDEO_URL_RE = /^https?:\/\//i;
+
+function assertValidExerciseName(name) {
+  if (typeof name !== 'string' || name.trim().length === 0 || name.length > EXERCISE_NAME_MAX) {
+    throw new ValidationError('name', `must be a non-empty string of at most ${EXERCISE_NAME_MAX} chars, got "${name}"`);
+  }
+}
+
+function assertValidVideoUrl(videoUrl) {
+  if (videoUrl == null) return;
+  if (typeof videoUrl !== 'string' || !VIDEO_URL_RE.test(videoUrl)) {
+    throw new ValidationError('videoUrl', `must be an http(s) URL, got "${videoUrl}"`);
+  }
+}
+
+/** Replaces exercise.md — every reference row, alphabetical by name. */
+export async function listExercises() {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase.from('exercises').select('*').order('name');
+  if (error) throw dbError('listExercises', error);
+  return data || [];
+}
+
+/**
+ * One query, returns a Map of trimmed/lowercased exercise name -> video_url,
+ * excluding rows with no video_url set (contracts/exercise-data-api.md). This
+ * is what parseProgramDetail() uses to resolve each workout exercise's
+ * videoUrl without one DB round trip per exercise line.
+ */
+export async function getExerciseVideoLinkMap() {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase.from('exercises').select('name, video_url');
+  if (error) throw dbError('getExerciseVideoLinkMap', error);
+  const map = new Map();
+  for (const row of data || []) {
+    if (row.video_url) map.set(row.name.trim().toLowerCase(), row.video_url);
+  }
+  return map;
+}
+
+/**
+ * Inserts a new exercise or updates the existing one matched case-insensitively
+ * by name (spec FR-008). Looks the table up client-side rather than using
+ * Supabase's ilike/onConflict filters — the library is small (~40-90 rows,
+ * plan.md Scale/Scope) and this avoids ilike's %/_ wildcard-escaping footgun
+ * for arbitrary exercise names.
+ */
+export async function upsertExercise(name, { category = null, videoUrl = null } = {}) {
+  assertValidExerciseName(name);
+  assertValidVideoUrl(videoUrl);
+
+  const supabase = getSupabaseClient();
+  const { data: rows, error: findError } = await supabase.from('exercises').select('id, name');
+  if (findError) throw dbError(`upsertExercise(${name}) lookup`, findError);
+  const existing = (rows || []).find((r) => r.name.trim().toLowerCase() === name.trim().toLowerCase());
+
+  const payload = { name, category, video_url: videoUrl, updated_at: new Date().toISOString() };
+  const { data, error } = existing
+    ? await supabase.from('exercises').update(payload).eq('id', existing.id).select().single()
+    : await supabase.from('exercises').insert(payload).select().single();
+  if (error) throw dbError(`upsertExercise(${name})`, error);
+  return data;
+}
+
 export { computeContentHash };

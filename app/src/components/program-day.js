@@ -9,7 +9,14 @@ function renderExerciseRow(exercise) {
   const main = document.createElement('div');
   main.className = 'exercise-row-main';
 
-  const name = document.createElement('span');
+  // Exercise name doubles as the link to its form-demo video when one is known
+  // (specs/007-exercise-library-migration/contracts/exercise-video-linking.md).
+  const name = document.createElement(exercise.videoUrl ? 'a' : 'span');
+  if (exercise.videoUrl) {
+    name.href = exercise.videoUrl;
+    name.target = '_blank';
+    name.rel = 'noopener noreferrer';
+  }
   name.className = 'exercise-name';
   name.textContent = exercise.name;
   main.appendChild(name);
