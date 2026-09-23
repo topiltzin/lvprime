@@ -1,20 +1,20 @@
-// Program week PDF export (User Story 2 / contracts/pdf-export-download.md): builds a
-// plain content model for whichever week is currently selected, then renders it with
-// jsPDF as real, selectable text (not a DOM screenshot — research.md §1) and triggers a
-// browser download.
+// Program week PDF export: builds a plain content model for the week currently shown,
+// then renders it with jsPDF as real, selectable text (not a DOM screenshot) and
+// triggers a browser download.
 
 import { jsPDF } from 'jspdf';
-import { resolveProgressionText } from './week-subnav.js';
 
 /**
  * Pure content-model builder — no DOM, no jsPDF — so it's testable with plain
- * `node --test` assertions (data-model.md's Program PDF Document).
+ * `node --test` assertions. `weekDetail` is one week's own parsed routine
+ * (GET /api/customers/:slug/program/weeks/:week), never a schedule shared across weeks.
  */
-export function buildProgramWeekPdfContent(weekNumber, programDetail) {
+export function buildProgramWeekPdfContent(weekDetail) {
   return {
-    weekLabel: `Week ${weekNumber}`,
-    days: programDetail.weeklySchedule || [],
-    progressionText: resolveProgressionText(weekNumber, programDetail.weeklyProgression),
+    weekNumber: weekDetail.weekNumber,
+    weekLabel: `Week ${weekDetail.weekNumber}`,
+    days: weekDetail.weeklySchedule || [],
+    progressionHtml: weekDetail.progressionHtml || null,
   };
 }
 
@@ -75,13 +75,12 @@ function renderDay(doc, day, y, maxWidth) {
 }
 
 /**
- * Builds the content model for `weekNumber`, renders it with jsPDF, and triggers a
- * browser download named `<customerSlug>-week-<weekNumber>.pdf` (FR-006, FR-007, FR-008).
- * Empty schedule → an explicit "No schedule available." line rather than a blank/broken
- * file (spec.md Edge Cases).
+ * Renders `weekDetail` with jsPDF and triggers a browser download named
+ * `<customerSlug>-week-<weekNumber>.pdf`. Empty schedule → an explicit
+ * "No schedule available." line rather than a blank/broken file.
  */
-export function downloadProgramWeekPdf(weekNumber, programDetail, customerSlug) {
-  const content = buildProgramWeekPdfContent(weekNumber, programDetail);
+export function downloadProgramWeekPdf(weekDetail, customerSlug) {
+  const content = buildProgramWeekPdfContent(weekDetail);
 
   const doc = new jsPDF({ unit: 'pt' });
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -93,26 +92,33 @@ export function downloadProgramWeekPdf(weekNumber, programDetail, customerSlug) 
   doc.text(content.weekLabel, MARGIN_X, y);
   y += 30;
 
-  doc.setFontSize(12);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Progression', MARGIN_X, y);
-  y += 18;
-  doc.setFont('helvetica', 'normal');
-  const progressionLines = doc.splitTextToSize(content.progressionText, maxWidth);
-  doc.text(progressionLines, MARGIN_X, y);
-  y += progressionLines.length * 14 + 16;
-
   if (content.days.length === 0) {
     y = addPageIfNeeded(doc, y);
     doc.setFont('helvetica', 'italic');
     doc.text('No schedule available.', MARGIN_X, y);
+    y += 30;
   } else {
     for (const day of content.days) {
       y = renderDay(doc, day, y, maxWidth);
     }
   }
 
-  const fileName = `${customerSlug}-week-${weekNumber}.pdf`;
+  const progressionText = htmlToPlainText(content.progressionHtml);
+  if (progressionText) {
+    y = addPageIfNeeded(doc, y);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Progression', MARGIN_X, y);
+    y += 18;
+    doc.setFont('helvetica', 'normal');
+    for (const line of doc.splitTextToSize(progressionText, maxWidth)) {
+      y = addPageIfNeeded(doc, y);
+      doc.text(line, MARGIN_X, y);
+      y += 14;
+    }
+  }
+
+  const fileName = `${customerSlug}-week-${content.weekNumber}.pdf`;
   const blob = doc.output('blob');
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');

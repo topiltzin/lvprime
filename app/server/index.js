@@ -10,6 +10,8 @@ import {
   getCustomerNotes,
   getCustomerNutritionPlan,
   getCustomerFullProfile,
+  getCustomerProgramWeek,
+  listCustomerProgramWeeks,
   getExerciseVideoLinkMap,
   addFeedbackEntry,
   listAllCustomers,
@@ -17,6 +19,9 @@ import {
   syncCoachWrite,
   getSyncState,
   CustomerNotFoundError,
+  WeekNotFoundError,
+  WeekLockedError,
+  WeekNumberGapError,
 } from './lib/customer-data.js';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -65,6 +70,51 @@ function toFeedbackEntryJson(row) {
   };
 }
 
+// One week's parsed routine (specs/010 contracts/weekly-routine-api.md).
+function programWeekJson(row, videoLinkMap, { isCurrent, isLocked }) {
+  return {
+    present: true,
+    goal: parseProgramGoal(row.content),
+    ...parseProgramDetail(row.content, renderMarkdown, videoLinkMap),
+    weekNumber: row.week_number,
+    isCurrent,
+    isLocked,
+    version: row.version,
+    updatedAt: row.updated_at,
+  };
+}
+
+// Optional ?week_number= / body week_number. Returns null when absent,
+// NaN when present but not a positive integer.
+function parseWeekNumber(value) {
+  if (value === undefined || value === null || value === '') return null;
+  const n = Number(value);
+  return Number.isInteger(n) && n >= 1 ? n : NaN;
+}
+
+async function handleGetProgramWeeks(req, res, slug) {
+  try {
+    const weeks = await listCustomerProgramWeeks(slug);
+    sendJson(res, 200, { weeks });
+  } catch (err) {
+    if (err instanceof CustomerNotFoundError) return sendJson(res, 404, { error: 'customer_not_found' });
+    throw err;
+  }
+}
+
+async function handleGetProgramWeek(req, res, slug, weekParam) {
+  const weekNumber = parseWeekNumber(weekParam);
+  if (!weekNumber) return sendJson(res, 422, { error: 'validation_failed', fields: { week: 'must be a positive integer' } });
+  try {
+    const [row, videoLinkMap] = await Promise.all([getCustomerProgramWeek(slug, weekNumber), getExerciseVideoLinkMap()]);
+    sendJson(res, 200, programWeekJson(row, videoLinkMap, row));
+  } catch (err) {
+    if (err instanceof CustomerNotFoundError) return sendJson(res, 404, { error: 'customer_not_found' });
+    if (err instanceof WeekNotFoundError) return sendJson(res, 404, { error: 'week_not_found', weekNumber });
+    throw err;
+  }
+}
+
 async function handleGetCustomers(req, res) {
   const rows = await listAllCustomers();
   sendJson(res, 200, { customers: rows });
@@ -87,13 +137,19 @@ async function handleGetCustomer(req, res, slug) {
     }
     throw err;
   }
-  const { customer, program: programRow, notes: notesRow, nutritionPlan: nutritionRow, feedback } = profile;
+  const {
+    customer,
+    program: programRow,
+    programWeeks,
+    notes: notesRow,
+    nutritionPlan: nutritionRow,
+    feedback,
+  } = profile;
 
-  let program = { present: !!programRow };
-  if (programRow) {
-    const detail = parseProgramDetail(programRow.content, renderMarkdown, videoLinkMap);
-    program = { present: true, goal: parseProgramGoal(programRow.content), ...detail };
-  }
+  // programRow is the current (highest) week — see getCustomerFullProfile.
+  const program = programRow
+    ? programWeekJson(programRow, videoLinkMap, { isCurrent: true, isLocked: false })
+    : { present: false };
 
   let notes = { present: !!notesRow };
   if (notesRow) {
@@ -125,6 +181,7 @@ async function handleGetCustomer(req, res, slug) {
     slug: customer.slug,
     displayName: customer.name,
     program,
+    programWeeks,
     notes,
     nutrition,
     feedback: { entries, trend, template: feedback.template },
@@ -240,6 +297,10 @@ async function handleSyncUpload(req, res) {
   try {
     const body = await readJsonBody(req);
     const { customer_id, file_type, current_version, content, content_hash } = body;
+    const weekNumber = parseWeekNumber(body.week_number);
+    if (Number.isNaN(weekNumber)) {
+      return sendJson(res, 422, { error: 'validation_failed', fields: { week_number: 'must be a positive integer' } });
+    }
 
     // Validate required fields
     if (!customer_id || !file_type || current_version === undefined || !content || !content_hash) {
@@ -281,16 +342,29 @@ async function handleSyncUpload(req, res) {
       });
     }
 
-    const result = await syncCoachWrite(customer_id, file_type, {
-      currentVersion: current_version,
-      content,
-      contentHash: content_hash,
-    });
+    let result;
+    try {
+      result = await syncCoachWrite(customer_id, file_type, {
+        weekNumber: file_type === 'program' ? weekNumber : null,
+        currentVersion: current_version,
+        content,
+        contentHash: content_hash,
+      });
+    } catch (err) {
+      if (err instanceof WeekLockedError) {
+        return sendJson(res, 423, { error: 'week_locked', weekNumber: err.weekNumber, currentWeek: err.currentWeek });
+      }
+      if (err instanceof WeekNumberGapError) {
+        return sendJson(res, 400, { error: 'week_number_gap', expected: err.expected });
+      }
+      throw err;
+    }
 
     sendJson(res, 201, {
       status: 'synced',
       customer_id,
       file_type,
+      week_number: result.weekNumber,
       new_version: result.newVersion,
       server_version: result.serverVersion,
       last_sync_timestamp: new Date().toISOString(),
@@ -311,6 +385,10 @@ async function handleSyncDownload(req, res) {
     const customer_id = url.searchParams.get('customer_id');
     const file_type = url.searchParams.get('file_type');
     const current_version = url.searchParams.get('current_version');
+    const weekNumber = parseWeekNumber(url.searchParams.get('week_number'));
+    if (Number.isNaN(weekNumber)) {
+      return sendJson(res, 422, { error: 'validation_failed', fields: { week_number: 'must be a positive integer' } });
+    }
 
     if (!customer_id || !file_type) {
       return sendJson(res, 422, {
@@ -329,7 +407,7 @@ async function handleSyncDownload(req, res) {
       throw err;
     }
 
-    const state = await getSyncState(customer_id, file_type);
+    const state = await getSyncState(customer_id, file_type, weekNumber);
     if (!state) {
       return sendJson(res, 404, { error: 'not_found', message: 'File never synced' });
     }
@@ -343,7 +421,7 @@ async function handleSyncDownload(req, res) {
 
     const row =
       file_type === 'program'
-        ? await getCustomerProgram(customer_id)
+        ? await getCustomerProgram(customer_id, weekNumber)
         : file_type === 'nutrition_plan'
           ? await getCustomerNutritionPlan(customer_id)
           : await getCustomerNotes(customer_id);
@@ -373,12 +451,16 @@ async function handleSyncStatus(req, res) {
   try {
     const url = new URL(req.url, 'http://localhost');
     const customer_id = url.searchParams.get('customer_id');
+    const weekNumber = parseWeekNumber(url.searchParams.get('week_number'));
 
     if (!customer_id) {
       return sendJson(res, 422, {
         error: 'validation_failed',
         fields: { customer_id: 'required' }
       });
+    }
+    if (Number.isNaN(weekNumber)) {
+      return sendJson(res, 422, { error: 'validation_failed', fields: { week_number: 'must be a positive integer' } });
     }
 
     try {
@@ -391,7 +473,7 @@ async function handleSyncStatus(req, res) {
     // Get status for program/notes (version-tracked, per sync-engine.js)
     const files = {};
     for (const fileType of ['program', 'notes']) {
-      const state = await getSyncState(customer_id, fileType);
+      const state = await getSyncState(customer_id, fileType, fileType === 'program' ? weekNumber : null);
       files[fileType] = state
         ? { status: state.syncStatus, current_version: state.version, last_sync_timestamp: state.updatedAt }
         : { status: 'not_initialized' };
@@ -430,6 +512,16 @@ const ROUTES = [
     method: 'GET',
     pattern: /^\/api\/customers\/([^/]+)\/?$/,
     handler: (req, res, m) => handleGetCustomer(req, res, decodeURIComponent(m[1])),
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/customers\/([^/]+)\/program\/weeks\/?$/,
+    handler: (req, res, m) => handleGetProgramWeeks(req, res, decodeURIComponent(m[1])),
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/customers\/([^/]+)\/program\/weeks\/([^/]+)\/?$/,
+    handler: (req, res, m) => handleGetProgramWeek(req, res, decodeURIComponent(m[1]), decodeURIComponent(m[2])),
   },
   {
     method: 'GET',

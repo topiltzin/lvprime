@@ -1,5 +1,8 @@
 # Contract: Program Week Selector
 
+> **Superseded** by `specs/010-weekly-routine-versioning/contracts/week-tab-navigation-v2.md`
+> (2026-09-23). Weeks are now independent routines; do not implement against this contract.
+
 **Component**: `week-subnav.js` (new) + `tab-container.js`'s `renderProgramContent`
 (`app/src/components/`)
 **Requirement Refs**: FR-001, FR-002, FR-003, FR-010, FR-011

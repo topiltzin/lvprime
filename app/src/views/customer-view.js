@@ -90,7 +90,10 @@ function buildTabConfig(data) {
  * Prepare tab data from customer data
  */
 function buildTabData(customerData) {
-  const program = customerData.program && customerData.program.present ? customerData.program : null;
+  const program =
+    customerData.program && customerData.program.present
+      ? { ...customerData.program, weeks: customerData.programWeeks || [] }
+      : null;
 
   const rawFeedback = customerData.feedback || { entries: [], trend: null };
   // Map API field names (date, felt, completed, difficulty, notes) to display model.

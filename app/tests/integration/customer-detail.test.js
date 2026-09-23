@@ -65,10 +65,8 @@ test('GET /api/customers/:slug returns program, notes, feedback, and attachments
   assert.equal(body.program.weeklySchedule[0].exercises[0].setsReps, '3 x 8');
   assert.equal(body.program.weeklySchedule[0].exercises[0].rest, '90s');
 
-  assert.deepEqual(body.program.weeklyProgression, [
-    { weekNumber: 1, text: 'Find a comfortable load.' },
-    { weekNumber: 2, text: 'Increase reps within the given range.' },
-  ]);
+  assert.equal(body.program.weekNumber, 1);
+  assert.match(body.program.progressionHtml, /Find a comfortable load/);
 
   assert.equal(body.notes.present, true);
   assert.match(body.notes.html, /progressing well/);

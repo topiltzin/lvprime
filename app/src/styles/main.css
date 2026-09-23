@@ -415,7 +415,22 @@ h3 {
   outline-offset: 2px;
 }
 
-.program-progression-note {
+.week-chip.locked:not(.active) {
+  border-style: dashed;
+}
+
+.week-chip.locked::before {
+  content: '🔒 ';
+  font-size: 0.85em;
+}
+
+.program-week-body.loading {
+  opacity: 0.55;
+  pointer-events: none;
+  transition: opacity 150ms ease;
+}
+
+.program-week-status {
   background: var(--accent-tint);
   border-radius: var(--radius-card);
   padding: 0.9rem 1.1rem;

@@ -5,8 +5,9 @@
 
 import { marked } from 'marked';
 import { renderProgramDay, renderDaySubnav } from './program-day.js';
-import { renderWeekSubnav, resolveProgressionText } from './week-subnav.js';
+import { renderWeekSubnav } from './week-subnav.js';
 import { downloadProgramWeekPdf } from './program-pdf.js';
+import { getProgramWeek } from '../api-client.js';
 import { downloadNutritionPdf } from './nutrition-pdf.js';
 import { renderFeedbackEntry } from './feedback-entry.js';
 import { renderTrendChart } from './trend-chart.js';
@@ -22,9 +23,8 @@ export class TabContainer {
     this.activeTabId = (tabs.find((t) => t.isEnabled) || {}).id || null;
     this.tabElements = {};
     this.panelElements = {};
-    // Program tab week selector state (contracts/week-tab-navigation.md): resets to Week 1
-    // on every fresh TabContainer instance, i.e. every customer page load.
-    this.activeWeek = 1;
+    // Program tab week; set to the customer's current week in renderProgramContent.
+    this.activeWeek = null;
 
     // Options for feedback form integration
     this.slug = options.slug; // Customer slug for feedback API calls
@@ -151,56 +151,94 @@ export class TabContainer {
     return container;
   }
 
+  // Each week is its own routine (specs/010 contracts/week-tab-navigation-v2.md). `program`
+  // is the current week's detail; other weeks are fetched on first view and cached for
+  // this page visit.
   renderProgramContent(container, program) {
-    // Week 1-4 selector (User Story 1): reuses the same day-by-day schedule below for
-    // every week (FR-003, FR-011) and only swaps the progression note text on switch. The
-    // subnav element itself manages its own active-chip state in place (never torn down
-    // and rebuilt — see week-subnav.js), so keyboard focus survives arrow-key navigation.
-    const progressionNoteEl = document.createElement('div');
-    progressionNoteEl.className = 'program-progression-note';
-    progressionNoteEl.textContent = resolveProgressionText(this.activeWeek, program.weeklyProgression);
+    const weeks = program.weeks && program.weeks.length
+      ? program.weeks
+      : [{ weekNumber: program.weekNumber ?? 1, isCurrent: true, isLocked: false }];
+    this.activeWeek = program.weekNumber ?? weeks[weeks.length - 1].weekNumber;
+    const weekCache = new Map([[this.activeWeek, program]]);
 
-    const weekSubnav = renderWeekSubnav(this.activeWeek, (weekNumber) => {
+    const weekBody = document.createElement('div');
+    weekBody.className = 'program-week-body';
+
+    const showWeek = async (weekNumber) => {
       this.activeWeek = weekNumber;
-      progressionNoteEl.textContent = resolveProgressionText(weekNumber, program.weeklyProgression);
-    });
-    container.appendChild(weekSubnav);
-    container.appendChild(progressionNoteEl);
-
-    if (program.weeklySchedule && program.weeklySchedule.length) {
-      const subnav = renderDaySubnav(program.weeklySchedule);
-      if (subnav) container.appendChild(subnav);
-
-      const scheduleSection = document.createElement('div');
-      scheduleSection.className = 'weekly-schedule';
-      for (const day of program.weeklySchedule) {
-        scheduleSection.appendChild(renderProgramDay(day));
+      let detail = weekCache.get(weekNumber);
+      if (!detail) {
+        weekBody.classList.add('loading');
+        weekBody.setAttribute('aria-busy', 'true');
+        try {
+          detail = await getProgramWeek(this.slug, weekNumber);
+          weekCache.set(weekNumber, detail);
+        } catch (err) {
+          showToast(`Could not load week ${weekNumber}. Please try again.`, 3000, 'error');
+          return;
+        } finally {
+          weekBody.classList.remove('loading');
+          weekBody.removeAttribute('aria-busy');
+        }
       }
-      container.appendChild(scheduleSection);
-    }
+      // A slower fetch must not overwrite a week the user has since switched to.
+      if (this.activeWeek === weekNumber) this.renderProgramWeek(weekBody, detail);
+    };
 
-    if (program.progressionHtml) {
-      const progression = document.createElement('div');
-      progression.className = 'card program-progression';
-      progression.innerHTML = program.progressionHtml;
-      container.appendChild(progression);
-    }
+    container.appendChild(renderWeekSubnav(weeks, this.activeWeek, showWeek));
+    container.appendChild(weekBody);
+    this.renderProgramWeek(weekBody, program);
 
-    // "Download PDF" (User Story 2): always acts on whichever week is active at click
-    // time, reading `this.activeWeek` fresh rather than closing over the value at
-    // render time (spec.md User Story 2 Acceptance Scenario 2).
+    // Acts on whichever week is showing at click time, not the one at render time.
     const pdfButton = document.createElement('button');
     pdfButton.type = 'button';
     pdfButton.className = 'pdf-download-button';
     pdfButton.textContent = 'Download PDF';
     pdfButton.addEventListener('click', () => {
+      const detail = weekCache.get(this.activeWeek);
+      if (!detail) return;
       try {
-        downloadProgramWeekPdf(this.activeWeek, program, this.slug);
+        downloadProgramWeekPdf(detail, this.slug);
       } catch (err) {
         showToast('Could not generate the PDF. Please try again.', 3000, 'error');
       }
     });
     container.appendChild(pdfButton);
+  }
+
+  renderProgramWeek(weekBody, detail) {
+    weekBody.innerHTML = '';
+
+    if (detail.isLocked) {
+      const status = document.createElement('div');
+      status.className = 'program-week-status';
+      status.textContent = `Week ${detail.weekNumber} · past week, read-only`;
+      weekBody.appendChild(status);
+    }
+
+    if (detail.weeklySchedule && detail.weeklySchedule.length) {
+      const subnav = renderDaySubnav(detail.weeklySchedule);
+      if (subnav) weekBody.appendChild(subnav);
+
+      const scheduleSection = document.createElement('div');
+      scheduleSection.className = 'weekly-schedule';
+      for (const day of detail.weeklySchedule) {
+        scheduleSection.appendChild(renderProgramDay(day));
+      }
+      weekBody.appendChild(scheduleSection);
+    } else {
+      const empty = document.createElement('p');
+      empty.className = 'empty-state';
+      empty.textContent = 'No schedule for this week.';
+      weekBody.appendChild(empty);
+    }
+
+    if (detail.progressionHtml) {
+      const progression = document.createElement('div');
+      progression.className = 'card program-progression';
+      progression.innerHTML = detail.progressionHtml;
+      weekBody.appendChild(progression);
+    }
   }
 
   renderFeedbackContent(container, feedbackData) {

@@ -9,6 +9,7 @@
 import { getSupabaseClient } from './database-client.js';
 import { computeContentHash, verifyContentHash } from '../hash-utils.js';
 import { resolveCoachSync } from '../sync-engine.js';
+import { deriveWeekState, validateNextWeekNumber } from './week-lock-rule.js';
 import {
   extractFeedbackTemplate,
   parseFeedbackEntries,
@@ -34,6 +35,17 @@ export class ValidationError extends Error {
     this.field = field;
   }
 }
+
+export class WeekNotFoundError extends Error {
+  constructor(slug, weekNumber) {
+    super(`No program for ${slug} week ${weekNumber}`);
+    this.name = 'WeekNotFoundError';
+    this.code = 'WEEK_NOT_FOUND';
+    this.weekNumber = weekNumber;
+  }
+}
+
+export { WeekLockedError, WeekNumberGapError } from './week-lock-rule.js';
 
 export class DatabaseError extends Error {
   constructor(message, cause) {
@@ -93,11 +105,37 @@ export async function getCustomer(slug) {
 // trips and blowing past the <500ms target (spec SC-004). The public
 // getCustomerXxx(slug) functions below are unchanged for other callers.
 
-async function getCustomerProgramById(customerId) {
+// programs holds one row per (customer, week_number); weekNumber = null means
+// the current week, i.e. the highest week_number (specs/010 data-model.md).
+async function getCustomerProgramById(customerId, weekNumber = null) {
   const supabase = getSupabaseClient();
-  const { data, error } = await supabase.from('programs').select('*').eq('customer_id', customerId).maybeSingle();
-  if (error) throw dbError(`getCustomerProgramById(${customerId})`, error);
+  let query = supabase.from('programs').select('*').eq('customer_id', customerId);
+  query =
+    weekNumber == null
+      ? query.order('week_number', { ascending: false }).limit(1)
+      : query.eq('week_number', weekNumber);
+  const { data, error } = await query.maybeSingle();
+  if (error) throw dbError(`getCustomerProgramById(${customerId}, ${weekNumber})`, error);
   return data || null;
+}
+
+async function listProgramWeeksById(customerId) {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from('programs')
+    .select('week_number, updated_at')
+    .eq('customer_id', customerId);
+  if (error) throw dbError(`listProgramWeeksById(${customerId})`, error);
+  const updatedAtByWeek = new Map((data || []).map((r) => [r.week_number, r.updated_at]));
+  return deriveWeekState([...updatedAtByWeek.keys()]).map((w) => ({
+    ...w,
+    updatedAt: updatedAtByWeek.get(w.weekNumber),
+  }));
+}
+
+async function getMaxProgramWeek(customerId) {
+  const weeks = await listProgramWeeksById(customerId);
+  return weeks.length ? weeks[weeks.length - 1].weekNumber : 0;
 }
 
 async function getCustomerFeedbackById(customerId) {
@@ -136,9 +174,27 @@ async function getCustomerNutritionPlanById(customerId) {
   return data || null;
 }
 
-export async function getCustomerProgram(slug) {
+export async function getCustomerProgram(slug, weekNumber = null) {
   const customer = await getCustomer(slug);
-  return getCustomerProgramById(customer.id);
+  return getCustomerProgramById(customer.id, weekNumber);
+}
+
+/** [{ weekNumber, isCurrent, isLocked, updatedAt }] ascending; [] when no program. */
+export async function listCustomerProgramWeeks(slug) {
+  const customer = await getCustomer(slug);
+  return listProgramWeeksById(customer.id);
+}
+
+/** Program row plus derived lock state for one week; throws WeekNotFoundError if absent. */
+export async function getCustomerProgramWeek(slug, weekNumber) {
+  const customer = await getCustomer(slug);
+  const [row, weeks] = await Promise.all([
+    getCustomerProgramById(customer.id, weekNumber),
+    listProgramWeeksById(customer.id),
+  ]);
+  if (!row) throw new WeekNotFoundError(slug, weekNumber);
+  const state = weeks.find((w) => w.weekNumber === weekNumber);
+  return { ...row, isCurrent: state.isCurrent, isLocked: state.isLocked };
 }
 
 /**
@@ -172,13 +228,14 @@ export async function getCustomerNutritionPlan(slug) {
  */
 export async function getCustomerFullProfile(slug) {
   const customer = await getCustomer(slug);
-  const [program, notes, nutritionPlan, feedback] = await Promise.all([
+  const [program, programWeeks, notes, nutritionPlan, feedback] = await Promise.all([
     getCustomerProgramById(customer.id),
+    listProgramWeeksById(customer.id),
     getCustomerNotesById(customer.id),
     getCustomerNutritionPlanById(customer.id),
     getCustomerFeedbackById(customer.id),
   ]);
-  return { customer, program, notes, nutritionPlan, feedback };
+  return { customer, program, programWeeks, notes, nutritionPlan, feedback };
 }
 
 // ---- List all customers (replaces customers-repo.js's listCustomers + SQLite index) ----
@@ -232,7 +289,13 @@ export async function listAllCustomers() {
   return Promise.all(
     customers.map(async (customer) => {
       const [programRes, notesRes, feedbackRes] = await Promise.all([
-        supabase.from('programs').select('content').eq('customer_id', customer.id).maybeSingle(),
+        supabase
+          .from('programs')
+          .select('content')
+          .eq('customer_id', customer.id)
+          .order('week_number', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
         supabase.from('notes').select('id').eq('customer_id', customer.id).maybeSingle(),
         supabase.from('feedbacks').select('content').eq('customer_id', customer.id).maybeSingle(),
       ]);
@@ -327,15 +390,19 @@ export async function updateCustomerNotes(slug, content) {
   return data;
 }
 
-export async function updateCustomerProgram(slug, content) {
+/** weekNumber defaults to the current week (week 1 for a customer with none). */
+export async function updateCustomerProgram(slug, content, weekNumber = null) {
   assertContentSize(content, 'content', MAX_CONTENT_BYTES);
   const customer = await getCustomer(slug);
+  const maxWeek = await getMaxProgramWeek(customer.id);
+  const targetWeek = weekNumber ?? Math.max(maxWeek, 1);
+  validateNextWeekNumber(maxWeek, targetWeek);
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from('programs')
     .upsert(
-      { customer_id: customer.id, content, updated_at: new Date().toISOString() },
-      { onConflict: 'customer_id' }
+      { customer_id: customer.id, week_number: targetWeek, content, updated_at: new Date().toISOString() },
+      { onConflict: 'customer_id,week_number' }
     )
     .select()
     .single();
@@ -374,8 +441,12 @@ function assertSyncFileType(fileType) {
  * same "coach-always-wins" conflict resolution as sync-engine.js's
  * resolveCoachSync, backed by the target table's version column instead of
  * a JSON file.
+ *
+ * For 'program', weekNumber picks the week (default: current). Writing to a
+ * past week or skipping ahead throws WeekLockedError / WeekNumberGapError
+ * before any version resolution — coach-always-wins never overrides a lock.
  */
-export async function syncCoachWrite(slug, fileType, { currentVersion, content, contentHash }) {
+export async function syncCoachWrite(slug, fileType, { weekNumber = null, currentVersion, content, contentHash }) {
   assertSyncFileType(fileType);
   if (!verifyContentHash(content, contentHash)) {
     throw new ValidationError('contentHash', 'does not match computed hash of content');
@@ -385,32 +456,39 @@ export async function syncCoachWrite(slug, fileType, { currentVersion, content, 
   const table = SYNC_TABLE_BY_FILE_TYPE[fileType];
   const supabase = getSupabaseClient();
 
-  const { data: existing, error: readError } = await supabase
-    .from(table)
-    .select('version')
-    .eq('customer_id', customer.id)
-    .maybeSingle();
+  let targetWeek = null;
+  if (fileType === 'program') {
+    const maxWeek = await getMaxProgramWeek(customer.id);
+    targetWeek = weekNumber ?? Math.max(maxWeek, 1);
+    validateNextWeekNumber(maxWeek, targetWeek);
+  }
+
+  let readQuery = supabase.from(table).select('version').eq('customer_id', customer.id);
+  if (targetWeek != null) readQuery = readQuery.eq('week_number', targetWeek);
+  const { data: existing, error: readError } = await readQuery.maybeSingle();
   if (readError) throw dbError(`syncCoachWrite(${slug}, ${fileType}) read`, readError);
 
   const serverVersion = existing ? existing.version : 0;
   const resolution = resolveCoachSync({ current_version: currentVersion }, serverVersion);
 
-  const { error: writeError } = await supabase.from(table).upsert(
-    {
-      customer_id: customer.id,
-      content,
-      version: resolution.new_version,
-      content_hash: contentHash,
-      last_writer: 'coach',
-      sync_status: 'synced',
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'customer_id' }
-  );
+  const row = {
+    customer_id: customer.id,
+    content,
+    version: resolution.new_version,
+    content_hash: contentHash,
+    last_writer: 'coach',
+    sync_status: 'synced',
+    updated_at: new Date().toISOString(),
+  };
+  if (targetWeek != null) row.week_number = targetWeek;
+  const { error: writeError } = await supabase
+    .from(table)
+    .upsert(row, { onConflict: targetWeek != null ? 'customer_id,week_number' : 'customer_id' });
   if (writeError) throw dbError(`syncCoachWrite(${slug}, ${fileType}) write`, writeError);
 
   await recordSyncEvent(slug, fileType, resolution.conflicted ? 'sync_conflict' : 'sync_success', {
     source: 'coach',
+    weekNumber: targetWeek,
     versionFrom: serverVersion,
     versionTo: resolution.new_version,
     contentHash,
@@ -419,23 +497,30 @@ export async function syncCoachWrite(slug, fileType, { currentVersion, content, 
 
   return {
     status: 'synced',
+    weekNumber: targetWeek,
     newVersion: resolution.new_version,
     conflicted: resolution.conflicted,
     serverVersion,
   };
 }
 
-/** Replaces sync-state.js's getSyncState. */
-export async function getSyncState(slug, fileType) {
+/** Replaces sync-state.js's getSyncState. For 'program', weekNumber defaults to the current week. */
+export async function getSyncState(slug, fileType, weekNumber = null) {
   assertSyncFileType(fileType);
   const customer = await getCustomer(slug);
   const table = SYNC_TABLE_BY_FILE_TYPE[fileType];
   const supabase = getSupabaseClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from(table)
     .select('version, sync_status, last_writer, content_hash, updated_at')
-    .eq('customer_id', customer.id)
-    .maybeSingle();
+    .eq('customer_id', customer.id);
+  if (fileType === 'program') {
+    query =
+      weekNumber == null
+        ? query.order('week_number', { ascending: false }).limit(1)
+        : query.eq('week_number', weekNumber);
+  }
+  const { data, error } = await query.maybeSingle();
   if (error) throw dbError(`getSyncState(${slug}, ${fileType})`, error);
   if (!data) return null;
   return {
@@ -485,9 +570,12 @@ export async function queueOfflineChange(slug, fileType, entry) {
     throw new ValidationError('sequence', `Sequence gap: expected ${expectedSequence}, got ${entry.sequence}`);
   }
 
+  const currentWeek = fileType === 'program' ? await getMaxProgramWeek(customer.id) : null;
+
   const { error: insertError } = await supabase.from('offline_queue_entries').insert({
     customer_id: customer.id,
     file_type: fileType,
+    week_number: currentWeek,
     sequence: entry.sequence,
     queued_at: entry.timestamp,
     action: entry.action,
@@ -498,10 +586,9 @@ export async function queueOfflineChange(slug, fileType, entry) {
   if (insertError) throw dbError(`queueOfflineChange(${slug}, ${fileType})`, insertError);
 
   const table = SYNC_TABLE_BY_FILE_TYPE[fileType];
-  const { error: statusError } = await supabase
-    .from(table)
-    .update({ sync_status: 'pending' })
-    .eq('customer_id', customer.id);
+  let statusQuery = supabase.from(table).update({ sync_status: 'pending' }).eq('customer_id', customer.id);
+  if (currentWeek != null) statusQuery = statusQuery.eq('week_number', currentWeek);
+  const { error: statusError } = await statusQuery;
   if (statusError) throw dbError(`queueOfflineChange(${slug}, ${fileType}) status update`, statusError);
 }
 
@@ -538,6 +625,7 @@ export async function recordSyncEvent(slug, fileType, eventType, metadata = {}) 
   const { error } = await supabase.from('sync_events').insert({
     customer_id: customer.id,
     file_type: fileType,
+    week_number: metadata.weekNumber ?? null,
     event_type: eventType,
     source: metadata.source || null,
     version_from: metadata.versionFrom ?? null,

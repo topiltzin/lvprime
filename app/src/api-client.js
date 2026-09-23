@@ -45,6 +45,10 @@ export function getCustomer(slug) {
   return request(`/api/customers/${encodeURIComponent(slug)}`);
 }
 
+export function getProgramWeek(slug, weekNumber) {
+  return request(`/api/customers/${encodeURIComponent(slug)}/program/weeks/${weekNumber}`);
+}
+
 export function submitFeedback(slug, data) {
   return request(`/api/customers/${encodeURIComponent(slug)}/feedback`, {
     method: 'POST',

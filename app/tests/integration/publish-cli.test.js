@@ -61,7 +61,7 @@ test(
       { cwd: APP_DIR }
     );
 
-    assert.match(stdout, new RegExp(`Published ${FIXTURE_SLUG}/program: version \\d+ -> \\d+`));
+    assert.match(stdout, new RegExp(`Published ${FIXTURE_SLUG}/program \\(week 1\\): version \\d+ -> \\d+`));
     assert.match(stdout, /Missing: \d+/);
     assert.match(stdout, new RegExp(`"${FIXTURE_EXERCISE_NAME}" — used by: [^\\n]*${FIXTURE_SLUG}`));
   }

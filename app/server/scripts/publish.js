@@ -10,8 +10,10 @@
  *
  * Run from app/:
  *   node --env-file=.env.local server/scripts/publish.js <slug> <program|notes|nutrition_plan>
- * or:
- *   npm run publish -- <slug> <program|notes|nutrition_plan>
+ *   node --env-file=.env.local server/scripts/publish.js <slug> program [--week <N> | --new-week]
+ *
+ * program with no flag updates the current week; --new-week starts the next
+ * week and locks the previous one (specs/010 contracts/publish-cli.md).
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -22,6 +24,7 @@ import {
   upsertCustomer,
   getSyncState,
   syncCoachWrite,
+  listCustomerProgramWeeks,
   CustomerNotFoundError,
 } from '../lib/customer-data.js';
 import { checkCoverage, formatCoverageReport } from './check-exercise-coverage.js';
@@ -59,10 +62,27 @@ export async function reportProgramCoverage() {
   }
 }
 
+const USAGE =
+  `Usage: node server/scripts/publish.js <slug> <${Object.keys(FILE_BY_TYPE).join('|')}>\n` +
+  '       node server/scripts/publish.js <slug> program [--week <N> | --new-week]';
+
+// Returns { week: number|null, newWeek: boolean } or null for invalid flags.
+export function parseWeekFlags(fileType, flags) {
+  if (flags.length === 0) return { week: null, newWeek: false };
+  if (fileType !== 'program') return null;
+  if (flags.length === 1 && flags[0] === '--new-week') return { week: null, newWeek: true };
+  if (flags.length === 2 && flags[0] === '--week') {
+    const week = Number(flags[1]);
+    return Number.isInteger(week) && week >= 1 ? { week, newWeek: false } : null;
+  }
+  return null;
+}
+
 async function main() {
-  const [slug, fileType] = process.argv.slice(2);
-  if (!slug || !FILE_BY_TYPE[fileType]) {
-    console.error(`Usage: node server/scripts/publish.js <slug> <${Object.keys(FILE_BY_TYPE).join('|')}>`);
+  const [slug, fileType, ...flags] = process.argv.slice(2);
+  const weekFlags = FILE_BY_TYPE[fileType] ? parseWeekFlags(fileType, flags) : null;
+  if (!slug || !weekFlags) {
+    console.error(USAGE);
     process.exit(1);
   }
 
@@ -84,16 +104,54 @@ async function main() {
     await upsertCustomer(slug, name);
   }
 
-  const state = await getSyncState(slug, fileType);
-  const currentVersion = state ? state.version : 0;
+  let weekNumber = null;
+  let previousWeek = 0;
+  if (fileType === 'program') {
+    const weeks = await listCustomerProgramWeeks(slug);
+    previousWeek = weeks.length ? weeks[weeks.length - 1].weekNumber : 0;
+    if (weekFlags.newWeek) {
+      if (previousWeek === 0) {
+        throw new Error(`${slug} has no program yet; publish without --new-week to create week 1.`);
+      }
+      weekNumber = previousWeek + 1;
+    } else {
+      weekNumber = weekFlags.week ?? Math.max(previousWeek, 1);
+    }
+  }
+
+  const state = await getSyncState(slug, fileType, weekNumber);
+  const currentVersion = weekNumber > previousWeek || !state ? 0 : state.version;
   const contentHash = computeContentHash(content);
 
-  const result = await syncCoachWrite(slug, fileType, { currentVersion, content, contentHash });
+  let result;
+  try {
+    result = await syncCoachWrite(slug, fileType, { weekNumber, currentVersion, content, contentHash });
+  } catch (err) {
+    if (err.code === 'WEEK_LOCKED') {
+      throw new Error(
+        `week ${err.weekNumber} is locked (current week is ${err.currentWeek}). ` +
+          'Use --new-week to start a new week, or omit --week to update the current one.'
+      );
+    }
+    if (err.code === 'WEEK_NUMBER_GAP') {
+      throw new Error(`week ${err.weekNumber} would leave a gap (next available is ${err.expected}).`);
+    }
+    throw err;
+  }
 
-  console.log(
-    `Published ${slug}/${fileType}: version ${currentVersion} -> ${result.newVersion}` +
-      (result.conflicted ? ' (server had a newer version; coach changes applied anyway)' : '')
-  );
+  const conflictNote = result.conflicted ? ' (server had a newer version; coach changes applied anyway)' : '';
+  if (fileType !== 'program') {
+    console.log(`Published ${slug}/${fileType}: version ${currentVersion} -> ${result.newVersion}${conflictNote}`);
+  } else if (weekNumber > previousWeek && previousWeek > 0) {
+    console.log(
+      `Published ${slug}/program: created week ${weekNumber} (was week ${previousWeek}, now locked): ` +
+        `version ${currentVersion} -> ${result.newVersion}`
+    );
+  } else {
+    console.log(
+      `Published ${slug}/program (week ${weekNumber}): version ${currentVersion} -> ${result.newVersion}${conflictNote}`
+    );
+  }
 
   if (fileType === 'program') await reportProgramCoverage();
 }
