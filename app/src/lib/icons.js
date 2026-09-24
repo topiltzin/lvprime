@@ -19,6 +19,9 @@ import calendarCheck from '@phosphor-icons/core/assets/regular/calendar-check.sv
 import paperclip from '@phosphor-icons/core/assets/regular/paperclip.svg?raw';
 import users from '@phosphor-icons/core/assets/regular/users.svg?raw';
 import lightning from '@phosphor-icons/core/assets/regular/lightning.svg?raw';
+import signOut from '@phosphor-icons/core/assets/regular/sign-out.svg?raw';
+import eye from '@phosphor-icons/core/assets/regular/eye.svg?raw';
+import eyeSlash from '@phosphor-icons/core/assets/regular/eye-slash.svg?raw';
 
 const ICONS = {
   'caret-left': caretLeft,
@@ -29,6 +32,9 @@ const ICONS = {
   clock,
   calendar: calendarBlank,
   users,
+  'sign-out': signOut,
+  eye,
+  'eye-slash': eyeSlash,
   lightning,
   'file-pdf': filePdf,
   'check-circle': checkCircle,

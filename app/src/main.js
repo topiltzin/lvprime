@@ -3,6 +3,7 @@ import { renderCustomer } from './views/customer-view.js';
 import { renderLogin } from './views/login-view.js';
 import { setUnauthorizedHandler } from './api-client.js';
 import { renderSidebar } from './components/sidebar.js';
+import { renderHeaderAccount } from './components/header-account.js';
 
 const app = document.getElementById('app');
 const sidebar = document.getElementById('sidebar');
@@ -35,4 +36,5 @@ setUnauthorizedHandler(async () => {
 });
 
 window.addEventListener('hashchange', render);
-render();
+// Once per page load, after the first view has passed the sign-in gate.
+render().then(() => renderHeaderAccount(document.getElementById('header-account')));

@@ -44,7 +44,10 @@ export function renderCustomerCard(customer) {
   checkIn.className = 'check-in-date';
   checkIn.appendChild(icon('calendar-check'));
   const checkInText = document.createElement('span');
-  checkInText.textContent = `Last check-in ${formatRelativeCheckIn(customer.lastFeedbackDate).toLowerCase()}`;
+  // Short enough to share a row with the status pill on a narrow card.
+  checkInText.textContent = customer.lastFeedbackDate
+    ? `Check-in ${formatRelativeCheckIn(customer.lastFeedbackDate).toLowerCase()}`
+    : 'No check-in yet';
   checkIn.appendChild(checkInText);
   footer.appendChild(checkIn);
 

@@ -15,6 +15,9 @@ export async function startTestServer(fixtureBuilder) {
   fixtureBuilder(tmpDir);
 
   process.env.FITNESS_DASHBOARD_CUSTOMERS_DIR = tmpDir;
+  // Data tests exercise routes, not sign-in: leave the coach gate open unless a
+  // test (coach-auth.test.js) has set it explicitly.
+  process.env.COACH_AUTH_DISABLED ??= 'true';
   process.env.FITNESS_DASHBOARD_DB_PATH = ':memory:';
 
   // server/index.js is imported once per process and caches a DB singleton;

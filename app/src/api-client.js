@@ -71,8 +71,17 @@ export function submitFeedback(slug, data) {
   });
 }
 
-export function login(password) {
-  return request('/api/login', { method: 'POST', body: JSON.stringify({ password }) }, true);
+export function login(email, password) {
+  return request('/api/login', { method: 'POST', body: JSON.stringify({ email, password }) }, true);
+}
+
+export function logout() {
+  return request('/api/logout', { method: 'POST' }, true);
+}
+
+/** { authenticated, authDisabled, email } for the header's account area. */
+export function getSession() {
+  return request('/api/session', {}, true);
 }
 
 export { ApiError };

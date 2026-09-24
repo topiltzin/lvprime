@@ -1,8 +1,9 @@
-import { login } from '../api-client.js';
+import { login, ApiError } from '../api-client.js';
+import { icon } from '../lib/icons.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
-// On-light LvPrime lock-up (specs/011 contracts/header-lockup.md "Sign-in view").
+// LvPrime lock-up for the sign-in brand panel.
 // Same mark geometry and classes as the header SVG in index.html.
 function renderBrand() {
   const brand = document.createElement('div');
@@ -47,14 +48,67 @@ function renderBrand() {
   return brand;
 }
 
-// Coach password screen, shown when the API answers 401 (server/auth.js).
-// Resolves once the session cookie is set so the caller can retry its request.
+// One labelled field: label above, input, error below (announced on change).
+function field({ label, type, name, autocomplete }) {
+  const wrap = document.createElement('div');
+  wrap.className = 'login-field';
+
+  const id = `login-${name}`;
+  const labelEl = document.createElement('label');
+  labelEl.htmlFor = id;
+  labelEl.textContent = label;
+  wrap.appendChild(labelEl);
+
+  const control = document.createElement('div');
+  control.className = 'login-control';
+  const input = document.createElement('input');
+  Object.assign(input, { id, type, name, autocomplete, required: true, spellcheck: false });
+  control.appendChild(input);
+  wrap.appendChild(control);
+
+  const error = document.createElement('p');
+  error.className = 'field-error';
+  error.id = `${id}-error`;
+  error.setAttribute('aria-live', 'polite');
+  wrap.appendChild(error);
+  input.setAttribute('aria-describedby', error.id);
+
+  const setError = (message) => {
+    error.textContent = message || '';
+    input.toggleAttribute('aria-invalid', !!message);
+  };
+  return { wrap, control, input, setError };
+}
+
+// Show/hide toggle, so a 40+ audience can check what they typed on a phone.
+function passwordToggle(input) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'password-toggle';
+  const render = () => {
+    const shown = input.type === 'text';
+    button.replaceChildren(icon(shown ? 'eye-slash' : 'eye'));
+    button.setAttribute('aria-label', shown ? 'Hide password' : 'Show password');
+    button.setAttribute('aria-pressed', String(shown));
+  };
+  button.addEventListener('click', () => {
+    input.type = input.type === 'password' ? 'text' : 'password';
+    render();
+    input.focus();
+  });
+  render();
+  return button;
+}
+
+// Coach sign-in page, shown when the API answers 401 (server/auth.js). Email and
+// password are checked against the project's Supabase Auth users. Resolves once the
+// session cookie is set so the caller can reload into the app.
 export function renderLogin(container) {
   return new Promise((resolve) => {
+    document.body.classList.add('is-login');
     container.removeAttribute('aria-busy');
     container.innerHTML = '';
 
-    // Split card: plum brand panel beside the form (stacks on phones).
     const wrap = document.createElement('div');
     wrap.className = 'login-wrap';
     const panel = document.createElement('aside');
@@ -67,27 +121,27 @@ export function renderLogin(container) {
     wrap.appendChild(formSide);
 
     const heading = document.createElement('h1');
-    heading.textContent = 'Coach sign-in';
+    heading.textContent = 'Sign in';
     formSide.appendChild(heading);
+    const intro = document.createElement('p');
+    intro.className = 'login-intro';
+    intro.textContent = 'Use your LvPrime coach account.';
+    formSide.appendChild(intro);
 
     const form = document.createElement('form');
-    form.className = 'feedback-form';
+    form.className = 'feedback-form login-form';
+    form.noValidate = true;
 
-    const label = document.createElement('label');
-    label.textContent = 'Password';
-    const input = document.createElement('input');
-    input.type = 'password';
-    input.name = 'password';
-    input.autocomplete = 'current-password';
-    input.required = true;
-    label.appendChild(input);
-    form.appendChild(label);
+    const email = field({ label: 'Email', type: 'email', name: 'email', autocomplete: 'username' });
+    email.input.inputMode = 'email';
+    const password = field({ label: 'Password', type: 'password', name: 'password', autocomplete: 'current-password' });
+    password.control.appendChild(passwordToggle(password.input));
+    form.append(email.wrap, password.wrap);
 
-    const error = document.createElement('p');
-    error.className = 'field-error';
-    error.setAttribute('role', 'alert');
-    error.hidden = true;
-    form.appendChild(error);
+    const formError = document.createElement('p');
+    formError.className = 'field-error login-form-error';
+    formError.setAttribute('role', 'alert');
+    form.appendChild(formError);
 
     const submit = document.createElement('button');
     submit.type = 'submit';
@@ -96,21 +150,45 @@ export function renderLogin(container) {
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      email.setError('');
+      password.setError('');
+      formError.textContent = '';
+
+      // Same checks the server makes, so most mistakes never leave the page.
+      let invalid = null;
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.input.value.trim())) {
+        email.setError('Enter a valid email address.');
+        invalid ??= email.input;
+      }
+      if (!password.input.value) {
+        password.setError('Enter your password.');
+        invalid ??= password.input;
+      }
+      if (invalid) {
+        invalid.focus();
+        return;
+      }
+
       submit.disabled = true;
-      error.hidden = true;
+      submit.textContent = 'Signing in…';
       try {
-        await login(input.value);
+        await login(email.input.value.trim(), password.input.value);
         resolve();
       } catch (err) {
-        error.textContent = err.status === 401 ? 'Wrong password.' : err.message;
-        error.hidden = false;
+        if (err instanceof ApiError && err.status === 422 && err.fields) {
+          if (err.fields.email) email.setError(err.fields.email);
+          if (err.fields.password) password.setError(err.fields.password);
+        } else {
+          formError.textContent = err.message || 'Sign-in failed. Try again.';
+          password.input.select();
+        }
         submit.disabled = false;
-        input.select();
+        submit.textContent = 'Sign in';
       }
     });
 
     formSide.appendChild(form);
     container.appendChild(wrap);
-    input.focus();
+    email.input.focus();
   });
 }
