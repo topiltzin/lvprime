@@ -21,8 +21,10 @@ const CUSTOMERS_DIR = path.resolve(__dirname, '..', '..', '..', 'customers');
 // integration test per user story.
 test('round-trips a real, unmodified entry from topiltzin-flores/feedback.md exactly', () => {
   const text = fs.readFileSync(path.join(CUSTOMERS_DIR, 'topiltzin-flores', 'feedback.md'), 'utf8');
-  const entries = parseFeedbackEntries(text);
-  assert.equal(entries.length, 1, 'expected exactly one real entry in the fixture file');
+  // Only fully-matched entries are expected to round-trip; the live file also
+  // holds placeholder entries and keeps growing, so don't pin the count.
+  const entries = parseFeedbackEntries(text).filter((e) => e.raw_matched);
+  assert.ok(entries.length > 0, 'expected at least one fully-matched entry in the fixture file');
 
   const template = extractFeedbackTemplate(text);
   const entry = entries[0];
@@ -33,7 +35,7 @@ test('round-trips a real, unmodified entry from topiltzin-flores/feedback.md exa
     fieldValues,
   });
 
-  const originalBlockStart = text.indexOf(`${'#'.repeat(entry.heading_level)} ${entry.entry_date}`);
+  const originalBlockStart = text.indexOf(formatted.split('\n')[0]);
   assert.ok(originalBlockStart !== -1, 'could not locate the original entry block in the source file');
   const originalBlock = text.slice(originalBlockStart, originalBlockStart + formatted.length);
 
@@ -118,8 +120,17 @@ test('parseProgramDetail extracts exercise rows from a real Spanish program (jaq
   assert.equal(squat.formTip, 'Rodillas alineadas con tobillos, bajar controlado');
 });
 
-test('parseProgramDetail extracts exercise rows from a real English program (topiltzin-flores, Rest/Form tip)', () => {
-  const text = fs.readFileSync(path.join(CUSTOMERS_DIR, 'topiltzin-flores', 'program.md'), 'utf8');
+// Inline copy of topiltzin-flores/program.md's English "Rest / Form tip" format;
+// the real file is rewritten every week, so the exact exercises can't be pinned.
+test('parseProgramDetail extracts exercise rows from an English program (Rest/Form tip)', () => {
+  const text = `# Test Program
+
+### Monday - Chest & Back
+
+1. **Barbell Bench Press** - 4 × 6-8 reps - Rest 2 min
+   - Form tip: Full range of motion, chest to bar, feet planted
+2. **Pull-ups** - 3 × 8 - Rest 90 sec
+`;
   const detail = parseProgramDetail(text, renderMarkdown);
 
   const monday = detail.weeklySchedule.find((d) => /^Monday/i.test(d.day));

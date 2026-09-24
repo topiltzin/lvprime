@@ -8,13 +8,14 @@
     "dev": "vite",
     "build": "vite build",
     "start": "node server.js",
-    "test": "node --test tests/",
+    "test": "node --test \"tests/**/*.test.js\"",
     "publish-customer": "node --env-file=.env.local server/scripts/publish.js"
   },
   "dependencies": {
     "@fontsource/inter": "^5.3.0",
     "@fontsource/inter-tight": "^5.3.0",
     "@supabase/supabase-js": "^2.116.0",
+    "dompurify": "^3.4.16",
     "jspdf": "^4.2.1",
     "marked": "^13.0.3"
   },

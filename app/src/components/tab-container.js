@@ -12,6 +12,7 @@ import { downloadNutritionPdf } from './nutrition-pdf.js';
 import { renderFeedbackEntry } from './feedback-entry.js';
 import { renderTrendChart } from './trend-chart.js';
 import { showToast } from './toast.js';
+import { setSafeHtml } from '../lib/safe-html.js';
 
 export class TabContainer {
   constructor(containerEl, tabs, data, options = {}) {
@@ -236,7 +237,7 @@ export class TabContainer {
     if (detail.progressionHtml) {
       const progression = document.createElement('div');
       progression.className = 'card program-progression';
-      progression.innerHTML = detail.progressionHtml;
+      setSafeHtml(progression, detail.progressionHtml);
       weekBody.appendChild(progression);
     }
   }
@@ -342,7 +343,7 @@ export class TabContainer {
     if (notes.present && notes.html) {
       const body = document.createElement('div');
       body.className = 'notes-body';
-      body.innerHTML = notes.html;
+      setSafeHtml(body, notes.html);
       container.appendChild(body);
     } else {
       const empty = document.createElement('div');
@@ -358,7 +359,7 @@ export class TabContainer {
       body.className = 'nutrition-body';
       // Convert markdown to HTML using marked library
       const htmlContent = marked(nutrition.content);
-      body.innerHTML = htmlContent;
+      setSafeHtml(body, htmlContent);
       container.appendChild(body);
 
       // Add PDF download button

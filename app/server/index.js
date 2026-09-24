@@ -3,6 +3,7 @@ import { parseProgramDetail, parseProgramGoal } from './markdown-parser.js';
 import { renderMarkdown } from './markdown-render.js';
 import { validateFeedbackSubmission } from './feedback-writer.js';
 import * as hashUtils from './hash-utils.js';
+import { isAuthorized, loginCookie, logoutCookie } from './auth.js';
 import {
   getCustomer,
   getCustomerProgram,
@@ -19,6 +20,7 @@ import {
   syncCoachWrite,
   getSyncState,
   CustomerNotFoundError,
+  ValidationError,
   WeekNotFoundError,
   WeekLockedError,
   WeekNumberGapError,
@@ -39,10 +41,36 @@ function sendJson(res, status, body) {
   res.end(JSON.stringify(body));
 }
 
+// Largest legitimate body is a 500KB program sync upload (customer-data.js
+// MAX_CONTENT_BYTES) plus JSON overhead.
+const MAX_BODY_BYTES = 1024 * 1024;
+
+class PayloadTooLargeError extends Error {}
+
+// Errors handleApiRequest translates into specific 4xx/503 responses; the sync
+// handlers' catch-alls rethrow these instead of flattening them to 500.
+function isMappedError(err) {
+  return (
+    err instanceof PayloadTooLargeError ||
+    err instanceof ValidationError ||
+    err instanceof URIError ||
+    err.code === 'DATABASE_ERROR'
+  );
+}
+
 function readJsonBody(req) {
   return new Promise((resolve, reject) => {
     let data = '';
+    let size = 0;
     req.on('data', (chunk) => {
+      size += chunk.length;
+      if (size > MAX_BODY_BYTES) {
+        // Drain and discard the rest (not destroy) so the 413 still reaches the client.
+        req.removeAllListeners('data');
+        req.resume();
+        reject(new PayloadTooLargeError('request body too large'));
+        return;
+      }
       data += chunk;
     });
     req.on('end', () => {
@@ -242,7 +270,8 @@ async function handlePostFeedback(req, res, slug) {
   let body;
   try {
     body = await readJsonBody(req);
-  } catch {
+  } catch (err) {
+    if (err instanceof PayloadTooLargeError) throw err;
     sendJson(res, 422, { error: 'validation_failed', fields: { body: 'invalid JSON' } });
     return;
   }
@@ -373,6 +402,7 @@ async function handleSyncUpload(req, res) {
         : 'Sync successful'
     });
   } catch (err) {
+    if (isMappedError(err)) throw err;
     console.error('Sync upload error:', err);
     sendJson(res, 500, { error: 'sync_error', message: err.message });
   }
@@ -441,6 +471,7 @@ async function handleSyncDownload(req, res) {
       message: 'Latest version available'
     });
   } catch (err) {
+    if (isMappedError(err)) throw err;
     console.error('Sync download error:', err);
     sendJson(res, 500, { error: 'sync_error', message: err.message });
   }
@@ -496,10 +527,33 @@ async function handleSyncStatus(req, res) {
       message: allSynced ? 'All files in sync' : 'Some files pending sync'
     });
   } catch (err) {
+    if (isMappedError(err)) throw err;
     console.error('Sync status error:', err);
     sendJson(res, 500, { error: 'sync_error', message: err.message });
   }
 }
+
+async function handleLogin(req, res) {
+  const body = await readJsonBody(req).catch((err) => {
+    if (err instanceof PayloadTooLargeError) throw err;
+    return {};
+  });
+  const cookie = loginCookie(req, body.password);
+  if (!cookie) return sendJson(res, 401, { error: 'invalid_password', message: 'Wrong password.' });
+  res.setHeader('Set-Cookie', cookie);
+  sendJson(res, 200, { ok: true });
+}
+
+function handleLogout(req, res) {
+  res.setHeader('Set-Cookie', logoutCookie(req));
+  sendJson(res, 200, { ok: true });
+}
+
+// Reachable without a session; everything else goes through isAuthorized().
+const PUBLIC_ROUTES = [
+  { method: 'POST', pattern: /^\/api\/login\/?$/, handler: (req, res) => handleLogin(req, res) },
+  { method: 'POST', pattern: /^\/api\/logout\/?$/, handler: (req, res) => handleLogout(req, res) },
+];
 
 const ROUTES = [
   {
@@ -557,6 +611,19 @@ export async function handleApiRequest(req, res) {
   const pathname = url.pathname;
 
   try {
+    for (const route of PUBLIC_ROUTES) {
+      const match = req.method === route.method && pathname.match(route.pattern);
+      if (match) {
+        await route.handler(req, res, match);
+        return;
+      }
+    }
+
+    if (!isAuthorized(req)) {
+      sendJson(res, 401, { error: 'unauthorized', message: 'Sign in to continue.' });
+      return;
+    }
+
     for (const route of ROUTES) {
       if (route.method !== req.method) continue;
       const match = pathname.match(route.pattern);
@@ -568,6 +635,17 @@ export async function handleApiRequest(req, res) {
 
     sendJson(res, 404, { error: 'not_found' });
   } catch (err) {
+    if (res.headersSent) throw err;
+    // Malformed %-escapes in the path (decodeURIComponent).
+    if (err instanceof URIError) return sendJson(res, 400, { error: 'bad_request' });
+    if (err instanceof PayloadTooLargeError) return sendJson(res, 413, { error: 'payload_too_large' });
+    // A slug that fails assertValidSlug can't name an existing customer.
+    if (err instanceof ValidationError && err.field === 'slug') {
+      return sendJson(res, 404, { error: 'customer_not_found' });
+    }
+    if (err instanceof ValidationError) {
+      return sendJson(res, 422, { error: 'validation_failed', fields: { [err.field]: err.message } });
+    }
     // Supabase connection/query failures surface here as DatabaseError from
     // customer-data.js (per T048); translate to a friendly message instead of
     // letting vite.config.js/server.js's outer catch return a bare

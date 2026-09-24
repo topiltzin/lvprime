@@ -109,7 +109,11 @@ export function renderTrendChart(trend) {
   const details = document.createElement('ul');
   details.id = 'trend-chart-details';
   details.className = 'sr-only';
-  details.innerHTML = summaryItems.map((item) => `<li>${item}</li>`).join('');
+  for (const item of summaryItems) {
+    const li = document.createElement('li');
+    li.textContent = item;
+    details.appendChild(li);
+  }
   wrap.appendChild(details);
 
   const legend = document.createElement('div');

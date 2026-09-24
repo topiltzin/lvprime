@@ -349,7 +349,7 @@ export async function addFeedbackEntry(slug, displayName, { date, label, fields 
   if (!DATE_RE.test(date)) throw new ValidationError('date', 'must be in YYYY-MM-DD format');
 
   const customer = await getCustomer(slug);
-  const existing = await getCustomerFeedback(slug);
+  const existing = await getCustomerFeedbackById(customer.id);
   const template = existing.template;
   const entryText = formatFeedbackEntry(template, { date, label, fieldValues: fields });
 

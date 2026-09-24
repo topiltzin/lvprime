@@ -2,6 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { startTestServer, writeCustomer } from './helpers.js';
 
+// The unknown-slug lookup goes to Supabase, so it needs real credentials.
+const NO_SUPABASE = !process.env.SUPABASE_URL || !process.env.SUPABASE_SECRET_KEY;
+
 // Superseded by specs/006-customer-data-storage for tests that need real
 // fixture content (server reads Supabase now, not FITNESS_DASHBOARD_CUSTOMERS_DIR).
 // See tests/integration/customer-data.test.js and
@@ -80,7 +83,7 @@ test('GET /api/customers/:slug returns program, notes, feedback, and attachments
   assert.equal(body.attachments[0].relativePath, 'plans/week1.pdf');
 });
 
-test('GET /api/customers/:slug returns 404 for an unknown slug', async (t) => {
+test('GET /api/customers/:slug returns 404 for an unknown slug', { skip: NO_SUPABASE && 'SUPABASE_URL/SUPABASE_SECRET_KEY not set' }, async (t) => {
   const server = await startTestServer((tmpDir) => {
     writeCustomer(tmpDir, 'test-customer', { 'program.md': PROGRAM });
   });

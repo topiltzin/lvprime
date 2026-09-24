@@ -1,3 +1,5 @@
+import { setSafeHtml } from '../lib/safe-html.js';
+
 // Program tab "workout poster" (User Story 2): one card per training day, with structured
 // exercise rows when available, falling back to the day's raw rendered html otherwise
 // (FR-009, FR-010, FR-011, FR-012).
@@ -73,7 +75,7 @@ export function renderProgramDay(day) {
   } else {
     const body = document.createElement('div');
     body.className = 'program-day-html';
-    body.innerHTML = day.html || '';
+    setSafeHtml(body, day.html);
     card.appendChild(body);
   }
 

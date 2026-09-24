@@ -3,6 +3,7 @@
 // triggers a browser download.
 
 import { jsPDF } from 'jspdf';
+import { setSafeHtml } from '../lib/safe-html.js';
 
 /**
  * Pure content-model builder — no DOM, no jsPDF — so it's testable with plain
@@ -23,7 +24,7 @@ export function buildProgramWeekPdfContent(weekDetail) {
 // since the PDF is real text, not a screenshot.
 function htmlToPlainText(html) {
   const el = document.createElement('div');
-  el.innerHTML = html || '';
+  setSafeHtml(el, html);
   return (el.textContent || '').replace(/\n{3,}/g, '\n\n').trim();
 }
 

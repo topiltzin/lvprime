@@ -33,13 +33,14 @@ Coach-only fitness/nutrition dashboard. Customer data (program, feedback, notes,
 
 ## Deploying to Vercel
 
-1. Add `SUPABASE_URL` and `SUPABASE_SECRET_KEY` to the Vercel project's **Environment Variables** (Production and Preview scopes) — Vercel dashboard → Project → Settings → Environment Variables.
+1. Add `SUPABASE_URL`, `SUPABASE_SECRET_KEY` and `COACH_ACCESS_TOKEN` to the Vercel project's **Environment Variables** (Production and Preview scopes) — Vercel dashboard → Project → Settings → Environment Variables. `COACH_ACCESS_TOKEN` is the dashboard password; without it the API (which runs with the Supabase secret key) is open to anyone with the URL.
 2. Deploy as usual (`vercel` CLI or git push, depending on your setup).
 3. Verify a customer profile loads correctly on the deployed URL, then trigger a redeploy and confirm the same data still loads (this is the point of the whole migration — the filesystem/SQLite approach this app used before did not survive Vercel's stateless serverless functions between deployments).
 
 ## Architecture notes
 
 - **Source of truth**: Supabase PostgreSQL. The `customers/` filesystem directory is kept only as a 30-day migration backup (see note in that directory) — the app does not read from it for program/notes/feedback/nutrition_plan data. Attachments (PDFs etc. under a customer's folder) are the one exception and remain filesystem-based; they were out of scope for this migration.
+- **Access control**: `app/server/auth.js` gates every `/api/*` and `/customer-files/*` route behind `COACH_ACCESS_TOKEN`. `POST /api/login` checks the password and sets an HttpOnly, SameSite=Strict session cookie (30 days); the frontend shows a sign-in screen on any 401. Leave the variable unset for open local development.
 - **Data access layer**: `app/server/lib/customer-data.js` is the only module that should touch Supabase directly. It's server-only (imports the secret key) — never import it from `app/src/`, which is Vite's browser-bundled root.
 - **Sync**: `app/server/sync-engine.js` still holds the pure conflict-resolution logic (no filesystem/DB dependency); `customer-data.js`'s `syncCoachWrite` uses it against the `programs`/`notes` tables' `version`/`content_hash`/`sync_status` columns instead of the old JSON-file-backed `sync-state.js` (removed).
 - **Tests**: `npm test` runs everything under `tests/`. Tests that need Supabase (integration tests, and `tests/unit/database.test.js`'s validation-only tests which don't but live alongside them) read `SUPABASE_URL`/`SUPABASE_SECRET_KEY` from the environment — run with `node --env-file=.env.local --test 'tests/**/*.test.js'` to include them.

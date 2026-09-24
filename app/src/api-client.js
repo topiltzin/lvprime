@@ -1,5 +1,6 @@
-// Thin fetch() wrapper for the local API (server/index.js). No auth, no CORS —
-// same-origin local tool (constitution "Local-only" scope).
+// Thin fetch() wrapper for the API (server/index.js). Same-origin, no CORS. Auth is
+// a coach session cookie (server/auth.js): on a 401, the handler registered via
+// setUnauthorizedHandler (the login screen) takes over the page.
 
 class ApiError extends Error {
   constructor(message, status, fields) {
@@ -9,7 +10,15 @@ class ApiError extends Error {
   }
 }
 
-async function request(path, options = {}) {
+let onUnauthorized = null;
+let pendingLogin = null;
+
+export function setUnauthorizedHandler(handler) {
+  onUnauthorized = handler;
+}
+
+// skipAuthHandler: login() itself answers 401 for a wrong password.
+async function request(path, options = {}, skipAuthHandler = false) {
   let res;
   try {
     res = await fetch(path, {
@@ -25,6 +34,12 @@ async function request(path, options = {}) {
     body = await res.json();
   } catch {
     body = null;
+  }
+
+  if (res.status === 401 && onUnauthorized && !skipAuthHandler) {
+    // Several requests can 401 at once; they share one login screen.
+    pendingLogin ??= onUnauthorized();
+    await pendingLogin;
   }
 
   if (!res.ok) {
@@ -54,6 +69,10 @@ export function submitFeedback(slug, data) {
     method: 'POST',
     body: JSON.stringify(data),
   });
+}
+
+export function login(password) {
+  return request('/api/login', { method: 'POST', body: JSON.stringify({ password }) }, true);
 }
 
 export { ApiError };

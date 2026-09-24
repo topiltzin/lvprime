@@ -690,6 +690,12 @@ th, td {
   max-width: 640px;
 }
 
+/* Coach sign-in (login-view.js) reuses the log-session form styling */
+.login-wrap {
+  max-width: 400px;
+  margin: 4rem auto;
+}
+
 form.feedback-form {
   display: grid;
   gap: 1.25rem;

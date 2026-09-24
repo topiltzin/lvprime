@@ -26,7 +26,7 @@ function serveStatic(req, res) {
   let reqPath = new URL(req.url, 'http://localhost').pathname;
   if (reqPath === '/') reqPath = '/index.html';
   let filePath = path.join(DIST_DIR, reqPath);
-  if (!filePath.startsWith(DIST_DIR)) {
+  if (!filePath.startsWith(DIST_DIR + path.sep)) {
     res.statusCode = 403;
     res.end('Forbidden');
     return;

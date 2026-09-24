@@ -4,6 +4,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { startTestServer, writeCustomer } from './helpers.js';
 
+// The unknown-slug lookup goes to Supabase, so it needs real credentials.
+const NO_SUPABASE = !process.env.SUPABASE_URL || !process.env.SUPABASE_SECRET_KEY;
+
 // Superseded by specs/006-customer-data-storage for tests that need a real
 // customer to exist (server checks Supabase now, not the fixture filesystem,
 // so a fixture-only customer 404s instead of reaching the 422 path under
@@ -79,7 +82,7 @@ test('POST with all fields returns 201, appends a YYYY-MM-DD entry, and is refle
   assert.equal(detail.feedback.entries[0].date, '2026-09-22');
 });
 
-test('POST for an unknown customer slug returns 404', async (t) => {
+test('POST for an unknown customer slug returns 404', { skip: NO_SUPABASE && 'SUPABASE_URL/SUPABASE_SECRET_KEY not set' }, async (t) => {
   const server = await startTestServer((tmpDir) => {
     writeCustomer(tmpDir, 'test-customer', { 'feedback.md': FEEDBACK });
   });
