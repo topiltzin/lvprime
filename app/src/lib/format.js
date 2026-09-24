@@ -20,3 +20,10 @@ export function formatDayDate(iso) {
   if (!date) return iso;
   return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 }
+
+/** "Jaqueline Orellano" → "JO"; single names use their first letter. */
+export function initials(name) {
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+  const letters = parts.length > 1 ? [parts[0], parts[parts.length - 1]] : parts;
+  return letters.map((p) => p[0]).join('').toUpperCase();
+}

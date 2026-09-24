@@ -8,7 +8,7 @@
     <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
-    <meta name="theme-color" content="#3A2141" />
+    <meta name="theme-color" content="#1C1F23" />
     <link rel="stylesheet" href="/src/styles/main.css" />
   </head>
   <body>
@@ -31,7 +31,10 @@
         <span class="header-chip">Coach workspace</span>
       </div>
     </header>
-    <div id="app"></div>
+    <div class="shell">
+      <aside id="sidebar" class="sidebar" aria-label="Clients" hidden></aside>
+      <main id="app"></main>
+    </div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

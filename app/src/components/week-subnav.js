@@ -62,7 +62,13 @@ export function renderWeekSubnav(weeks, activeWeek, onSelect) {
   });
 
   // Long histories scroll horizontally; keep the selected chip in view on first paint.
-  requestAnimationFrame(() => chips[activeWeek]?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' }));
+  // Scroll the row itself: scrollIntoView would also nudge the page vertically.
+  requestAnimationFrame(() => {
+    const chip = chips[activeWeek];
+    if (chip && chip.offsetLeft + chip.offsetWidth > nav.clientWidth) {
+      nav.scrollLeft = chip.offsetLeft - 16;
+    }
+  });
 
   return nav;
 }

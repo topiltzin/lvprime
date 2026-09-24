@@ -17,6 +17,8 @@ import warningCircle from '@phosphor-icons/core/assets/regular/warning-circle.sv
 import notePencil from '@phosphor-icons/core/assets/regular/note-pencil.svg?raw';
 import calendarCheck from '@phosphor-icons/core/assets/regular/calendar-check.svg?raw';
 import paperclip from '@phosphor-icons/core/assets/regular/paperclip.svg?raw';
+import users from '@phosphor-icons/core/assets/regular/users.svg?raw';
+import lightning from '@phosphor-icons/core/assets/regular/lightning.svg?raw';
 
 const ICONS = {
   'caret-left': caretLeft,
@@ -26,6 +28,8 @@ const ICONS = {
   barbell,
   clock,
   calendar: calendarBlank,
+  users,
+  lightning,
   'file-pdf': filePdf,
   'check-circle': checkCircle,
   'x-circle': xCircle,

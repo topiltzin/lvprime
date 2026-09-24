@@ -13,13 +13,13 @@ const PAGE_HEIGHT = 297;
 // Stays above the LvPrime footer band (footerReserve) stamped on every page.
 const PAGE_BOTTOM = Math.min(280, PAGE_HEIGHT - footerReserve('mm') - 3);
 
-// LvPrime palette (specs/011 data-model.md BrandPalette)
+// LvPrime performance palette (graphite + volt; see src/lib/pdf-brand.js)
 const COLORS = {
-  headerBg: BRAND_RGB.plum,   // Section bars, table headers, title rule
+  headerBg: BRAND_RGB.graphite,   // Section bars, table headers, title rule
   headerText: [255, 255, 255],     // White
   sectionBg: [236, 240, 241],      // Light gray
-  sectionText: BRAND_RGB.plum,
-  tableBorder: BRAND_RGB.mist,
+  sectionText: BRAND_RGB.graphite,
+  tableBorder: BRAND_RGB.steel,
   tableAlt: [248, 249, 250],       // Very light gray
   text: [52, 73, 94],              // Dark text
 };

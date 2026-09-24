@@ -1,5 +1,5 @@
 // LvPrime brand for jsPDF exports (specs/011 contracts/pdf-brand.md).
-// Draws the mark as vectors and the wordmark in built-in Times, so PDFs stay sharp
+// Draws the mark as vectors and the wordmark in built-in Helvetica, so PDFs stay sharp
 // and text stays selectable without embedding images or font files. No DOM imports:
 // `markSegments` is tested under plain `node --test`.
 
@@ -7,14 +7,14 @@ export const BRAND_NAME = 'LvPrime';
 
 // Mirrors the --brand-* tokens in src/styles/tokens.css (checked by tests/unit/brand.test.js).
 export const BRAND_RGB = {
-  plum: [58, 33, 65],
-  plumDeep: [40, 22, 46],
-  rose: [231, 195, 183],
-  roseOnLight: [176, 116, 102],
-  porcelain: [250, 247, 251],
-  mist: [233, 224, 238],
-  ink: [30, 22, 34],
-  muted: [107, 98, 114],
+  graphite: [28, 31, 35],
+  graphiteDeep: [18, 20, 23],
+  volt: [194, 235, 87],
+  voltOnLight: [75, 107, 10],
+  chalk: [244, 245, 242],
+  steel: [221, 225, 220],
+  ink: [21, 24, 27],
+  muted: [90, 96, 104],
 };
 
 const PT_PER_MM = 2.8346;
@@ -28,10 +28,10 @@ const GRID = 64;
 const TILE_RADIUS = 15;
 const STROKE_WIDTH = 5;
 const STROKES = [
-  { from: [18, 16], to: [18, 46], colour: BRAND_RGB.porcelain },
-  { from: [18, 46], to: [34, 46], colour: BRAND_RGB.porcelain },
-  { from: [25, 26], to: [34, 46], colour: BRAND_RGB.porcelain },
-  { from: [34, 46], to: [47, 16], colour: BRAND_RGB.rose },
+  { from: [18, 16], to: [18, 46], colour: BRAND_RGB.chalk },
+  { from: [18, 46], to: [34, 46], colour: BRAND_RGB.chalk },
+  { from: [25, 26], to: [34, 46], colour: BRAND_RGB.chalk },
+  { from: [34, 46], to: [47, 16], colour: BRAND_RGB.volt },
 ];
 
 function toUnit(pt, unit) {
@@ -82,7 +82,7 @@ function restoreState(doc, s) {
 
 function drawMark(doc, x, y, size) {
   const { tile, strokes, strokeWidth } = markSegments(size);
-  doc.setFillColor(...BRAND_RGB.plum);
+  doc.setFillColor(...BRAND_RGB.graphite);
   doc.roundedRect(x + tile.x, y + tile.y, tile.w, tile.h, tile.r, tile.r, 'F');
   doc.setLineWidth(strokeWidth);
   doc.setLineCap('round');
@@ -93,7 +93,7 @@ function drawMark(doc, x, y, size) {
 }
 
 /**
- * Mark + "Lv" (Times bold, Plum) + "Prime" (Times bold italic, Rose on light),
+ * Mark + "Lv" (Helvetica bold, Graphite) + "Prime" (Helvetica bold oblique, Volt on light),
  * top-left at (x, y). Restores the caller's drawing state and returns the y below the lock-up.
  */
 export function drawBrandHeader(doc, { x, y, unit }) {
@@ -104,19 +104,19 @@ export function drawBrandHeader(doc, { x, y, unit }) {
   const textX = x + mark + toUnit(10, unit);
   const baseline = y + mark * 0.72;
   doc.setFontSize(WORDMARK_PT);
-  doc.setFont('times', 'bold');
-  doc.setTextColor(...BRAND_RGB.plum);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...BRAND_RGB.graphite);
   doc.text('Lv', textX, baseline);
   const lvWidth = doc.getTextWidth('Lv');
-  doc.setFont('times', 'bolditalic');
-  doc.setTextColor(...BRAND_RGB.roseOnLight);
+  doc.setFont('helvetica', 'bolditalic');
+  doc.setTextColor(...BRAND_RGB.voltOnLight);
   doc.text('Prime', textX + lvWidth, baseline);
 
   restoreState(doc, state);
   return y + mark + toUnit(24, unit);
 }
 
-/** Stamps every page with a Mist rule, "LvPrime" and "Page i of n". Call once, after all content. */
+/** Stamps every page with a Steel rule, "LvPrime" and "Page i of n". Call once, after all content. */
 export function drawBrandFooter(doc, { unit }) {
   const state = saveState(doc);
   const pageCount = doc.getNumberOfPages();
@@ -128,12 +128,12 @@ export function drawBrandFooter(doc, { unit }) {
 
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
-    doc.setDrawColor(...BRAND_RGB.mist);
+    doc.setDrawColor(...BRAND_RGB.steel);
     doc.setLineWidth(toUnit(0.75, unit));
     doc.line(margin, ruleY, width - margin, ruleY);
     doc.setFontSize(FOOTER_TEXT_PT);
     doc.setTextColor(...BRAND_RGB.muted);
-    doc.setFont('times', 'bolditalic');
+    doc.setFont('helvetica', 'bolditalic');
     doc.text(BRAND_NAME, margin, textY);
     doc.setFont('helvetica', 'normal');
     doc.text(`Page ${i} of ${pageCount}`, width - margin, textY, { align: 'right' });

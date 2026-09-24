@@ -12,7 +12,7 @@ function renderExerciseRow(exercise, index) {
   const number = document.createElement('span');
   number.className = 'exercise-number';
   number.setAttribute('aria-hidden', 'true');
-  number.textContent = String(index + 1);
+  number.textContent = String(index + 1).padStart(2, '0');
   row.appendChild(number);
 
   const main = document.createElement('div');

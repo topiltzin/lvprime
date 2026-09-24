@@ -48,21 +48,23 @@ function tokenBlocks() {
   };
 }
 
-// Locks the plum/lilac status and action colours so they only change deliberately.
+// Locks the graphite/volt status and action colours so they only change deliberately.
 test('status and action colours match the locked palette', () => {
   const { light, dark } = tokenBlocks();
   assert.deepEqual(
     {
       accent: light.accent, 'accent-hover': light['accent-hover'], 'accent-deep': light['accent-deep'],
       'accent-tint': light['accent-tint'], 'accent-contrast': light['accent-contrast'],
+      'accent-fill': light['accent-fill'],
       danger: light.danger, 'danger-tint': light['danger-tint'], 'danger-border': light['danger-border'],
       'warning-deep': light['warning-deep'], 'warning-tint': light['warning-tint'],
     },
     {
-      accent: '#7a4e9e', 'accent-hover': '#6a4190', 'accent-deep': '#4a2c63',
-      'accent-tint': '#f3ecf8', 'accent-contrast': '#ffffff',
-      danger: '#b4234a', 'danger-tint': '#fbe4ea', 'danger-border': '#f1a7b9',
-      'warning-deep': '#8a5a1c', 'warning-tint': '#fdf0e2',
+      accent: '#4B6B0A', 'accent-hover': '#3A5306', 'accent-deep': '#3A5306',
+      'accent-tint': '#EEF5DC', 'accent-contrast': '#14170F',
+      'accent-fill': '#C2EB57',
+      danger: '#B42318', 'danger-tint': '#FDE8E6', 'danger-border': '#F4B4AD',
+      'warning-deep': '#8F5200', 'warning-tint': '#FFF1D6',
     },
   );
   assert.deepEqual(
@@ -73,10 +75,10 @@ test('status and action colours match the locked palette', () => {
       'warning-deep': dark['warning-deep'], 'warning-tint': dark['warning-tint'],
     },
     {
-      accent: '#c9a8ee', 'accent-hover': '#b993e6', 'accent-deep': '#c9a8ee',
-      'accent-tint': '#2b2138', 'accent-contrast': '#241832',
-      'danger-tint': '#3a1622', 'danger-border': '#6a2638',
-      'warning-deep': '#e8b979', 'warning-tint': '#3a2a12',
+      accent: '#C2EB57', 'accent-hover': '#D2F27A', 'accent-deep': '#C2EB57',
+      'accent-tint': '#252D16', 'accent-contrast': '#14170F',
+      'danger-tint': '#3A1A18', 'danger-border': '#6B2A25',
+      'warning-deep': '#F0B34A', 'warning-tint': '#33270F',
     },
   );
 });
@@ -94,7 +96,7 @@ test('markSegments matches the 64-grid mark and scales linearly', async () => {
     [[25, 26], [34, 46]],
     [[34, 46], [47, 16]],
   ]);
-  assert.deepEqual(full.strokes.at(-1).colour, BRAND_RGB.rose);
+  assert.deepEqual(full.strokes.at(-1).colour, BRAND_RGB.volt);
 
   const half = markSegments(32);
   assert.deepEqual(half.tile, { x: 0, y: 0, w: 32, h: 32, r: 7.5 });
@@ -107,12 +109,12 @@ test('PDF palette matches the brand tokens and name', async () => {
   const { light } = tokenBlocks();
   const hex = (rgb) => '#' + rgb.map((n) => n.toString(16).padStart(2, '0')).join('').toUpperCase();
   assert.equal(BRAND_NAME, 'LvPrime');
-  assert.equal(hex(BRAND_RGB.plum), light['brand-plum']);
-  assert.equal(hex(BRAND_RGB.plumDeep), light['brand-plum-deep']);
-  assert.equal(hex(BRAND_RGB.rose), light['brand-rose']);
-  assert.equal(hex(BRAND_RGB.roseOnLight), light['brand-rose-on-light']);
-  assert.equal(hex(BRAND_RGB.porcelain), light['brand-porcelain']);
-  assert.equal(hex(BRAND_RGB.mist), light['brand-mist']);
+  assert.equal(hex(BRAND_RGB.graphite), light['brand-graphite']);
+  assert.equal(hex(BRAND_RGB.graphiteDeep), light['brand-graphite-deep']);
+  assert.equal(hex(BRAND_RGB.volt), light['brand-volt']);
+  assert.equal(hex(BRAND_RGB.voltOnLight), light['brand-volt-on-light']);
+  assert.equal(hex(BRAND_RGB.chalk), light['brand-chalk']);
+  assert.equal(hex(BRAND_RGB.steel), light['brand-steel']);
   assert.equal(hex(BRAND_RGB.ink), light.ink);
   assert.equal(hex(BRAND_RGB.muted), light.muted);
 });

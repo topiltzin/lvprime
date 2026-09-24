@@ -1,6 +1,33 @@
 // Client detail hero (FR-005): name, goal, and level/session/plan facts, with a quiet
 // back-to-overview link — rendered above the tab navigation on every client detail page.
 import { icon } from '../lib/icons.js';
+import { deriveStatus, STATUS_LABEL, formatRelativeCheckIn } from '../lib/status.js';
+
+// "4 semanas" / "6 weeks" → 4 / 6; anything else → null (no progress row).
+function planWeeks(planDuration) {
+  const match = String(planDuration || '').match(/(\d+)\s*(semanas?|weeks?)/i);
+  return match ? Number(match[1]) : null;
+}
+
+// Week N of M as one segment per week: past weeks, the current week, weeks to come.
+function renderWeekProgress(currentWeek, totalWeeks) {
+  const wrap = document.createElement('div');
+  wrap.className = 'hero-progress';
+  const label = document.createElement('span');
+  label.className = 'hero-progress-label';
+  label.textContent = `Week ${currentWeek} of ${totalWeeks}`;
+  wrap.appendChild(label);
+  const track = document.createElement('span');
+  track.className = 'hero-progress-segments';
+  track.setAttribute('aria-hidden', 'true');
+  for (let w = 1; w <= totalWeeks; w++) {
+    const seg = document.createElement('span');
+    seg.className = w < currentWeek ? 'is-past' : w === currentWeek ? 'is-current' : '';
+    track.appendChild(seg);
+  }
+  wrap.appendChild(track);
+  return wrap;
+}
 
 // "55-65 min/sesión (7 min calentamiento, ...)" → main value + the parenthetical as detail.
 function splitDetail(text) {
@@ -49,6 +76,22 @@ export function renderClientHero(customerData) {
   const card = document.createElement('section');
   card.className = 'client-hero-card';
 
+  const entries = customerData.feedback?.entries || [];
+  const lastDate = entries.length ? entries[entries.length - 1].date : null;
+  const status = deriveStatus(lastDate);
+
+  const top = document.createElement('div');
+  top.className = 'client-hero-top';
+  const pill = document.createElement('span');
+  pill.className = `status-pill status-${status}`;
+  pill.textContent = STATUS_LABEL[status];
+  top.appendChild(pill);
+  const checkIn = document.createElement('span');
+  checkIn.className = 'client-hero-checkin';
+  checkIn.textContent = `Last check-in ${formatRelativeCheckIn(lastDate).toLowerCase()}`;
+  top.appendChild(checkIn);
+  card.appendChild(top);
+
   const name = document.createElement('h1');
   name.className = 'client-hero-name';
   name.textContent = customerData.displayName;
@@ -68,6 +111,12 @@ export function renderClientHero(customerData) {
       ['clock', 'Session', program.sessionDuration],
       ['calendar', 'Plan', program.planDuration],
     ].filter(([, , value]) => value);
+
+    const total = planWeeks(program.planDuration);
+    const current = program.weekNumber
+      ?? (customerData.programWeeks || []).find((w) => w.isCurrent)?.weekNumber
+      ?? null;
+    if (total && current && current <= total) card.appendChild(renderWeekProgress(current, total));
 
     if (facts.length) {
       const list = document.createElement('div');

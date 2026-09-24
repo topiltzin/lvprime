@@ -1,71 +1,79 @@
-/* Self-hosted type system (research.md §4) — no external font CDN. */
-@import '@fontsource/inter/400.css';
-@import '@fontsource/inter/500.css';
-@import '@fontsource/inter/600.css';
-@import '@fontsource/inter/700.css';
-@import '@fontsource/fraunces/500.css';
-@import '@fontsource/fraunces/600.css';
-@import '@fontsource/fraunces/500-italic.css';
+/* Self-hosted type system — no external font CDN.
+   Barlow Condensed: athletic display face for headings, numbers and the wordmark.
+   Geist: body and UI text. */
+@import '@fontsource/barlow-condensed/500.css';
+@import '@fontsource/barlow-condensed/600.css';
+@import '@fontsource/barlow-condensed/700.css';
+@import '@fontsource/barlow-condensed/700-italic.css';
+@import '@fontsource-variable/geist/wght.css';
 
 :root {
   color-scheme: light dark;
 
-  /* LvPrime brand palette: plum, lilac and rose gold.
-     Rose gold is brand detail only: never buttons, links, tabs, status or charts. */
-  --brand-plum: #3A2141;
-  --brand-plum-deep: #28162E;
-  --brand-rose: #E7C3B7;
-  --brand-rose-on-light: #B07466; /* large text (>=24px) only on light */
-  --brand-porcelain: #FAF7FB;
-  --brand-mist: #E9E0EE;
+  /* LvPrime performance palette: graphite, chalk and one volt accent.
+     Volt is a fill colour on light surfaces (dark text on top); text in the accent
+     uses --brand-volt-on-light there. On dark surfaces volt works as both. */
+  --brand-graphite: #1C1F23;
+  --brand-graphite-deep: #121417;
+  --brand-volt: #C2EB57;
+  --brand-volt-on-light: #4B6B0A;
+  --brand-chalk: #F4F5F2;
+  --brand-steel: #DDE1DC;
 
   /* Color (locked visual system) */
-  --bg: var(--brand-porcelain);
-  --surface: #ffffff;
-  --ink: #1E1622;
-  --muted: #6B6272;
-  --border: var(--brand-mist);
-  --accent: #7a4e9e;
-  --accent-deep: #4a2c63;
-  --accent-tint: #f3ecf8;
-  --accent-contrast: #ffffff;
-  --danger: #b4234a;
-  --danger-tint: #fbe4ea;
-  --danger-border: #f1a7b9;
-  --warning-deep: #8a5a1c;
-  --warning-tint: #fdf0e2;
-  --header-bg: var(--brand-plum);
+  --bg: var(--brand-chalk);
+  --surface: #FCFCFB;
+  --surface-raised: #FFFFFE;
+  --ink: #15181B;
+  --muted: #5A6068;
+  --border: var(--brand-steel);
+  --accent: #4B6B0A;
+  --accent-deep: #3A5306;
+  --accent-tint: #EEF5DC;
+  --accent-fill: #C2EB57;
+  --accent-fill-hover: #B3DE45;
+  --accent-contrast: #14170F;
+  --danger: #B42318;
+  --danger-tint: #FDE8E6;
+  --danger-border: #F4B4AD;
+  --warning-deep: #8F5200;
+  --warning-tint: #FFF1D6;
+  --header-bg: var(--brand-graphite);
+  --on-header: var(--brand-chalk);
+  --on-header-muted: #A9AFAC;
 
   /* Type */
-  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
-  --h1-size: 2rem; /* 32px */
-  --h1-line: 2.375rem; /* 38px */
-  --h2-size: 1.375rem; /* 22px */
-  --h2-line: 1.75rem; /* 28px */
-  --body-size: 0.9375rem; /* 15px */
-  --body-line: 1.5rem; /* 24px */
-  --meta-size: 0.8125rem; /* 13px */
-  --meta-line: 1.125rem; /* 18px */
-  --logo-tracking: -0.02em;
-  --label-tracking: 0.04em;
+  --font-body: 'Geist Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Barlow Condensed', 'Arial Narrow', system-ui, sans-serif;
+  --h1-size: 2.5rem;
+  --h1-line: 1.05;
+  --h2-size: 1.5rem;
+  --h2-line: 1.15;
+  --body-size: 1rem; /* 16px: readability first for a 40+ audience */
+  --body-line: 1.5rem;
+  --meta-size: 0.875rem; /* 14px */
+  --meta-line: 1.125rem;
+  --logo-tracking: -0.01em;
+  --label-tracking: 0.06em;
 
-  /* Space & shape */
-  --radius-card: 16px;
-  --radius-hero: 24px;
+  /* Space & shape. Rule: actions and chips are pills, inputs --radius-input,
+     cards --radius-card, feature panels --radius-hero. */
+  --radius-card: 14px;
+  --radius-hero: 20px;
   --radius-pill: 999px;
   --radius-input: 10px;
-  --page-max-width: 1080px;
-  --header-height: 104px;
+  --page-max-width: 1120px;
+  --header-height: 64px;
   --tab-header-height: 58px;
+  --sidebar-width: 248px;
   --card-padding: 20px;
-  --shadow-rest: 0 1px 2px rgba(58, 33, 65, 0.05);
-  --shadow-hover: 0 8px 24px rgba(58, 33, 65, 0.10);
-  --shadow-hero: 0 18px 40px -18px rgba(40, 22, 46, 0.55);
+  --shadow-rest: 0 1px 2px rgba(21, 24, 27, 0.05);
+  --shadow-hover: 0 10px 28px -8px rgba(21, 24, 27, 0.16);
+  --shadow-hero: 0 22px 44px -22px rgba(18, 20, 23, 0.55);
 
   /* Surfaces & interactive accents */
-  --muted-bg: #F1EAF4;
-  --accent-hover: #6a4190;
+  --muted-bg: #ECEEEA;
+  --accent-hover: #3A5306;
 
   /* Chart (trend bars — read via getComputedStyle in JS) */
   --chart-completed: var(--accent);
@@ -89,25 +97,27 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #17131B;
-    --surface: #201B25;
-    --ink: #F3EEF6;
-    --muted: #B0A6B8;
-    --border: #342C3B;
-    --brand-rose-on-light: #E7C3B7;
-    --accent: #c9a8ee;
-    /* On dark surfaces, tint text needs to be light-on-dark (not the light-mode
-       deep-violet shade), or it goes muddy/illegible against --accent-tint. */
-    --accent-deep: #c9a8ee;
-    --accent-tint: #2b2138;
-    --accent-contrast: #241832;
-    /* Same light-on-dark fix applied to the danger/warning semantic colors so
-       their tint backgrounds don't read as a jarring light patch on a dark page. */
-    --danger-tint: #3a1622;
-    --danger-border: #6a2638;
-    --warning-deep: #e8b979;
-    --warning-tint: #3a2a12;
-    --muted-bg: #29222F;
-    --accent-hover: #b993e6;
+    --bg: #0F1113;
+    --surface: #181B1F;
+    --surface-raised: #1E2126;
+    --ink: #ECEEE9;
+    --muted: #9CA3AB;
+    --border: #2A2E34;
+    --brand-volt-on-light: #C2EB57;
+    --accent: #C2EB57;
+    /* Tint text must stay light-on-dark, or it goes muddy against --accent-tint. */
+    --accent-deep: #C2EB57;
+    --accent-tint: #252D16;
+    --accent-contrast: #14170F;
+    --danger: #FF8A80;
+    --danger-tint: #3A1A18;
+    --danger-border: #6B2A25;
+    --warning-deep: #F0B34A;
+    --warning-tint: #33270F;
+    --muted-bg: #22262B;
+    --accent-hover: #D2F27A;
+    --shadow-rest: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-hover: 0 12px 30px -10px rgba(0, 0, 0, 0.6);
+    --chart-hatch: #0F1113;
   }
 }

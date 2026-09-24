@@ -1,12 +1,6 @@
 import { deriveStatus, STATUS_LABEL, formatRelativeCheckIn } from '../lib/status.js';
 import { icon } from '../lib/icons.js';
-
-// "Jaqueline Orellano" → "JO"; single names use their first letter.
-function initials(name) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  const letters = parts.length > 1 ? [parts[0], parts[parts.length - 1]] : parts;
-  return letters.map((p) => p[0]).join('').toUpperCase();
-}
+import { initials } from '../lib/format.js';
 
 // Renders one client's overview card (User Story 1, FR-002).
 export function renderCustomerCard(customer) {

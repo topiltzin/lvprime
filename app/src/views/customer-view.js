@@ -4,6 +4,7 @@ import { TabContainer } from '../components/tab-container.js';
 import { renderClientHero } from '../components/client-hero.js';
 import { showToast } from '../components/toast.js';
 import { icon } from '../lib/icons.js';
+import { renderSidebar, invalidateSidebar } from '../components/sidebar.js';
 
 // Make renderFeedbackForm available globally for TabContainer
 window.renderFeedbackForm = renderFeedbackForm;
@@ -234,6 +235,9 @@ export async function renderCustomer(container, slug) {
         });
         refreshed.setActiveTab('feedback');
         showToast('Saved · view in Feedback');
+        // The new check-in changes this client's status in the sidebar.
+        invalidateSidebar();
+        renderSidebar(document.getElementById('sidebar'), slug);
       } catch (err) {
         console.error('Failed to refresh feedback:', err);
       }
