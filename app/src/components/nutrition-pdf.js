@@ -1,4 +1,5 @@
 import { jsPDF } from 'jspdf';
+import { BRAND_NAME, BRAND_RGB, drawBrandFooter, drawBrandHeader, footerReserve } from '../lib/pdf-brand.js';
 
 const MARGIN_X = 15;
 const MARGIN_Y = 12;
@@ -9,17 +10,18 @@ const BODY_SIZE = 10;
 const LINE_HEIGHT = 5;
 const MAX_WIDTH = 180;
 const PAGE_HEIGHT = 297;
-const PAGE_BOTTOM = 280;
+// Stays above the LvPrime footer band (footerReserve) stamped on every page.
+const PAGE_BOTTOM = Math.min(280, PAGE_HEIGHT - footerReserve('mm') - 3);
 
-// Color scheme - professional and appealing
+// LvPrime palette (specs/011 data-model.md BrandPalette)
 const COLORS = {
-  headerBg: [41, 128, 185],      // Professional blue
-  headerText: [255, 255, 255],   // White
-  sectionBg: [236, 240, 241],    // Light gray
-  sectionText: [44, 62, 80],     // Dark gray
-  tableBorder: [189, 195, 199],  // Medium gray
-  tableAlt: [248, 249, 250],     // Very light gray
-  text: [52, 73, 94],            // Dark text
+  headerBg: BRAND_RGB.evergreen,   // Section bars, table headers, title rule
+  headerText: [255, 255, 255],     // White
+  sectionBg: [236, 240, 241],      // Light gray
+  sectionText: BRAND_RGB.evergreen,
+  tableBorder: BRAND_RGB.stone,
+  tableAlt: [248, 249, 250],       // Very light gray
+  text: [52, 73, 94],              // Dark text
 };
 
 function isTableRow(line) {
@@ -164,26 +166,28 @@ export function downloadNutritionPdf(customerName, nutritionMarkdown) {
 
   doc.setProperties({
     title: `Nutrition Plan - ${customerName}`,
-    author: 'Lili Trainer',
+    author: BRAND_NAME,
   });
+
+  const titleY = drawBrandHeader(doc, { x: MARGIN_X, y: MARGIN_Y, unit: 'mm' }) + 2;
 
   // Title with styling
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(TITLE_SIZE);
   doc.setTextColor(...COLORS.sectionText);
-  doc.text(`${customerName}`, MARGIN_X, MARGIN_Y);
+  doc.text(`${customerName}`, MARGIN_X, titleY);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(SUBTITLE_SIZE);
   doc.setTextColor(120, 120, 120);
-  doc.text('Personalized Nutrition Plan', MARGIN_X, MARGIN_Y + 6);
+  doc.text('Personalized Nutrition Plan', MARGIN_X, titleY + 6);
 
   // Subtitle underline
   doc.setDrawColor(...COLORS.headerBg);
   doc.setLineWidth(1);
-  doc.line(MARGIN_X, MARGIN_Y + 8, MARGIN_X + 60, MARGIN_Y + 8);
+  doc.line(MARGIN_X, titleY + 8, MARGIN_X + 60, titleY + 8);
 
-  let y = MARGIN_Y + 14;
+  let y = titleY + 14;
 
   for (const section of sections) {
     if (y > PAGE_BOTTOM) {
@@ -222,6 +226,8 @@ export function downloadNutritionPdf(customerName, nutritionMarkdown) {
 
     y += 2;
   }
+
+  drawBrandFooter(doc, { unit: 'mm' });
 
   const filename = `nutrition-plan-${customerName.toLowerCase().replace(/\s+/g, '-')}.pdf`;
   doc.save(filename);

@@ -3,17 +3,28 @@
 @import '@fontsource/inter/500.css';
 @import '@fontsource/inter/600.css';
 @import '@fontsource/inter/700.css';
-@import '@fontsource/inter-tight/700.css';
+@import '@fontsource/fraunces/500.css';
+@import '@fontsource/fraunces/600.css';
+@import '@fontsource/fraunces/500-italic.css';
 
 :root {
   color-scheme: light dark;
 
+  /* LvPrime brand palette (specs/011 data-model.md BrandPalette).
+     Brass is brand detail only: never buttons, links, tabs, status or charts. */
+  --brand-evergreen: #16352A;
+  --brand-evergreen-deep: #0E231C;
+  --brand-brass: #C9A46A;
+  --brand-brass-on-light: #9C7A43; /* large text (>=24px) only on light */
+  --brand-ivory: #F5F1EA;
+  --brand-stone: #E6E0D5;
+
   /* Color (locked visual system) */
-  --bg: #f4f2ee;
+  --bg: var(--brand-ivory);
   --surface: #ffffff;
-  --ink: #111111;
-  --muted: #6b6b64;
-  --border: #e6e3dc;
+  --ink: #141412;
+  --muted: #6B675E;
+  --border: var(--brand-stone);
   --accent: #1f7a4d;
   --accent-deep: #143d2b;
   --accent-tint: #e8f5ee;
@@ -23,11 +34,11 @@
   --danger-border: #fca5a5;
   --warning-deep: #8a5a1c;
   --warning-tint: #fdf0e2;
-  --header-bg: #0b0b0b;
+  --header-bg: var(--brand-evergreen);
 
   /* Type */
   --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-display: 'Inter Tight', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
   --h1-size: 2rem; /* 32px */
   --h1-line: 2.375rem; /* 38px */
   --h2-size: 1.375rem; /* 22px */
@@ -51,7 +62,7 @@
   --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.06);
 
   /* Surfaces & interactive accents */
-  --muted-bg: #ebe8e2;
+  --muted-bg: #EDE8DF;
   --accent-hover: #186a42;
 
   /* Chart (trend bars — read via getComputedStyle in JS) */
@@ -75,11 +86,12 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #171715;
-    --surface: #211f1d;
-    --ink: #f0efe9;
-    --muted: #a9a79f;
-    --border: #35332f;
+    --bg: #121614;
+    --surface: #1B201D;
+    --ink: #F0EDE6;
+    --muted: #A9ADA6;
+    --border: #2C332F;
+    --brand-brass-on-light: #C9A46A;
     --accent: #3ddc97;
     /* On dark surfaces, tint text needs to be light-on-dark (not the light-mode
        dark-green shade), or it goes muddy/illegible against --accent-tint. */
@@ -92,7 +104,7 @@
     --danger-border: #5c261a;
     --warning-deep: #e8b979;
     --warning-tint: #3a2a12;
-    --muted-bg: #2c2a26;
+    --muted-bg: #242A26;
     --accent-hover: #2fc984;
   }
 }

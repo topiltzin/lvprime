@@ -204,3 +204,29 @@ Jaqueline debe actualizar `feedback.md` después de cada sesión o mínimo 2x po
 - Si logra mantener cena antes de 7pm
 - Nivel de energía general con nueva estructura
 
+---
+
+## Actualización de Programa — 21 de Septiembre, 2026
+
+**Solicitud:** Ajustar rutina priorizando aumento de glúteo y tonificación de brazos, manteniendo pull-ups.
+
+**Feedback revisado antes del cambio (Semana 2, sesiones 2026-09-22 y 2026-09-23):**
+- Energía alta en ambas sesiones, dificultad "moderada" pese a subir carga en sentadillas (+2.5kg)
+- DOMS de la semana 1 desapareció completamente — señal de buena recuperación
+- Pull-up mejorando de forma notable, considerando reducir asistencia
+- **Interpretación:** hay margen real para más volumen sin riesgo de sobreentrenamiento a esta edad, siempre que se vigile la recuperación en las 3 sesiones de pierna semanales.
+
+**Cambios aplicados en `program.md`:**
+1. **Hombro — 3 haces musculares (martes y jueves):** se agregó el haz que faltaba en cada día para cubrir anterior + lateral + posterior en ambas sesiones de tren superior:
+   - Martes: se agregó Front raise (anterior) y Rear delt fly/Face pull con banda (posterior); ya tenía Lateral raises (lateral)
+   - Jueves: se agregó Front raise (anterior); ya tenía Face pull (posterior) y Lateral raises (lateral)
+2. **Pull-ups:** sin cambios — se mantiene la progresión tal como está (martes y jueves), respetando la solicitud explícita.
+3. **Glúteo (miércoles pasa a ser el día de énfasis):** se aumentó Hip thrust de 3 a 4 series (ejercicio principal del día), se agregó Single-leg hip thrust y Glute kickback, y se subió el rango de reps de Hip abduction (12-15 → 15-20). Se recortó Pallof press de 3 a 2 series para compensar tiempo de sesión.
+4. **Tonificación de brazos:** rango de reps de Biceps curl y Triceps pushdown subido de 10-12 a 12-15 en ambos días de tren superior (mayor reps/menor carga relativa = mejor para el objetivo de tonificación vs. hipertrofia pura).
+
+**Puntos de seguimiento para esta fase:**
+- Duración de sesión: martes/jueves y miércoles suman ejercicios nuevos — confirmar que se sigue completando dentro de los 55-65 min; si se excede, primer candidato a recortar es Pallof press o Glute kickback.
+- Vigilar sensación de hombro con el volumen nuevo (3 ejercicios de aislamiento de hombro por sesión es más que antes).
+- Confirmar en la próxima sesión de miércoles si el hip thrust a 4 series se tolera bien o genera fatiga lumbar/glútea excesiva para el resto de la semana.
+- Seguir vigilando si pull-up puede reducir asistencia, según lo notado en feedback del 2026-09-23.
+

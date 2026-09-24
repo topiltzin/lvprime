@@ -14,32 +14,38 @@ body {
   font-size: var(--body-size);
 }
 
-/* Brand shell (plan.md Foundational — solid header, no gradient) */
+/* Brand shell (specs/011 contracts/header-lockup.md): Evergreen band, Brass rule.
+   Text uses Ivory directly, not --accent-contrast, which turns dark green in dark mode. */
 .app-header {
   background: var(--header-bg);
-  color: var(--accent-contrast);
+  color: var(--brand-ivory);
   padding: 0;
   position: sticky;
   top: 0;
   z-index: 100;
-  border-bottom: 2px solid var(--accent);
+  border-bottom: 2px solid var(--brand-brass);
 }
 
+/* Fixed height: sticky tab headers offset by --header-height, and a fixed box
+   means the wordmark's font swap cannot shift the page (SC-007). */
 .header-content {
   max-width: var(--page-max-width);
+  height: calc(var(--header-height) - 2px);
   margin: 0 auto;
-  padding: 1.25rem 1.5rem;
+  padding: 0 1.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 1rem;
 }
 
 .logo {
   display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
   text-decoration: none;
-  color: var(--accent-contrast);
+  color: var(--brand-ivory);
   transition: opacity var(--motion-fast) var(--motion-ease);
 }
 
@@ -47,17 +53,62 @@ body {
   opacity: 0.85;
 }
 
+/* Mark colours come from variables so one SVG serves the on-dark (header)
+   and on-light (sign-in) variants. */
+.logo-mark {
+  --mark-tile: var(--brand-evergreen-deep);
+  --mark-hairline: var(--brand-brass);
+  --mark-ink: var(--brand-ivory);
+  --mark-rise: var(--brand-brass);
+  width: 40px;
+  height: 40px;
+  flex: none;
+}
+
+.mark-tile {
+  fill: var(--mark-tile);
+  stroke: var(--mark-hairline);
+  stroke-opacity: 0.55;
+  stroke-width: 1.5;
+}
+
+.mark-ink {
+  stroke: var(--mark-ink);
+  fill: none;
+}
+
+.mark-rise {
+  stroke: var(--mark-rise);
+  fill: none;
+}
+
+.logo-lockup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
 .logo-text {
   font-family: var(--font-display);
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: 1.875rem;
+  line-height: 1;
+  font-weight: 600;
   letter-spacing: var(--logo-tracking);
+  color: var(--brand-ivory);
+}
+
+.logo-text em {
+  font-style: italic;
+  font-weight: 500;
+  color: var(--brand-brass);
 }
 
 .logo-subtitle {
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.72);
-  font-weight: 500;
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.26em;
+  color: rgba(245, 241, 234, 0.72);
 }
 
 /* Static context label, not an action — no pill border so it doesn't read as
@@ -66,7 +117,7 @@ body {
   font-size: var(--meta-size);
   letter-spacing: var(--label-tracking);
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(245, 241, 234, 0.72);
 }
 
 #app {
@@ -92,11 +143,17 @@ h1, h2, h3 {
   color: var(--ink);
 }
 
-h1 {
+/* LvPrime voice: Fraunces for page and section headings, Inter everywhere else. */
+h1,
+h2 {
   font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+h1 {
   font-size: var(--h1-size);
   line-height: var(--h1-line);
-  font-weight: 700;
 }
 
 h2 {
@@ -696,6 +753,48 @@ th, td {
   margin: 4rem auto;
 }
 
+.login-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.login-mark {
+  --mark-tile: var(--brand-evergreen);
+  --mark-hairline: transparent;
+  width: 56px;
+  height: 56px;
+}
+
+.login-wordmark {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 2.25rem;
+  line-height: 1;
+  letter-spacing: var(--logo-tracking);
+  color: var(--ink);
+  margin: 0;
+}
+
+/* Brass-on-light is AA only as large text; the wordmark is 36px. */
+.login-wordmark em {
+  font-style: italic;
+  font-weight: 500;
+  color: var(--brand-brass-on-light);
+}
+
+.login-tagline {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.125rem;
+  color: var(--muted);
+  margin: 0;
+}
+
 form.feedback-form {
   display: grid;
   gap: 1.25rem;
@@ -813,10 +912,19 @@ form.feedback-form button:disabled {
   }
 
   .header-content {
-    flex-wrap: wrap;
     gap: 0.75rem;
   }
 
+  .logo-mark {
+    width: 32px;
+    height: 32px;
+  }
+
+  .logo-text {
+    font-size: 1.375rem;
+  }
+
+  .logo-subtitle,
   .header-chip {
     display: none;
   }

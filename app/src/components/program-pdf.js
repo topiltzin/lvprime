@@ -4,6 +4,7 @@
 
 import { jsPDF } from 'jspdf';
 import { setSafeHtml } from '../lib/safe-html.js';
+import { BRAND_NAME, drawBrandFooter, drawBrandHeader, footerReserve } from '../lib/pdf-brand.js';
 
 /**
  * Pure content-model builder — no DOM, no jsPDF — so it's testable with plain
@@ -29,7 +30,8 @@ function htmlToPlainText(html) {
 }
 
 const MARGIN_X = 40;
-const PAGE_BOTTOM_MARGIN = 60;
+// Keeps content clear of the LvPrime footer band stamped on every page.
+const PAGE_BOTTOM_MARGIN = footerReserve('pt') + 20;
 
 function addPageIfNeeded(doc, y) {
   if (y <= doc.internal.pageSize.getHeight() - PAGE_BOTTOM_MARGIN) return y;
@@ -86,7 +88,8 @@ export function downloadProgramWeekPdf(weekDetail, customerSlug) {
   const doc = new jsPDF({ unit: 'pt' });
   const pageWidth = doc.internal.pageSize.getWidth();
   const maxWidth = pageWidth - MARGIN_X * 2;
-  let y = 50;
+  doc.setProperties({ title: `${BRAND_NAME} · ${content.weekLabel}`, author: BRAND_NAME });
+  let y = drawBrandHeader(doc, { x: MARGIN_X, y: 36, unit: 'pt' }) + 8;
 
   doc.setFontSize(20);
   doc.setFont('helvetica', 'bold');
@@ -118,6 +121,8 @@ export function downloadProgramWeekPdf(weekDetail, customerSlug) {
       y += 14;
     }
   }
+
+  drawBrandFooter(doc, { unit: 'pt' });
 
   const fileName = `${customerSlug}-week-${content.weekNumber}.pdf`;
   const blob = doc.output('blob');

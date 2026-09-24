@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1200">
+<title>LvPrime Brand Sheet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&display=block" rel="stylesheet">
+<style>
+  :root {
+    --evergreen: #16352A;
+    --evergreen-deep: #0E231C;
+    --brass: #C9A46A;
+    --ivory: #F5F1EA;
+    --stone: #E6E0D5;
+    --ink: #141412;
+    --muted: #6B675E;
+    --signal: #1F7A4D;
+    --serif: 'Fraunces', Georgia, serif;
+    --sans: 'Inter', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    width: 1200px; height: 1400px; overflow: hidden;
+    background: var(--ivory); color: var(--ink);
+    font-family: var(--sans);
+    padding: 56px;
+    display: flex; flex-direction: column; gap: 40px;
+  }
+  .label {
+    font-size: 13px; font-weight: 600; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .top { display: flex; justify-content: space-between; align-items: baseline; }
+  .top h1 { font-family: var(--serif); font-weight: 500; font-size: 34px; letter-spacing: -0.01em; }
+
+  /* Hero: primary lock-up on evergreen */
+  .hero {
+    background: var(--evergreen); border-radius: 24px;
+    height: 380px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 26px;
+    position: relative;
+  }
+  .lockup { display: flex; align-items: center; gap: 22px; }
+  .lockup .mark { width: 96px; height: 96px; }
+  .word { display: flex; flex-direction: column; gap: 8px; }
+  .wordmark {
+    font-family: var(--serif); font-weight: 600; font-size: 84px; line-height: 0.9;
+    letter-spacing: -0.02em; color: var(--ivory);
+  }
+  .wordmark em { font-style: italic; font-weight: 500; color: var(--brass); }
+  .descriptor {
+    font-size: 14px; font-weight: 600; letter-spacing: 0.32em;
+    text-transform: uppercase; color: rgba(245,241,234,0.72);
+    padding-left: 4px;
+  }
+  .tagline {
+    font-family: var(--serif); font-style: italic; font-weight: 500;
+    font-size: 24px; color: var(--stone);
+  }
+  .hero .rule { width: 56px; height: 2px; background: var(--brass); }
+
+  /* Row of variants */
+  .row { display: grid; grid-template-columns: 1.3fr 1fr; gap: 24px; }
+  .card { border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 20px; }
+  .card.light { background: #FFFFFF; border: 1px solid var(--stone); }
+  .card.stone { background: var(--stone); }
+  .lockup.small .mark { width: 56px; height: 56px; }
+  .lockup.small { gap: 14px; }
+  .lockup.small .wordmark { font-size: 46px; color: var(--evergreen); }
+  .lockup.small .wordmark em { color: #9C7A43; }
+  .lockup.small .descriptor { font-size: 11px; color: var(--muted); letter-spacing: 0.28em; }
+  .sizes { display: flex; align-items: flex-end; gap: 28px; }
+  .sizes figure { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .sizes figcaption { font-size: 13px; color: var(--muted); font-weight: 500; }
+  .mono { color: var(--evergreen); }
+
+  /* Palette */
+  .palette { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; }
+  .swatch { border-radius: 14px; overflow: hidden; border: 1px solid var(--stone); background: #fff; }
+  .swatch .chip { height: 92px; }
+  .swatch .meta { padding: 12px 14px; }
+  .swatch b { display: block; font-size: 15px; font-weight: 600; }
+  .swatch span { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  /* Type + header preview */
+  .type { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .specimen .big { font-family: var(--serif); font-size: 44px; font-weight: 500; line-height: 1.05; }
+  .specimen .big em { color: #9C7A43; }
+  .specimen p { font-size: 17px; line-height: 1.5; color: var(--muted); }
+  .specimen .ui { font-size: 17px; font-weight: 600; color: var(--ink); }
+
+  .header-preview { border-radius: 16px; overflow: hidden; border: 1px solid var(--stone); }
+  .hp-bar {
+    background: var(--evergreen); padding: 18px 22px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 2px solid var(--brass);
+  }
+  .hp-bar .lockup { gap: 12px; }
+  .hp-bar .mark { width: 40px; height: 40px; }
+  .hp-bar .wordmark { font-size: 30px; }
+  .hp-bar .descriptor { font-size: 9.5px; letter-spacing: 0.26em; }
+  .hp-chip { font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(245,241,234,0.72); }
+  .hp-body { background: var(--ivory); padding: 18px 22px; display: flex; gap: 10px; }
+  .hp-body div { height: 44px; flex: 1; border-radius: 10px; background: #fff; border: 1px solid var(--stone); }
+
+  .rules { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .rules div { font-size: 16px; line-height: 1.45; }
+  .rules b { display: block; font-family: var(--serif); font-size: 20px; font-weight: 600; margin-bottom: 4px; color: var(--evergreen); }
+</style>
+</head>
+<body>
+  <div class="top">
+    <h1>LvPrime brand system</h1>
+    <span class="label">v1 proposal · Coaching for 40+</span>
+  </div>
+
+  <section class="hero">
+    <div class="lockup">
+      <img class="mark" src="mark-on-dark.svg" alt="">
+      <div class="word">
+        <div class="wordmark">Lv<em>Prime</em></div>
+        <div class="descriptor">Personal training · 40+</div>
+      </div>
+    </div>
+    <div class="rule"></div>
+    <div class="tagline">Strength for the decades ahead.</div>
+  </section>
+
+  <div class="row">
+    <div class="card light">
+      <span class="label">On light</span>
+      <div class="lockup small">
+        <img class="mark" src="mark.svg" alt="">
+        <div class="word">
+          <div class="wordmark">Lv<em>Prime</em></div>
+          <div class="descriptor">Personal training · 40+</div>
+        </div>
+      </div>
+    </div>
+    <div class="card stone">
+      <span class="label">Mark · app icon · favicon</span>
+      <div class="sizes">
+        <figure><img src="mark.svg" width="72" height="72" alt=""><figcaption>72</figcaption></figure>
+        <figure><img src="mark.svg" width="40" height="40" alt=""><figcaption>40</figcaption></figure>
+        <figure><img src="mark.svg" width="24" height="24" alt=""><figcaption>24</figcaption></figure>
+        <figure class="mono">
+          <svg width="56" height="56" viewBox="0 0 64 64" aria-hidden="true"><path d="M18 16V46H34L47 16M25 26L34 46" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <figcaption>Mono</figcaption>
+        </figure>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="label" style="margin-bottom:14px">Palette</div>
+    <div class="palette">
+      <div class="swatch"><div class="chip" style="background:#16352A"></div><div class="meta"><b>Evergreen</b><span>#16352A · brand</span></div></div>
+      <div class="swatch"><div class="chip" style="background:#C9A46A"></div><div class="meta"><b>Brass</b><span>#C9A46A · detail</span></div></div>
+      <div class="swatch"><div class="chip" style="background:#F5F1EA"></div><div class="meta"><b>Ivory</b><span>#F5F1EA · page</span></div></div>
+      <div class="swatch"><div class="chip" style="background:#E6E0D5"></div><div class="meta"><b>Stone</b><span>#E6E0D5 · lines</span></div></div>
+      <div class="swatch"><div class="chip" style="background:#141412"></div><div class="meta"><b>Ink</b><span>#141412 · text</span></div></div>
+      <div class="swatch"><div class="chip" style="background:#1F7A4D"></div><div class="meta"><b>Signal</b><span>#1F7A4D · status</span></div></div>
+    </div>
+  </div>
+
+  <div class="type">
+    <div class="specimen">
+      <div class="label" style="margin-bottom:12px">Type</div>
+      <div class="big">Fraunces for <em>voice</em>,<br>Inter for work.</div>
+      <p style="margin-top:12px"><span class="ui">Inter 600 · 17px</span> keeps body and UI large and calm.</p>
+    </div>
+    <div>
+      <div class="label" style="margin-bottom:12px">App header</div>
+      <div class="header-preview">
+        <div class="hp-bar">
+          <div class="lockup">
+            <img class="mark" src="mark-on-dark.svg" alt="">
+            <div class="word">
+              <div class="wordmark">Lv<em>Prime</em></div>
+              <div class="descriptor">Personal training · 40+</div>
+            </div>
+          </div>
+          <span class="hp-chip">Coach workspace</span>
+        </div>
+        <div class="hp-body"><div></div><div></div><div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rules">
+    <div><b>The rising line</b>L and V share one baseline; the brass stroke climbs past the cap height. Progress, not youth.</div>
+    <div><b>Brass is jewellery</b>Mark, italic Prime and one rule per view. Never for buttons or status.</div>
+    <div><b>Green still signals</b>Status, progress and actions keep Signal green, so data reads the same as today.</div>
+  </div>
+</body>
+</html>

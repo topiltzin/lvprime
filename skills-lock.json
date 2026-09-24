@@ -7,6 +7,18 @@
       "skillPath": "skills/fitness-coach/SKILL.md",
       "computedHash": "29ed91e0e7f56a5625e08712e2d54e2a7304210ad15bc4c615a32dc4ea4b8d8c"
     },
+    "graphic-designer": {
+      "source": "charlie947/social-media-skills",
+      "sourceType": "github",
+      "skillPath": "skills/graphic-designer/SKILL.md",
+      "computedHash": "5a67963bbc1217fa7c3b4461210d1a68b0d5ac13333b6b7417f02de9c608ff7e"
+    },
+    "no-ai-slop": {
+      "source": "petergyang/no-ai-slop",
+      "sourceType": "github",
+      "skillPath": "skills/no-ai-slop/SKILL.md",
+      "computedHash": "77d287e3c8e09874e144ee35f6fb0ee1adcf609012c7c3273e9c8fe2054ce5af"
+    },
     "nutritional-specialist": {
       "source": "ailabs-393/ai-labs-claude-skills",
       "sourceType": "github",
