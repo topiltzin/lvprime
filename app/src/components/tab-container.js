@@ -4,7 +4,7 @@
  */
 
 import { marked } from 'marked';
-import { renderProgramDay, renderDaySubnav } from './program-day.js';
+import { renderProgramDay, renderDaySubnav, trackActiveDay } from './program-day.js';
 import { renderWeekSubnav } from './week-subnav.js';
 import { downloadProgramWeekPdf } from './program-pdf.js';
 import { getProgramWeek } from '../api-client.js';
@@ -13,6 +13,18 @@ import { renderFeedbackEntry } from './feedback-entry.js';
 import { renderTrendChart } from './trend-chart.js';
 import { showToast } from './toast.js';
 import { setSafeHtml } from '../lib/safe-html.js';
+import { icon } from '../lib/icons.js';
+
+function createPdfButton() {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'pdf-download-button';
+  button.appendChild(icon('download'));
+  const label = document.createElement('span');
+  label.textContent = 'Download PDF';
+  button.appendChild(label);
+  return button;
+}
 
 export class TabContainer {
   constructor(containerEl, tabs, data, options = {}) {
@@ -186,15 +198,13 @@ export class TabContainer {
       if (this.activeWeek === weekNumber) this.renderProgramWeek(weekBody, detail);
     };
 
-    container.appendChild(renderWeekSubnav(weeks, this.activeWeek, showWeek));
-    container.appendChild(weekBody);
-    this.renderProgramWeek(weekBody, program);
+    // Week selector and PDF export share one toolbar above the schedule.
+    const toolbar = document.createElement('div');
+    toolbar.className = 'program-toolbar';
+    toolbar.appendChild(renderWeekSubnav(weeks, this.activeWeek, showWeek));
 
     // Acts on whichever week is showing at click time, not the one at render time.
-    const pdfButton = document.createElement('button');
-    pdfButton.type = 'button';
-    pdfButton.className = 'pdf-download-button';
-    pdfButton.textContent = 'Download PDF';
+    const pdfButton = createPdfButton();
     pdfButton.addEventListener('click', () => {
       const detail = weekCache.get(this.activeWeek);
       if (!detail) return;
@@ -204,10 +214,15 @@ export class TabContainer {
         showToast('Could not generate the PDF. Please try again.', 3000, 'error');
       }
     });
-    container.appendChild(pdfButton);
+    toolbar.appendChild(pdfButton);
+
+    container.appendChild(toolbar);
+    container.appendChild(weekBody);
+    this.renderProgramWeek(weekBody, program);
   }
 
   renderProgramWeek(weekBody, detail) {
+    this.stopDayTracking?.();
     weekBody.innerHTML = '';
 
     if (detail.isLocked) {
@@ -223,10 +238,10 @@ export class TabContainer {
 
       const scheduleSection = document.createElement('div');
       scheduleSection.className = 'weekly-schedule';
-      for (const day of detail.weeklySchedule) {
-        scheduleSection.appendChild(renderProgramDay(day));
-      }
+      const cards = detail.weeklySchedule.map((day, i) => renderProgramDay(day, i));
+      cards.forEach((card) => scheduleSection.appendChild(card));
       weekBody.appendChild(scheduleSection);
+      this.stopDayTracking = trackActiveDay(subnav, cards);
     } else {
       const empty = document.createElement('p');
       empty.className = 'empty-state';
@@ -363,10 +378,7 @@ export class TabContainer {
       container.appendChild(body);
 
       // Add PDF download button
-      const pdfButton = document.createElement('button');
-      pdfButton.type = 'button';
-      pdfButton.className = 'pdf-download-button';
-      pdfButton.textContent = 'Download PDF';
+      const pdfButton = createPdfButton();
       pdfButton.addEventListener('click', () => {
         try {
           // Extract customer name from slug or use default

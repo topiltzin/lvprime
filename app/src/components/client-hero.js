@@ -1,8 +1,37 @@
-// Client detail hero (FR-005): name, one-line goal/level/duration summary, and a quiet
+// Client detail hero (FR-005): name, goal, and level/session/plan facts, with a quiet
 // back-to-overview link — rendered above the tab navigation on every client detail page.
+import { icon } from '../lib/icons.js';
 
-const CHEVRON_LEFT_SVG =
-  '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+// "55-65 min/sesión (7 min calentamiento, ...)" → main value + the parenthetical as detail.
+function splitDetail(text) {
+  const match = text.match(/^([^(]+?)\s*\((.+)\)\s*$/);
+  return match ? { value: match[1], detail: match[2] } : { value: text, detail: null };
+}
+
+function renderFact(iconName, label, text) {
+  const { value, detail } = splitDetail(text);
+  const fact = document.createElement('div');
+  fact.className = 'hero-fact';
+
+  fact.appendChild(icon(iconName, 'hero-fact-icon'));
+
+  const body = document.createElement('div');
+  const labelEl = document.createElement('span');
+  labelEl.className = 'hero-fact-label';
+  labelEl.textContent = label;
+  const valueEl = document.createElement('span');
+  valueEl.className = 'hero-fact-value';
+  valueEl.textContent = value;
+  body.append(labelEl, valueEl);
+  if (detail) {
+    const detailEl = document.createElement('span');
+    detailEl.className = 'hero-fact-detail';
+    detailEl.textContent = detail;
+    body.appendChild(detailEl);
+  }
+  fact.appendChild(body);
+  return fact;
+}
 
 export function renderClientHero(customerData) {
   const wrap = document.createElement('div');
@@ -11,34 +40,43 @@ export function renderClientHero(customerData) {
   const back = document.createElement('a');
   back.className = 'back-link';
   back.href = '#/';
-  back.innerHTML = `${CHEVRON_LEFT_SVG}<span>All clients</span>`;
+  back.appendChild(icon('caret-left'));
+  const backText = document.createElement('span');
+  backText.textContent = 'All clients';
+  back.appendChild(backText);
   wrap.appendChild(back);
 
-  const row = document.createElement('div');
-  row.className = 'client-hero-row';
+  const card = document.createElement('section');
+  card.className = 'client-hero-card';
 
-  const heading = document.createElement('div');
   const name = document.createElement('h1');
   name.className = 'client-hero-name';
   name.textContent = customerData.displayName;
-  heading.appendChild(name);
+  card.appendChild(name);
 
   const program = customerData.program;
-  const metaParts = [];
   if (program && program.present) {
-    if (program.goal) metaParts.push(program.goal);
-    if (program.fitnessLevel) metaParts.push(program.fitnessLevel);
-    if (program.sessionDuration) metaParts.push(program.sessionDuration);
-  }
-  if (metaParts.length) {
-    const meta = document.createElement('p');
-    meta.className = 'client-hero-meta';
-    meta.textContent = metaParts.join(' · ');
-    heading.appendChild(meta);
+    if (program.goal) {
+      const goal = document.createElement('p');
+      goal.className = 'client-hero-goal';
+      goal.textContent = program.goal;
+      card.appendChild(goal);
+    }
+
+    const facts = [
+      ['barbell', 'Level', program.fitnessLevel],
+      ['clock', 'Session', program.sessionDuration],
+      ['calendar', 'Plan', program.planDuration],
+    ].filter(([, , value]) => value);
+
+    if (facts.length) {
+      const list = document.createElement('div');
+      list.className = 'hero-facts';
+      for (const [iconName, label, value] of facts) list.appendChild(renderFact(iconName, label, value));
+      card.appendChild(list);
+    }
   }
 
-  row.appendChild(heading);
-  wrap.appendChild(row);
-
+  wrap.appendChild(card);
   return wrap;
 }

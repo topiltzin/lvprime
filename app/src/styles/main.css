@@ -176,34 +176,121 @@ h3 {
 
 .back-link {
   font-size: var(--meta-size);
+  font-weight: 500;
   color: var(--muted);
   padding: 0.5rem 0;
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  transition: opacity var(--motion-fast) var(--motion-ease);
+  transition: color var(--motion-fast) var(--motion-ease);
 }
 
 .back-link:hover {
-  opacity: 0.7;
+  color: var(--accent);
+  opacity: 1;
+}
+
+.icon {
+  display: inline-flex;
+  flex: none;
+  width: 1.1em;
+  height: 1.1em;
+}
+
+.icon svg {
+  width: 100%;
+  height: 100%;
 }
 
 .client-hero {
-  margin-bottom: 2rem;
+  margin-bottom: 1.75rem;
 }
 
-.client-hero-row {
+/* Plum hero card: the client's name and goal read as the page's single focal point.
+   Rose gold stays a brand detail (top hairline and fact icons), never an action colour. */
+.client-hero-card {
+  position: relative;
+  overflow: hidden;
   margin-top: 0.75rem;
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  border-radius: var(--radius-hero);
+  background:
+    radial-gradient(120% 140% at 100% 0%, rgba(201, 168, 238, 0.22), transparent 55%),
+    linear-gradient(160deg, var(--brand-plum) 0%, var(--brand-plum-deep) 100%);
+  color: var(--brand-porcelain);
+  box-shadow: var(--shadow-hero);
+  animation: rise-in 500ms var(--motion-out) both;
+}
+
+.client-hero-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, var(--brand-rose), transparent 70%);
 }
 
 .client-hero-name {
   margin: 0;
+  color: var(--brand-porcelain);
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
 }
 
-.client-hero-meta {
-  color: var(--muted);
-  font-size: var(--body-size);
-  margin: 0.25rem 0 0;
+.client-hero-goal {
+  margin: 0.75rem 0 0;
+  max-width: 62ch;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: rgba(250, 247, 251, 0.86);
+}
+
+.hero-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem 1.5rem;
+  margin: 1.75rem 0 0;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(250, 247, 251, 0.14);
+}
+
+.hero-fact {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.hero-fact > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.hero-fact-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0.5rem;
+  border-radius: 12px;
+  background: rgba(250, 247, 251, 0.08);
+  color: var(--brand-rose);
+}
+
+.hero-fact-label {
+  font-size: var(--meta-size);
+  color: rgba(250, 247, 251, 0.7);
+}
+
+.hero-fact-value {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--brand-porcelain);
+}
+
+.hero-fact-detail {
+  font-size: var(--meta-size);
+  line-height: 1.4;
+  color: rgba(250, 247, 251, 0.7);
 }
 
 .card {
@@ -402,8 +489,9 @@ h3 {
   display: flex;
   gap: 0.5rem;
   overflow-x: auto;
+  scrollbar-width: none;
   padding: 0.75rem 0;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   background: var(--bg);
 }
 
@@ -411,14 +499,23 @@ h3 {
   flex: 0 0 auto;
   font: inherit;
   font-size: var(--meta-size);
+  font-weight: 600;
   color: var(--muted);
-  padding: 0.4rem 0.9rem;
+  padding: 0.5rem 1rem;
+  min-height: 40px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--border);
   background: var(--surface);
   white-space: nowrap;
   cursor: pointer;
-  transition: color var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease);
+  transition: color var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease),
+    background var(--motion-fast) var(--motion-ease);
+}
+
+/* Day names arrive uppercase from program.md; show them as "Lunes", "Sábado y domingo". */
+.day-chip::first-letter,
+.program-day-name::first-letter {
+  text-transform: uppercase;
 }
 
 .day-chip:hover {
@@ -427,26 +524,43 @@ h3 {
   opacity: 1;
 }
 
+.day-chip.active {
+  color: var(--accent-deep);
+  background: var(--accent-tint);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
 .day-chip:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-/* Program week selector (Week 1-4) — mirrors .day-subnav/.day-chip above, one level up. */
+/* Week selector and PDF export share one toolbar row. */
+.program-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
 .week-subnav {
   display: flex;
   gap: 0.5rem;
   overflow-x: auto;
-  padding: 0.25rem 0 0.75rem;
-  margin-bottom: 0.5rem;
+  scrollbar-width: none;
+  padding: 0.25rem 0;
+  min-width: 0;
 }
 
 .week-chip {
   flex: 0 0 auto;
+  font: inherit;
   font-size: var(--body-size);
   font-weight: 600;
   color: var(--muted);
-  padding: 0.5rem 1rem;
+  padding: 0.55rem 1.1rem;
+  min-height: 44px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--border);
   background: var(--surface);
@@ -496,24 +610,39 @@ h3 {
   margin-bottom: 1rem;
 }
 
+/* Secondary action: outlined, sized to its label (never a full-width slab on desktop). */
 .pdf-download-button {
-  min-height: 48px;
-  padding: 0.75rem 1.5rem;
-  margin-top: 1rem;
-  border-radius: var(--radius-input);
-  border: none;
-  background: var(--accent);
-  color: var(--accent-contrast);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.6rem 1.15rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  background: var(--surface);
+  color: var(--accent-deep);
   font: inherit;
+  font-size: var(--body-size);
   font-weight: 600;
+  white-space: nowrap;
   cursor: pointer;
-  transition: background var(--motion-fast) var(--motion-ease), box-shadow var(--motion-fast) var(--motion-ease);
-  box-shadow: var(--shadow-rest);
+  transition: background var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease),
+    transform var(--motion-fast) var(--motion-ease);
 }
 
 .pdf-download-button:hover:not(:disabled) {
-  background: var(--accent-hover);
-  box-shadow: var(--shadow-hover);
+  background: var(--accent-tint);
+  border-color: var(--accent);
+}
+
+.pdf-download-button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.pdf-download-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .pdf-download-button:disabled {
@@ -522,78 +651,205 @@ h3 {
 }
 
 @media (max-width: 480px) {
-  .pdf-download-button {
+  .program-toolbar .pdf-download-button {
     width: 100%;
   }
 }
 
 .weekly-schedule {
   display: grid;
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
 .program-day-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-left: 4px solid var(--accent);
   border-radius: var(--radius-card);
-  padding: var(--card-padding);
+  padding: clamp(1.25rem, 3vw, 1.75rem);
   box-shadow: var(--shadow-rest);
+  scroll-margin-top: calc(var(--header-height) + var(--tab-header-height) + 72px);
+  animation: rise-in 450ms var(--motion-out) both;
+  animation-delay: calc(var(--i, 0) * 60ms);
 }
 
-.program-day-card h3 {
-  margin: 0 0 1rem;
-  font-size: 1.05rem;
+/* Rest / free-form days: quieter tinted card, no exercise list. */
+.program-day-card--light {
+  background: var(--muted-bg);
+  box-shadow: none;
+}
+
+.program-day-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.program-day-name {
+  margin: 0 0 0.2rem;
+  font-size: var(--meta-size);
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.program-day-focus {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(1.25rem, 2.6vw, 1.5rem);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
   color: var(--ink);
+}
+
+.program-day-count {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--meta-size);
+  font-weight: 500;
+  color: var(--muted);
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--radius-pill);
+  background: var(--muted-bg);
+  white-space: nowrap;
 }
 
 .exercise-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
 }
 
 .exercise-row {
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.35rem 1rem;
+  padding: 0.9rem 0.75rem;
+  margin: 0 -0.75rem;
+  border-radius: 12px;
+  transition: background var(--motion-fast) var(--motion-ease);
 }
 
-.exercise-row:last-child {
-  padding-bottom: 0;
-  border-bottom: none;
+.exercise-row + .exercise-row {
+  border-top: 1px solid var(--border);
+}
+
+.exercise-row:hover {
+  background: color-mix(in srgb, var(--accent-tint) 60%, transparent);
+}
+
+.exercise-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--accent-tint);
+  color: var(--accent-deep);
+  font-size: var(--meta-size);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .exercise-row-main {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 0.6rem;
+  min-width: 0;
+  padding-top: 0.2rem;
 }
 
 .exercise-name {
+  font-size: 1rem;
   font-weight: 600;
   color: var(--ink);
+  line-height: 1.4;
 }
 
-.exercise-sets-reps {
-  font-size: var(--meta-size);
-  font-weight: 600;
-  color: var(--accent-deep);
-  background: var(--accent-tint);
-  padding: 0.15rem 0.6rem;
-  border-radius: var(--radius-pill);
+a.exercise-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-decoration: none;
 }
 
-.exercise-rest {
-  font-size: var(--meta-size);
-  color: var(--muted);
+a.exercise-name:hover {
+  color: var(--accent);
+  opacity: 1;
+}
+
+a.exercise-name:hover > span:first-child {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.exercise-video-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--accent);
+  transition: transform var(--motion-fast) var(--motion-ease);
+}
+
+a.exercise-name:hover .exercise-video-icon {
+  transform: scale(1.12);
 }
 
 .exercise-form-tip {
-  margin: 0.35rem 0 0;
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.exercise-dose {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.3rem;
+  padding-top: 0.15rem;
+}
+
+.exercise-sets-reps {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--accent-deep);
+  background: var(--accent-tint);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.exercise-rest {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
   font-size: var(--meta-size);
   color: var(--muted);
-  line-height: 1.4;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .exercise-row {
+    grid-template-columns: 2rem minmax(0, 1fr);
+  }
+
+  .exercise-dose {
+    grid-column: 2;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+  }
+
+  .program-day-header {
+    flex-direction: column;
+    gap: 0.6rem;
+  }
 }
 
 .program-day-html {
@@ -601,8 +857,61 @@ h3 {
   color: var(--ink);
 }
 
-.program-progression h2 {
+.program-day-html > :first-child {
   margin-top: 0;
+}
+
+.program-day-html > :last-child {
+  margin-bottom: 0;
+}
+
+/* Coach-authored progression notes (rendered markdown). */
+.program-progression {
+  margin-top: 1.25rem;
+  padding: clamp(1.25rem, 3vw, 1.75rem);
+  line-height: 1.65;
+}
+
+.program-progression h2 {
+  font-size: 1.25rem;
+  line-height: 1.3;
+  margin: 1.75rem 0 0.5rem;
+}
+
+.program-progression h2:first-child {
+  margin-top: 0;
+}
+
+.program-progression h3 {
+  font-size: 1rem;
+  margin: 1.5rem 0 0.5rem;
+}
+
+.program-progression p {
+  margin: 0 0 0.75rem;
+  color: var(--ink);
+  max-width: 72ch;
+}
+
+.program-progression ul,
+.program-progression ol {
+  margin: 0.5rem 0 1rem;
+  padding-left: 1.25rem;
+}
+
+.program-progression li {
+  margin: 0.35rem 0;
+  padding-left: 0.25rem;
+}
+
+.program-progression li::marker {
+  color: var(--accent);
+}
+
+.program-progression hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1.5rem 0;
 }
 
 table {
@@ -996,6 +1305,17 @@ form.feedback-form button:disabled {
   min-height: 220px;
 }
 
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 @keyframes skeleton-shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
@@ -1047,6 +1367,8 @@ form.feedback-form button:disabled {
   .day-chip,
   .week-chip,
   .tab-button,
+  .exercise-row,
+  .exercise-video-icon,
   .empty-state-cta {
     transition: none !important;
   }
@@ -1055,15 +1377,24 @@ form.feedback-form button:disabled {
     transform: none;
   }
 
-  form.feedback-form button:active:not(:disabled) {
+  form.feedback-form button:active:not(:disabled),
+  .pdf-download-button:active:not(:disabled) {
     transform: none;
   }
 
-  .skeleton-block {
+  .skeleton-block,
+  .client-hero-card,
+  .program-day-card {
     animation: none;
   }
 
   .toast {
     transform: translate(-50%, 0);
   }
+}
+
+/* Coach markdown often ends a section with a rule; inside a card it just doubles the edge. */
+.program-day-html > hr:last-child,
+.program-progression > hr:last-child {
+  display: none;
 }
