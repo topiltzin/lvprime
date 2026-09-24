@@ -31,12 +31,17 @@ export function renderTrendChart(trend) {
   const BAR_WIDTH = 28;
   const BAR_GAP = 20;
   const width = Math.max(240, trend.points.length * (BAR_WIDTH + BAR_GAP));
-  const height = 110;
+  // Without any scored sessions the bars carry no height information, so collapse the
+  // plot to a compact strip instead of an empty band.
+  const hasScores = trend.points.some((p) => p.difficultyScore);
+  const height = hasScores ? 110 : 44;
   const maxScore = 4;
 
   const svg = document.createElementNS(SVG_NS, 'svg');
   svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-  svg.setAttribute('width', '100%');
+  // Natural pixel size (shrinks on narrow screens via CSS max-width) so a few sessions
+  // don't get stretched and centred in an empty band.
+  svg.setAttribute('width', width);
   svg.setAttribute('height', height);
   svg.setAttribute('role', 'img');
   svg.setAttribute('aria-label', 'Difficulty and completion trend over sessions');
@@ -123,6 +128,16 @@ export function renderTrendChart(trend) {
     <span class="trend-legend-item"><span class="trend-swatch trend-swatch-missed" style="background:${colors.missed}"></span>Missed</span>
   `;
   wrap.appendChild(legend);
+
+  // Bar height is difficulty, which only scores when the entry uses one of the known
+  // words (server/lib/customer-data.js DIFFICULTY_SCORE); say so instead of showing
+  // unexplained stubs.
+  if (!hasScores) {
+    const note = document.createElement('p');
+    note.className = 'trend-note';
+    note.textContent = 'Bar height shows difficulty. Bars grow once difficulty is logged as Easy, Moderate, Hard or Brutal (or Fácil, Moderada, Difícil).';
+    wrap.appendChild(note);
+  }
 
   return wrap;
 }

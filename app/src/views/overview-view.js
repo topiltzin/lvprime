@@ -1,6 +1,7 @@
 import { getCustomers } from '../api-client.js';
 import { renderCustomerCard } from '../components/customer-card.js';
 import { deriveStatus, STATUS_RANK } from '../lib/status.js';
+import { icon } from '../lib/icons.js';
 
 // User Story 1: a single screen listing every client sorted by urgency, so a coach
 // knows who needs attention within seconds (FR-001, FR-002, FR-003, FR-004).
@@ -22,6 +23,19 @@ function sortByUrgency(customers) {
 
     return a.displayName.localeCompare(b.displayName);
   });
+}
+
+// One plain sentence on who needs attention, from the same status the cards show.
+function summarize(customers) {
+  const counts = { 'needs-checkin': 0, 'no-feedback': 0 };
+  for (const c of customers) {
+    const status = deriveStatus(c.lastFeedbackDate);
+    if (status in counts) counts[status] += 1;
+  }
+  const parts = [];
+  if (counts['needs-checkin']) parts.push(`${counts['needs-checkin']} need${counts['needs-checkin'] === 1 ? 's' : ''} a check-in`);
+  if (counts['no-feedback']) parts.push(`${counts['no-feedback']} ha${counts['no-feedback'] === 1 ? 's' : 've'} no feedback yet`);
+  return parts.length ? `${parts.join(', ')}.` : 'Everyone checked in within the last 7 days.';
 }
 
 function renderOverviewSkeleton(container) {
@@ -79,12 +93,19 @@ export async function renderOverview(container) {
   const header = document.createElement('div');
   header.className = 'page-header';
   header.innerHTML = `
-    <div class="page-header-title">
-      <h1>Clients</h1>
-      <span class="count-badge">${sorted.length}</span>
+    <div>
+      <div class="page-header-title">
+        <h1>Clients</h1>
+        <span class="count-badge">${sorted.length}</span>
+      </div>
+      <p class="page-header-summary"></p>
     </div>
-    <input type="search" class="client-search" placeholder="Search clients" aria-label="Search clients">
+    <label class="client-search-wrap">
+      <input type="search" class="client-search" placeholder="Search by name" aria-label="Search clients">
+    </label>
   `;
+  header.querySelector('.client-search-wrap').prepend(icon('magnifying-glass', 'client-search-icon'));
+  header.querySelector('.page-header-summary').textContent = summarize(sorted);
   container.appendChild(header);
 
   const list = document.createElement('div');

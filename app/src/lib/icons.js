@@ -7,6 +7,16 @@ import downloadSimple from '@phosphor-icons/core/assets/regular/download-simple.
 import barbell from '@phosphor-icons/core/assets/regular/barbell.svg?raw';
 import clock from '@phosphor-icons/core/assets/regular/clock.svg?raw';
 import calendarBlank from '@phosphor-icons/core/assets/regular/calendar-blank.svg?raw';
+import filePdf from '@phosphor-icons/core/assets/regular/file-pdf.svg?raw';
+import checkCircle from '@phosphor-icons/core/assets/regular/check-circle.svg?raw';
+import xCircle from '@phosphor-icons/core/assets/regular/x-circle.svg?raw';
+import chartBar from '@phosphor-icons/core/assets/regular/chart-bar.svg?raw';
+import magnifyingGlass from '@phosphor-icons/core/assets/regular/magnifying-glass.svg?raw';
+import arrowRight from '@phosphor-icons/core/assets/regular/arrow-right.svg?raw';
+import warningCircle from '@phosphor-icons/core/assets/regular/warning-circle.svg?raw';
+import notePencil from '@phosphor-icons/core/assets/regular/note-pencil.svg?raw';
+import calendarCheck from '@phosphor-icons/core/assets/regular/calendar-check.svg?raw';
+import paperclip from '@phosphor-icons/core/assets/regular/paperclip.svg?raw';
 
 const ICONS = {
   'caret-left': caretLeft,
@@ -16,6 +26,16 @@ const ICONS = {
   barbell,
   clock,
   calendar: calendarBlank,
+  'file-pdf': filePdf,
+  'check-circle': checkCircle,
+  'x-circle': xCircle,
+  'chart-bar': chartBar,
+  'magnifying-glass': magnifyingGlass,
+  'arrow-right': arrowRight,
+  'warning-circle': warningCircle,
+  'note-pencil': notePencil,
+  'calendar-check': calendarCheck,
+  'paperclip': paperclip,
 };
 
 /** Returns a decorative <span class="icon"> wrapping the named icon's SVG. */

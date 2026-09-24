@@ -54,13 +54,21 @@ export function renderLogin(container) {
     container.removeAttribute('aria-busy');
     container.innerHTML = '';
 
+    // Split card: plum brand panel beside the form (stacks on phones).
     const wrap = document.createElement('div');
-    wrap.className = 'log-session-form-wrap login-wrap';
-    wrap.appendChild(renderBrand());
+    wrap.className = 'login-wrap';
+    const panel = document.createElement('aside');
+    panel.className = 'login-panel';
+    panel.appendChild(renderBrand());
+    wrap.appendChild(panel);
+
+    const formSide = document.createElement('div');
+    formSide.className = 'login-form-side';
+    wrap.appendChild(formSide);
 
     const heading = document.createElement('h1');
     heading.textContent = 'Coach sign-in';
-    wrap.appendChild(heading);
+    formSide.appendChild(heading);
 
     const form = document.createElement('form');
     form.className = 'feedback-form';
@@ -101,7 +109,7 @@ export function renderLogin(container) {
       }
     });
 
-    wrap.appendChild(form);
+    formSide.appendChild(form);
     container.appendChild(wrap);
     input.focus();
   });

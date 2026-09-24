@@ -10,14 +10,26 @@ function todayIso() {
 // feedback list/trend in place without a page reload.
 export function renderFeedbackForm(slug, template, onSuccess) {
   const wrap = document.createElement('div');
-  wrap.className = 'log-session-form-wrap';
+  wrap.className = 'card log-session-form-wrap';
 
   const heading = document.createElement('h3');
   heading.textContent = 'Log a new session';
   wrap.appendChild(heading);
 
+  const intro = document.createElement('p');
+  intro.className = 'form-intro';
+  intro.textContent = 'Saved entries appear under Feedback, newest first.';
+  wrap.appendChild(intro);
+
   const form = document.createElement('form');
   form.className = 'feedback-form';
+
+  // Date + label side by side, template fields in a two-column grid (one column on phones).
+  const metaRow = document.createElement('div');
+  metaRow.className = 'form-row';
+  form.appendChild(metaRow);
+  const fieldGrid = document.createElement('div');
+  fieldGrid.className = 'form-grid';
 
   const dateLabel = document.createElement('label');
   dateLabel.textContent = 'Date';
@@ -27,7 +39,7 @@ export function renderFeedbackForm(slug, template, onSuccess) {
   dateInput.value = todayIso();
   dateInput.required = true;
   dateLabel.appendChild(dateInput);
-  form.appendChild(dateLabel);
+  metaRow.appendChild(dateLabel);
   const dateError = document.createElement('div');
   dateError.className = 'field-error';
   dateLabel.appendChild(dateError);
@@ -39,7 +51,7 @@ export function renderFeedbackForm(slug, template, onSuccess) {
   labelInput.name = 'label';
   labelInput.placeholder = 'e.g. Lunes - Piernas A';
   labelLabel.appendChild(labelInput);
-  form.appendChild(labelLabel);
+  metaRow.appendChild(labelLabel);
 
   const fieldInputs = {};
   const fieldErrors = {};
@@ -58,7 +70,7 @@ export function renderFeedbackForm(slug, template, onSuccess) {
       });
     } else {
       input = document.createElement('textarea');
-      input.rows = 1;
+      input.rows = 2;
     }
     input.name = fieldName;
     input.required = true;
@@ -66,19 +78,23 @@ export function renderFeedbackForm(slug, template, onSuccess) {
     const err = document.createElement('div');
     err.className = 'field-error';
     label.appendChild(err);
-    form.appendChild(label);
+    fieldGrid.appendChild(label);
     fieldInputs[fieldName] = input;
     fieldErrors[fieldName] = err;
   }
 
+  form.appendChild(fieldGrid);
+
+  const actions = document.createElement('div');
+  actions.className = 'form-actions';
+  const formError = document.createElement('div');
+  formError.className = 'field-error';
+  actions.appendChild(formError);
   const submitBtn = document.createElement('button');
   submitBtn.type = 'submit';
   submitBtn.textContent = 'Save entry';
-  form.appendChild(submitBtn);
-
-  const formError = document.createElement('div');
-  formError.className = 'field-error';
-  form.appendChild(formError);
+  actions.appendChild(submitBtn);
+  form.appendChild(actions);
 
   function clearErrors() {
     dateError.textContent = '';

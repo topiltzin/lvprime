@@ -3,6 +3,7 @@ import { renderFeedbackForm } from './feedback-form-view.js';
 import { TabContainer } from '../components/tab-container.js';
 import { renderClientHero } from '../components/client-hero.js';
 import { showToast } from '../components/toast.js';
+import { icon } from '../lib/icons.js';
 
 // Make renderFeedbackForm available globally for TabContainer
 window.renderFeedbackForm = renderFeedbackForm;
@@ -142,13 +143,23 @@ function renderAttachments(container, attachments) {
   h2.textContent = 'Attachments';
   section.appendChild(h2);
   const ul = document.createElement('ul');
+  ul.className = 'attachment-list';
   for (const a of attachments) {
     const li = document.createElement('li');
     const link = document.createElement('a');
+    link.className = 'attachment-link';
     link.href = `/customer-files/${a.relativePath}`;
-    link.textContent = a.relativePath;
+    link.appendChild(icon(/\.pdf$/i.test(a.relativePath) ? 'file-pdf' : 'paperclip', 'attachment-icon'));
+    const name = document.createElement('span');
+    name.className = 'attachment-name';
+    name.textContent = a.relativePath.split('/').pop();
+    name.title = a.relativePath;
+    link.appendChild(name);
+    const size = document.createElement('span');
+    size.className = 'attachment-size';
+    size.textContent = formatBytes(a.sizeBytes);
+    link.appendChild(size);
     li.appendChild(link);
-    li.appendChild(document.createTextNode(` (${formatBytes(a.sizeBytes)})`));
     ul.appendChild(li);
   }
   section.appendChild(ul);

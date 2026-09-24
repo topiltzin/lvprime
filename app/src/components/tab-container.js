@@ -14,6 +14,8 @@ import { renderTrendChart } from './trend-chart.js';
 import { showToast } from './toast.js';
 import { setSafeHtml } from '../lib/safe-html.js';
 import { icon } from '../lib/icons.js';
+import { formatDate } from '../lib/format.js';
+import { formatRelativeCheckIn } from '../lib/status.js';
 
 function createPdfButton() {
   const button = document.createElement('button');
@@ -251,7 +253,7 @@ export class TabContainer {
 
     if (detail.progressionHtml) {
       const progression = document.createElement('div');
-      progression.className = 'card program-progression';
+      progression.className = 'card program-progression prose';
       setSafeHtml(progression, detail.progressionHtml);
       weekBody.appendChild(progression);
     }
@@ -261,24 +263,32 @@ export class TabContainer {
     container.appendChild(this.renderFeedbackStatStrip(feedbackData.stats));
 
     if (feedbackData.trend) {
-      container.appendChild(renderTrendChart(feedbackData.trend));
+      const chartCard = document.createElement('section');
+      chartCard.className = 'card trend-card';
+      const chartTitle = document.createElement('h3');
+      chartTitle.textContent = 'Session trend';
+      chartCard.appendChild(chartTitle);
+      chartCard.appendChild(renderTrendChart(feedbackData.trend));
+      container.appendChild(chartCard);
     }
 
     const listTitle = document.createElement('h3');
-    listTitle.textContent = 'Session History';
+    listTitle.className = 'section-title';
+    listTitle.textContent = 'Session history';
     container.appendChild(listTitle);
 
     if (feedbackData.entries && feedbackData.entries.length) {
       const list = document.createElement('div');
       list.className = 'feedback-list';
-      feedbackData.entries.forEach((entry) => list.appendChild(renderFeedbackEntry(entry)));
+      // Newest first: the latest session is what the reader came to see.
+      [...feedbackData.entries].reverse().forEach((entry) => list.appendChild(renderFeedbackEntry(entry)));
       container.appendChild(list);
     } else {
       const emptyWrap = document.createElement('div');
-      emptyWrap.className = 'empty-state-with-cta';
+      emptyWrap.className = 'empty-state-card empty-state-with-cta';
+      emptyWrap.appendChild(icon('note-pencil', 'empty-state-icon'));
 
       const emptyMsg = document.createElement('p');
-      emptyMsg.className = 'empty-state';
       emptyMsg.textContent = 'No sessions logged yet. Log a session to start tracking feedback.';
       emptyWrap.appendChild(emptyMsg);
 
@@ -304,23 +314,31 @@ export class TabContainer {
     const strip = document.createElement('div');
     strip.className = 'stat-strip';
 
+    const lastSession = stats.lastSessionDate;
     const tiles = [
-      ['Completion', stats.completionPercent != null ? `${stats.completionPercent}%` : null],
-      ['Last session', stats.lastSessionDate || null],
-      ['Avg. difficulty', stats.avgDifficultyLabel || null],
+      ['check-circle', 'Completion', stats.completionPercent != null ? `${stats.completionPercent}%` : null, null],
+      ['calendar-check', 'Last session', lastSession ? formatDate(lastSession) : null,
+        lastSession ? formatRelativeCheckIn(lastSession) : null],
+      ['chart-bar', 'Avg. difficulty', stats.avgDifficultyLabel || null, null],
     ];
 
-    for (const [label, value] of tiles) {
+    for (const [iconName, label, value, detail] of tiles) {
       const tile = document.createElement('div');
       tile.className = 'stat-tile';
-      const valueEl = document.createElement('div');
-      valueEl.className = value ? 'stat-tile-value' : 'stat-tile-value stat-tile-empty';
-      valueEl.textContent = value || 'Not enough data yet';
+      tile.appendChild(icon(iconName, 'stat-tile-icon'));
       const labelEl = document.createElement('div');
       labelEl.className = 'stat-tile-label';
       labelEl.textContent = label;
-      tile.appendChild(valueEl);
-      tile.appendChild(labelEl);
+      const valueEl = document.createElement('div');
+      valueEl.className = value ? 'stat-tile-value' : 'stat-tile-value stat-tile-empty';
+      valueEl.textContent = value || 'Not enough data yet';
+      tile.append(labelEl, valueEl);
+      if (detail) {
+        const detailEl = document.createElement('div');
+        detailEl.className = 'stat-tile-detail';
+        detailEl.textContent = detail;
+        tile.appendChild(detailEl);
+      }
       strip.appendChild(tile);
     }
 
@@ -357,7 +375,7 @@ export class TabContainer {
   renderNotesContent(container, notes) {
     if (notes.present && notes.html) {
       const body = document.createElement('div');
-      body.className = 'notes-body';
+      body.className = 'card notes-body prose';
       setSafeHtml(body, notes.html);
       container.appendChild(body);
     } else {
@@ -371,7 +389,7 @@ export class TabContainer {
   renderNutritionContent(container, nutrition) {
     if (nutrition && nutrition.present && nutrition.content && !nutrition.isEmpty) {
       const body = document.createElement('div');
-      body.className = 'nutrition-body';
+      body.className = 'card nutrition-body prose';
       // Convert markdown to HTML using marked library
       const htmlContent = marked(nutrition.content);
       setSafeHtml(body, htmlContent);

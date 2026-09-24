@@ -1,7 +1,11 @@
-// Renders one feedback entry as a card: bold date + session label, and a 2x2 fact
-// grid (Felt / Completed / Difficulty / Notes) — User Story 3, contracts/feedback-honesty-and-stats.md.
+import { icon } from '../lib/icons.js';
+import { formatDayDate } from '../lib/format.js';
+
+// Renders one feedback entry as a card: date + session label and a completed/missed chip
+// up top, Felt / Difficulty side by side, and the notes as a full-width paragraph —
+// User Story 3, contracts/feedback-honesty-and-stats.md.
 // Every value here comes from feedback submitted through the public form, so it is
-// set via textContent, never innerHTML.
+// set via textContent, never innerHTML. Empty facts are left out rather than padded.
 function span(className, text) {
   const s = document.createElement('span');
   s.className = className;
@@ -9,35 +13,56 @@ function span(className, text) {
   return s;
 }
 
+function present(value) {
+  return value && value !== 'N/A' ? value : null;
+}
+
 export function renderFeedbackEntry(entry) {
-  const el = document.createElement('div');
+  const el = document.createElement('article');
   el.className = 'card feedback-entry-card';
 
-  const header = document.createElement('div');
+  const header = document.createElement('header');
   header.className = 'feedback-entry-header';
-  const date = document.createElement('strong');
-  date.textContent = entry.date || 'N/A';
-  header.appendChild(date);
-  if (entry.exercise) {
-    header.append(' ', span('feedback-entry-label', entry.exercise));
-  }
+
+  const titles = document.createElement('div');
+  const date = document.createElement('h4');
+  date.className = 'feedback-entry-date';
+  date.textContent = present(entry.date) ? formatDayDate(entry.date) : 'Undated session';
+  if (present(entry.date)) date.title = entry.date;
+  titles.appendChild(date);
+  if (entry.exercise) titles.appendChild(span('feedback-entry-label', entry.exercise));
+  header.appendChild(titles);
+
+  const chip = document.createElement('span');
+  chip.className = entry.completed ? 'completion-chip is-done' : 'completion-chip is-missed';
+  chip.appendChild(icon(entry.completed ? 'check-circle' : 'x-circle'));
+  chip.append(entry.completed ? 'Completed' : 'Not completed');
+  header.appendChild(chip);
   el.appendChild(header);
 
-  const grid = document.createElement('div');
-  grid.className = 'feedback-fact-grid';
   const facts = [
-    ['Felt', entry.howCustomerFelt && entry.howCustomerFelt !== 'N/A' ? entry.howCustomerFelt : '—'],
-    ['Completed', entry.completed ? 'Yes' : 'No'],
-    ['Difficulty', entry.overallImpression && entry.overallImpression !== 'N/A' ? entry.overallImpression : '—'],
-    ['Notes', entry.notes || '—'],
-  ];
-  for (const [label, value] of facts) {
-    const fact = document.createElement('div');
-    fact.className = 'feedback-fact';
-    fact.append(span('feedback-fact-label', label), span('feedback-fact-value', value));
-    grid.appendChild(fact);
+    ['Felt', present(entry.howCustomerFelt)],
+    ['Difficulty', present(entry.overallImpression)],
+  ].filter(([, value]) => value);
+
+  if (facts.length) {
+    const grid = document.createElement('div');
+    grid.className = 'feedback-fact-grid';
+    for (const [label, value] of facts) {
+      const fact = document.createElement('div');
+      fact.className = 'feedback-fact';
+      fact.append(span('feedback-fact-label', label), span('feedback-fact-value', value));
+      grid.appendChild(fact);
+    }
+    el.appendChild(grid);
   }
-  el.appendChild(grid);
+
+  if (entry.notes) {
+    const notes = document.createElement('p');
+    notes.className = 'feedback-entry-notes';
+    notes.textContent = entry.notes;
+    el.appendChild(notes);
+  }
 
   return el;
 }

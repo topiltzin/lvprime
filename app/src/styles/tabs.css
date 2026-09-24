@@ -96,7 +96,8 @@
   gap: 20px;
 }
 
-.tab-content p {
+/* Direct children only (empty-state lines); nested prose keeps its own spacing. */
+.tab-content > p {
   margin: 0;
   line-height: 1.6;
 }
@@ -107,145 +108,10 @@
   }
 }
 
-/* Nutrition Tab: Markdown-rendered content */
-.nutrition-body {
-  display: block;
-  max-width: 72ch;
-  line-height: 1.6;
-  color: var(--ink);
-}
-
-.nutrition-body h1,
-.nutrition-body h2,
-.nutrition-body h3,
-.nutrition-body h4,
-.nutrition-body h5,
-.nutrition-body h6 {
-  margin: 20px 0 12px 0;
-  font-weight: 600;
-  color: var(--ink);
-}
-
-.nutrition-body h1,
-.nutrition-body h2 {
-  font-family: var(--font-display);
-  font-weight: 500;
-}
-
-.nutrition-body h1 {
-  font-size: 28px;
-  margin-top: 0;
-}
-
-.nutrition-body h2 {
-  font-size: 24px;
-  border-bottom: 2px solid var(--border);
-  padding-bottom: 8px;
-}
-
-.nutrition-body h3 {
-  font-size: 20px;
-}
-
-.nutrition-body h4 {
-  font-size: 18px;
-}
-
-.nutrition-body h5,
-.nutrition-body h6 {
-  font-size: 16px;
-}
-
-.nutrition-body p {
-  margin: 8px 0;
-}
-
-.nutrition-body ul,
-.nutrition-body ol {
-  margin: 4px 0 16px;
-  padding-left: 24px;
-}
-
-.nutrition-body li {
-  margin: 6px 0;
-  line-height: 1.6;
-}
-
-.nutrition-body table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 16px 0;
-  border: 1px solid var(--border);
-}
-
-.nutrition-body th,
-.nutrition-body td {
-  border: 1px solid var(--border);
-  padding: 12px;
-  text-align: left;
-}
-
-.nutrition-body th {
-  background-color: var(--muted-bg);
-  font-weight: 600;
-}
-
-.nutrition-body tr:nth-child(even) {
-  background-color: color-mix(in srgb, var(--ink) 4%, transparent);
-}
-
-.nutrition-body code {
-  background-color: var(--muted-bg);
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-family: 'Monaco', 'Courier', monospace;
-  font-size: 14px;
-}
-
-.nutrition-body pre {
-  background-color: var(--muted-bg);
-  padding: 16px;
-  border-radius: 6px;
-  overflow-x: auto;
-  margin: 12px 0;
-}
-
-.nutrition-body pre code {
-  background-color: transparent;
-  padding: 0;
-  border-radius: 0;
-}
-
-.nutrition-body strong {
-  font-weight: 600;
-}
-
-.nutrition-body em {
-  font-style: italic;
-}
-
-.nutrition-body a {
-  color: var(--accent);
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.nutrition-body a:hover {
-  text-decoration: underline;
-}
-
-.nutrition-body blockquote {
-  border-left: 4px solid var(--accent);
-  margin: 12px 0;
-  padding-left: 16px;
-  color: var(--muted);
-  font-style: italic;
-}
-
-.nutrition-body hr {
-  border: none;
-  border-top: 2px solid var(--border);
-  margin: 24px 0;
+/* Nutrition and Notes tabs: markdown styled by the shared .prose rules (main.css). */
+.nutrition-body,
+.notes-body {
+  margin-bottom: 0;
 }
 
 /* Nutrition PDF uses the shared .pdf-download-button (main.css). */
