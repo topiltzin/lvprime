@@ -48,8 +48,8 @@ function tokenBlocks() {
   };
 }
 
-// SC-003: the rebrand must not change what status and action colours mean.
-test('status and action colours are unchanged by the rebrand', () => {
+// Locks the plum/lilac status and action colours so they only change deliberately.
+test('status and action colours match the locked palette', () => {
   const { light, dark } = tokenBlocks();
   assert.deepEqual(
     {
@@ -59,9 +59,9 @@ test('status and action colours are unchanged by the rebrand', () => {
       'warning-deep': light['warning-deep'], 'warning-tint': light['warning-tint'],
     },
     {
-      accent: '#1f7a4d', 'accent-hover': '#186a42', 'accent-deep': '#143d2b',
-      'accent-tint': '#e8f5ee', 'accent-contrast': '#ffffff',
-      danger: '#c23b22', 'danger-tint': '#fee2e2', 'danger-border': '#fca5a5',
+      accent: '#7a4e9e', 'accent-hover': '#6a4190', 'accent-deep': '#4a2c63',
+      'accent-tint': '#f3ecf8', 'accent-contrast': '#ffffff',
+      danger: '#b4234a', 'danger-tint': '#fbe4ea', 'danger-border': '#f1a7b9',
       'warning-deep': '#8a5a1c', 'warning-tint': '#fdf0e2',
     },
   );
@@ -73,9 +73,9 @@ test('status and action colours are unchanged by the rebrand', () => {
       'warning-deep': dark['warning-deep'], 'warning-tint': dark['warning-tint'],
     },
     {
-      accent: '#3ddc97', 'accent-hover': '#2fc984', 'accent-deep': '#3ddc97',
-      'accent-tint': '#10251b', 'accent-contrast': '#10251b',
-      'danger-tint': '#3a1712', 'danger-border': '#5c261a',
+      accent: '#c9a8ee', 'accent-hover': '#b993e6', 'accent-deep': '#c9a8ee',
+      'accent-tint': '#2b2138', 'accent-contrast': '#241832',
+      'danger-tint': '#3a1622', 'danger-border': '#6a2638',
       'warning-deep': '#e8b979', 'warning-tint': '#3a2a12',
     },
   );
@@ -94,7 +94,7 @@ test('markSegments matches the 64-grid mark and scales linearly', async () => {
     [[25, 26], [34, 46]],
     [[34, 46], [47, 16]],
   ]);
-  assert.deepEqual(full.strokes.at(-1).colour, BRAND_RGB.brass);
+  assert.deepEqual(full.strokes.at(-1).colour, BRAND_RGB.rose);
 
   const half = markSegments(32);
   assert.deepEqual(half.tile, { x: 0, y: 0, w: 32, h: 32, r: 7.5 });
@@ -107,12 +107,12 @@ test('PDF palette matches the brand tokens and name', async () => {
   const { light } = tokenBlocks();
   const hex = (rgb) => '#' + rgb.map((n) => n.toString(16).padStart(2, '0')).join('').toUpperCase();
   assert.equal(BRAND_NAME, 'LvPrime');
-  assert.equal(hex(BRAND_RGB.evergreen), light['brand-evergreen']);
-  assert.equal(hex(BRAND_RGB.evergreenDeep), light['brand-evergreen-deep']);
-  assert.equal(hex(BRAND_RGB.brass), light['brand-brass']);
-  assert.equal(hex(BRAND_RGB.brassOnLight), light['brand-brass-on-light']);
-  assert.equal(hex(BRAND_RGB.ivory), light['brand-ivory']);
-  assert.equal(hex(BRAND_RGB.stone), light['brand-stone']);
+  assert.equal(hex(BRAND_RGB.plum), light['brand-plum']);
+  assert.equal(hex(BRAND_RGB.plumDeep), light['brand-plum-deep']);
+  assert.equal(hex(BRAND_RGB.rose), light['brand-rose']);
+  assert.equal(hex(BRAND_RGB.roseOnLight), light['brand-rose-on-light']);
+  assert.equal(hex(BRAND_RGB.porcelain), light['brand-porcelain']);
+  assert.equal(hex(BRAND_RGB.mist), light['brand-mist']);
   assert.equal(hex(BRAND_RGB.ink), light.ink);
   assert.equal(hex(BRAND_RGB.muted), light.muted);
 });

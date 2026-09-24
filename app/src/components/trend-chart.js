@@ -8,9 +8,9 @@ function readChartColors() {
     return value || fallback;
   };
   return {
-    completed: read('--chart-completed', read('--accent', '#1f7a4d')),
-    missed: read('--chart-missed', read('--danger', '#c23b22')),
-    label: read('--chart-label', read('--muted', '#6b6b64')),
+    completed: read('--chart-completed', read('--accent', '#7a4e9e')),
+    missed: read('--chart-missed', read('--danger', '#b4234a')),
+    label: read('--chart-label', read('--muted', '#6b6272')),
     hatch: read('--chart-hatch', '#ffffff'),
   };
 }
@@ -42,7 +42,7 @@ export function renderTrendChart(trend) {
   svg.setAttribute('aria-label', 'Difficulty and completion trend over sessions');
   svg.setAttribute('aria-describedby', 'trend-chart-details');
 
-  // Colorblind users and screen readers can't rely on the green/red bar fill
+  // Colorblind users and screen readers can't rely on the violet/red bar fill
   // alone, so missed sessions also get a diagonal hatch pattern (visual) and
   // every session is repeated as a hidden text list (assistive tech).
   const defs = document.createElementNS(SVG_NS, 'defs');

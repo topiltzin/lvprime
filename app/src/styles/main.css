@@ -14,16 +14,16 @@ body {
   font-size: var(--body-size);
 }
 
-/* Brand shell (specs/011 contracts/header-lockup.md): Evergreen band, Brass rule.
-   Text uses Ivory directly, not --accent-contrast, which turns dark green in dark mode. */
+/* Brand shell (specs/011 contracts/header-lockup.md): Plum band, rose gold rule.
+   Text uses Porcelain directly, not --accent-contrast, which turns dark violet in dark mode. */
 .app-header {
   background: var(--header-bg);
-  color: var(--brand-ivory);
+  color: var(--brand-porcelain);
   padding: 0;
   position: sticky;
   top: 0;
   z-index: 100;
-  border-bottom: 2px solid var(--brand-brass);
+  border-bottom: 2px solid var(--brand-rose);
 }
 
 /* Fixed height: sticky tab headers offset by --header-height, and a fixed box
@@ -45,7 +45,7 @@ body {
   align-items: center;
   gap: 0.75rem;
   text-decoration: none;
-  color: var(--brand-ivory);
+  color: var(--brand-porcelain);
   transition: opacity var(--motion-fast) var(--motion-ease);
 }
 
@@ -56,10 +56,10 @@ body {
 /* Mark colours come from variables so one SVG serves the on-dark (header)
    and on-light (sign-in) variants. */
 .logo-mark {
-  --mark-tile: var(--brand-evergreen-deep);
-  --mark-hairline: var(--brand-brass);
-  --mark-ink: var(--brand-ivory);
-  --mark-rise: var(--brand-brass);
+  --mark-tile: var(--brand-plum-deep);
+  --mark-hairline: var(--brand-rose);
+  --mark-ink: var(--brand-porcelain);
+  --mark-rise: var(--brand-rose);
   width: 40px;
   height: 40px;
   flex: none;
@@ -94,13 +94,13 @@ body {
   line-height: 1;
   font-weight: 600;
   letter-spacing: var(--logo-tracking);
-  color: var(--brand-ivory);
+  color: var(--brand-porcelain);
 }
 
 .logo-text em {
   font-style: italic;
   font-weight: 500;
-  color: var(--brand-brass);
+  color: var(--brand-rose);
 }
 
 .logo-subtitle {
@@ -108,7 +108,7 @@ body {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.26em;
-  color: rgba(245, 241, 234, 0.72);
+  color: rgba(250, 247, 251, 0.72);
 }
 
 /* Static context label, not an action — no pill border so it doesn't read as
@@ -117,7 +117,7 @@ body {
   font-size: var(--meta-size);
   letter-spacing: var(--label-tracking);
   text-transform: uppercase;
-  color: rgba(245, 241, 234, 0.72);
+  color: rgba(250, 247, 251, 0.72);
 }
 
 #app {
@@ -763,7 +763,7 @@ th, td {
 }
 
 .login-mark {
-  --mark-tile: var(--brand-evergreen);
+  --mark-tile: var(--brand-plum);
   --mark-hairline: transparent;
   width: 56px;
   height: 56px;
@@ -779,11 +779,11 @@ th, td {
   margin: 0;
 }
 
-/* Brass-on-light is AA only as large text; the wordmark is 36px. */
+/* Rose-on-light is AA only as large text; the wordmark is 36px. */
 .login-wordmark em {
   font-style: italic;
   font-weight: 500;
-  color: var(--brand-brass-on-light);
+  color: var(--brand-rose-on-light);
 }
 
 .login-tagline {

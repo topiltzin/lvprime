@@ -15,11 +15,11 @@ const PAGE_BOTTOM = Math.min(280, PAGE_HEIGHT - footerReserve('mm') - 3);
 
 // LvPrime palette (specs/011 data-model.md BrandPalette)
 const COLORS = {
-  headerBg: BRAND_RGB.evergreen,   // Section bars, table headers, title rule
+  headerBg: BRAND_RGB.plum,   // Section bars, table headers, title rule
   headerText: [255, 255, 255],     // White
   sectionBg: [236, 240, 241],      // Light gray
-  sectionText: BRAND_RGB.evergreen,
-  tableBorder: BRAND_RGB.stone,
+  sectionText: BRAND_RGB.plum,
+  tableBorder: BRAND_RGB.mist,
   tableAlt: [248, 249, 250],       // Very light gray
   text: [52, 73, 94],              // Dark text
 };
