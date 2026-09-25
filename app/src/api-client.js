@@ -26,6 +26,8 @@ async function request(path, options = {}, skipAuthHandler = false) {
       ...options,
     });
   } catch (err) {
+    // A caller's own abort/timeout (askCoach's signal) is not "server unreachable".
+    if (err.name === 'AbortError' || err.name === 'TimeoutError') throw err;
     throw new ApiError('Cannot reach the local server. Is `npm run dev` running?', 0);
   }
 
@@ -77,6 +79,11 @@ export function quickCompleteSession(slug, { date, label }) {
     method: 'POST',
     body: JSON.stringify({ date, label }),
   });
+}
+
+/** POST /api/chat → { answer } (specs/013 contracts/chat-api.md). Throws ApiError on any non-2xx. */
+export function askCoach(message, { signal } = {}) {
+  return request('/api/chat', { method: 'POST', body: JSON.stringify({ message }), signal });
 }
 
 export function login(email, password) {

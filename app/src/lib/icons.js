@@ -22,6 +22,10 @@ import lightning from '@phosphor-icons/core/assets/regular/lightning.svg?raw';
 import signOut from '@phosphor-icons/core/assets/regular/sign-out.svg?raw';
 import eye from '@phosphor-icons/core/assets/regular/eye.svg?raw';
 import eyeSlash from '@phosphor-icons/core/assets/regular/eye-slash.svg?raw';
+import chatCircleDots from '@phosphor-icons/core/assets/regular/chat-circle-dots.svg?raw';
+import paperPlaneRight from '@phosphor-icons/core/assets/regular/paper-plane-right.svg?raw';
+import x from '@phosphor-icons/core/assets/regular/x.svg?raw';
+import arrowClockwise from '@phosphor-icons/core/assets/regular/arrow-clockwise.svg?raw';
 
 const ICONS = {
   'caret-left': caretLeft,
@@ -46,6 +50,10 @@ const ICONS = {
   'note-pencil': notePencil,
   'calendar-check': calendarCheck,
   'paperclip': paperclip,
+  chat: chatCircleDots,
+  send: paperPlaneRight,
+  close: x,
+  retry: arrowClockwise,
 };
 
 /** Returns a decorative <span class="icon"> wrapping the named icon's SVG. */

@@ -17,8 +17,9 @@ Coach-only fitness/nutrition dashboard. Customer data (program, feedback, notes,
    ```
    SUPABASE_URL=https://<your-project-ref>.supabase.co
    SUPABASE_SECRET_KEY=sb_secret_...
+   CHATBOT_URL=https://8000-<id>.cloudspaces.litng.ai/chat
    ```
-   Find these in Supabase Dashboard → **Settings → API**. Use the **secret** key (full server-side access), not the publishable key — this app has no client-side Supabase calls, everything goes through `app/server/lib/customer-data.js`. Never commit `.env.local` (already gitignored) or paste the secret key into chat/logs.
+   `CHATBOT_URL` is the Lightning AI fitness coach chatbot's `/chat` endpoint; without it the chat panel shows "unavailable". Find the Supabase values in Supabase Dashboard → **Settings → API**. Use the **secret** key (full server-side access), not the publishable key — this app has no client-side Supabase calls, everything goes through `app/server/lib/customer-data.js`. Never commit `.env.local` (already gitignored) or paste the secret key into chat/logs.
 
 5. **Migrate existing customer data** (one-time, only needed if you have existing `customers/[slug]/*.md` files to bring in):
    ```bash
@@ -33,7 +34,7 @@ Coach-only fitness/nutrition dashboard. Customer data (program, feedback, notes,
 
 ## Deploying to Vercel
 
-1. Add `SUPABASE_URL`, `SUPABASE_SECRET_KEY` and `SUPABASE_PUBLISHABLE_KEY` to the Vercel project's **Environment Variables** (Production and Preview scopes) — Vercel dashboard → Project → Settings → Environment Variables. Coaches sign in with a Supabase Auth user (email + password) from the same project; create them in Supabase → Authentication → Users, and turn off public sign-ups there so nobody can create their own account. Optionally set `SESSION_SECRET` (a long random value) to sign sessions independently of the Supabase secret key. Never set `COACH_AUTH_DISABLED` in a deployment.
+1. Add `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `SUPABASE_PUBLISHABLE_KEY` and `CHATBOT_URL` to the Vercel project's **Environment Variables** (Production and Preview scopes) — Vercel dashboard → Project → Settings → Environment Variables. Coaches sign in with a Supabase Auth user (email + password) from the same project; create them in Supabase → Authentication → Users, and turn off public sign-ups there so nobody can create their own account. Optionally set `SESSION_SECRET` (a long random value) to sign sessions independently of the Supabase secret key. Never set `COACH_AUTH_DISABLED` in a deployment. `vercel.json` gives the API function `maxDuration: 130` so a slow chatbot answer (up to 120 s) can finish; that needs Fluid compute on (Project → Settings → Functions).
 2. Deploy as usual (`vercel` CLI or git push, depending on your setup).
 3. Verify a customer profile loads correctly on the deployed URL, then trigger a redeploy and confirm the same data still loads (this is the point of the whole migration — the filesystem/SQLite approach this app used before did not survive Vercel's stateless serverless functions between deployments).
 
@@ -43,4 +44,5 @@ Coach-only fitness/nutrition dashboard. Customer data (program, feedback, notes,
 - **Access control**: `app/server/auth.js` gates every `/api/*` and `/customer-files/*` route behind a signed-in coach. `POST /api/login` checks email + password against Supabase Auth (`signInWithPassword`) and sets an HttpOnly, SameSite=Strict session cookie (30 days) signed with `SESSION_SECRET`, or a key derived from `SUPABASE_SECRET_KEY`. Supabase is only called at sign-in, so removing a user takes effect when their cookie expires or the secret rotates. `GET /api/session` returns the signed-in email for the header; the frontend shows the sign-in page on any 401. Set `COACH_AUTH_DISABLED=true` in `.env.local` for open local development.
 - **Data access layer**: `app/server/lib/customer-data.js` is the only module that should touch Supabase directly. It's server-only (imports the secret key) — never import it from `app/src/`, which is Vite's browser-bundled root.
 - **Sync**: `app/server/sync-engine.js` still holds the pure conflict-resolution logic (no filesystem/DB dependency); `customer-data.js`'s `syncCoachWrite` uses it against the `programs`/`notes` tables' `version`/`content_hash`/`sync_status` columns instead of the old JSON-file-backed `sync-state.js` (removed).
+- **Coach chatbot**: `POST /api/chat` (`app/server/lib/coach-chat.js`) sits behind the coach gate and proxies to `CHATBOT_URL`, adding the fitness-coach instruction and a 200-token cap on the server. The URL never reaches the browser, and nothing is stored or logged beyond the outcome. See `specs/013-fitness-coach-chatbot/`.
 - **Tests**: `npm test` runs everything under `tests/`. Tests that need Supabase (integration tests, and `tests/unit/database.test.js`'s validation-only tests which don't but live alongside them) read `SUPABASE_URL`/`SUPABASE_SECRET_KEY` from the environment — run with `node --env-file=.env.local --test 'tests/**/*.test.js'` to include them.

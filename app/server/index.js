@@ -26,6 +26,7 @@ import {
   WeekLockedError,
   WeekNumberGapError,
 } from './lib/customer-data.js';
+import { askCoachChatbot, ChatbotError, validateChatQuestion } from './lib/coach-chat.js';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -570,7 +571,38 @@ async function handleSyncStatus(req, res) {
   }
 }
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Fitness coach chatbot (specs/013-fitness-coach-chatbot contracts/chat-api.md).
+const CHATBOT_ERRORS = {
+  chatbot_unavailable: [502, 'The coach assistant is unavailable right now. Try again.'],
+  chatbot_timeout: [504, 'The coach assistant took too long to answer. Try again.'],
+  chatbot_not_configured: [503, 'The coach assistant is not set up yet.'],
+};
+
+async function handlePostChat(req, res) {
+  let body;
+  try {
+    body = await readJsonBody(req);
+  } catch (err) {
+    if (err instanceof PayloadTooLargeError) throw err;
+    return sendJson(res, 422, { error: 'validation_failed', fields: { body: 'invalid JSON' } });
+  }
+
+  const result = validateChatQuestion(body);
+  if (!result.ok) return sendJson(res, 422, { error: 'validation_failed', fields: result.fields });
+
+  try {
+    const answer = await askCoachChatbot(result.question);
+    sendJson(res, 200, { answer });
+  } catch (err) {
+    if (!(err instanceof ChatbotError)) throw err;
+    // Outcome only; never the question or answer text.
+    console.error('Chatbot error:', err.code, err.cause?.name || '', err.cause?.message || '');
+    const [status, message] = CHATBOT_ERRORS[err.code];
+    sendJson(res, status, { error: err.code, message });
+  }
+}
+
+const EMAIL_PATTERN =/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 async function handleLogin(req, res) {
   const body = await readJsonBody(req).catch((err) => {
@@ -669,6 +701,7 @@ const ROUTES = [
     pattern: /^\/api\/customers\/([^/]+)\/feedback\/?$/,
     handler: (req, res, m) => handlePostFeedback(req, res, decodeURIComponent(m[1])),
   },
+  { method: 'POST', pattern: /^\/api\/chat\/?$/, handler: (req, res) => handlePostChat(req, res) },
   {
     method: 'POST',
     pattern: /^\/api\/sync\/upload\/?$/,

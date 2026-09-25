@@ -1,5 +1,6 @@
 @import url('/src/styles/tokens.css');
 @import url('/src/styles/tabs.css');
+@import url('/src/styles/chat.css');
 
 /* LvPrime performance UI. Graphite chrome, chalk/graphite surfaces, one volt accent.
    Display face (Barlow Condensed) carries names, headings and every number; Geist

@@ -4,6 +4,7 @@ import { renderLogin } from './views/login-view.js';
 import { setUnauthorizedHandler } from './api-client.js';
 import { renderSidebar } from './components/sidebar.js';
 import { renderHeaderAccount } from './components/header-account.js';
+import { mountChatPanel } from './components/chat-panel.js';
 
 const app = document.getElementById('app');
 const sidebar = document.getElementById('sidebar');
@@ -37,4 +38,8 @@ setUnauthorizedHandler(async () => {
 
 window.addEventListener('hashchange', render);
 // Once per page load, after the first view has passed the sign-in gate.
-render().then(() => renderHeaderAccount(document.getElementById('header-account')));
+render().then(() => {
+  renderHeaderAccount(document.getElementById('header-account'));
+  // Signed in by now (the login screen reloads the page), so never on the sign-in page.
+  mountChatPanel(document.body);
+});
