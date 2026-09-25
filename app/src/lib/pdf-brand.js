@@ -25,13 +25,13 @@ const FOOTER_RESERVE_PT = 40;
 
 // Mark geometry on its 64 grid, identical to design/brand/mark.svg.
 const GRID = 64;
-const TILE_RADIUS = 15;
-const STROKE_WIDTH = 5;
+const TILE_RADIUS = 16;
+const STROKE_WIDTH = 6.5;
 const STROKES = [
-  { from: [18, 16], to: [18, 46], colour: BRAND_RGB.chalk },
-  { from: [18, 46], to: [34, 46], colour: BRAND_RGB.chalk },
-  { from: [25, 26], to: [34, 46], colour: BRAND_RGB.chalk },
-  { from: [34, 46], to: [47, 16], colour: BRAND_RGB.volt },
+  { from: [16, 19], to: [16, 48], colour: BRAND_RGB.chalk },
+  { from: [16, 48], to: [24, 48], colour: BRAND_RGB.chalk },
+  { from: [26.5, 28], to: [35.5, 48], colour: BRAND_RGB.chalk },
+  { from: [35.5, 48], to: [49, 13], colour: BRAND_RGB.volt },
 ];
 
 function toUnit(pt, unit) {

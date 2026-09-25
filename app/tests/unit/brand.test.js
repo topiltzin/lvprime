@@ -88,20 +88,20 @@ test('status and action colours match the locked palette', () => {
 test('markSegments matches the 64-grid mark and scales linearly', async () => {
   const { markSegments, BRAND_RGB } = await import('../../src/lib/pdf-brand.js');
   const full = markSegments(64);
-  assert.deepEqual(full.tile, { x: 0, y: 0, w: 64, h: 64, r: 15 });
-  assert.equal(full.strokeWidth, 5);
+  assert.deepEqual(full.tile, { x: 0, y: 0, w: 64, h: 64, r: 16 });
+  assert.equal(full.strokeWidth, 6.5);
   assert.deepEqual(full.strokes.map((s) => [s.from, s.to]), [
-    [[18, 16], [18, 46]],
-    [[18, 46], [34, 46]],
-    [[25, 26], [34, 46]],
-    [[34, 46], [47, 16]],
+    [[16, 19], [16, 48]],
+    [[16, 48], [24, 48]],
+    [[26.5, 28], [35.5, 48]],
+    [[35.5, 48], [49, 13]],
   ]);
   assert.deepEqual(full.strokes.at(-1).colour, BRAND_RGB.volt);
 
   const half = markSegments(32);
-  assert.deepEqual(half.tile, { x: 0, y: 0, w: 32, h: 32, r: 7.5 });
-  assert.equal(half.strokeWidth, 2.5);
-  assert.deepEqual(half.strokes[3].to, [23.5, 8]);
+  assert.deepEqual(half.tile, { x: 0, y: 0, w: 32, h: 32, r: 8 });
+  assert.equal(half.strokeWidth, 3.25);
+  assert.deepEqual(half.strokes[3].to, [24.5, 6.5]);
 });
 
 test('PDF palette matches the brand tokens and name', async () => {

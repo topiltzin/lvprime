@@ -112,21 +112,26 @@ h3 {
   color: var(--on-header);
 }
 
-/* One SVG serves the header and the sign-in panel via these variables. */
+/* One SVG serves the header and the sign-in panel (login-view.js clones it).
+   The "Lv" monogram: chalk L and v, with the v's right arm in volt rising past the
+   L's cap height. A faint inner edge keeps the tile readable on the graphite header. */
 .logo-mark {
   --mark-tile: var(--brand-graphite-deep);
-  --mark-hairline: var(--brand-volt);
   --mark-ink: var(--brand-chalk);
   --mark-rise: var(--brand-volt);
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   flex: none;
 }
 
 .mark-tile {
   fill: var(--mark-tile);
-  stroke: var(--mark-hairline);
-  stroke-opacity: 0.45;
+}
+
+.mark-edge {
+  fill: none;
+  stroke: var(--brand-chalk);
+  stroke-opacity: 0.1;
   stroke-width: 1.5;
 }
 
