@@ -5,7 +5,7 @@
 // question/answer text is never logged.
 
 export const COACH_INSTRUCTION =
-  'You are a fitness coach ready to help. Answer in 2-4 short sentences or at most 4 short bullet points. Question: ';
+  'You are a fitness coach in spanish ready to help. Answer in 2-4 short sentences in spanish or at most 4 short bullet points. Question: ';
 export const MAX_TOKENS = 200;
 export const UPSTREAM_TIMEOUT_MS = 120000;
 export const MAX_QUESTION_CHARS = 1000;
