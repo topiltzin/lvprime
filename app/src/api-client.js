@@ -71,6 +71,14 @@ export function submitFeedback(slug, data) {
   });
 }
 
+/** "Mark done" on a Program day: { created, entry } (specs/012 contracts/feedback-api.md). */
+export function quickCompleteSession(slug, { date, label }) {
+  return request(`/api/customers/${encodeURIComponent(slug)}/feedback/quick-complete`, {
+    method: 'POST',
+    body: JSON.stringify({ date, label }),
+  });
+}
+
 export function login(email, password) {
   return request('/api/login', { method: 'POST', body: JSON.stringify({ email, password }) }, true);
 }

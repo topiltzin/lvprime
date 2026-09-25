@@ -1,7 +1,7 @@
 import { getCustomersDir, scanAttachments } from './customers-repo.js';
 import { parseProgramDetail, parseProgramGoal } from './markdown-parser.js';
 import { renderMarkdown } from './markdown-render.js';
-import { validateFeedbackSubmission } from './feedback-writer.js';
+import { validateFeedbackSubmission, validateQuickCompleteSubmission } from './feedback-writer.js';
 import * as hashUtils from './hash-utils.js';
 import { getSession, isAuthDisabled, isAuthorized, logoutCookie, sessionCookie, signIn } from './auth.js';
 import {
@@ -15,6 +15,7 @@ import {
   listCustomerProgramWeeks,
   getExerciseVideoLinkMap,
   addFeedbackEntry,
+  quickCompleteFeedbackEntry,
   listAllCustomers,
   computeFeedbackTrend,
   syncCoachWrite,
@@ -283,13 +284,49 @@ async function handlePostFeedback(req, res, slug) {
     return;
   }
 
-  const created = await addFeedbackEntry(slug, customer.name, {
+  // Same date + label replaces the existing entry (specs/012 FR-009): 200, not 201.
+  const { entry, created } = await addFeedbackEntry(slug, customer.name, {
     date: body.date,
     label: body.label || null,
     fields: body.fields,
   });
 
-  sendJson(res, 201, toFeedbackEntryJson(created));
+  sendJson(res, created ? 201 : 200, toFeedbackEntryJson(entry));
+}
+
+// "Mark done" on a Program day (specs/012-program-day-mark-done contracts/feedback-api.md).
+async function handlePostQuickComplete(req, res, slug) {
+  let customer;
+  try {
+    customer = await getCustomer(slug);
+  } catch (err) {
+    if (err instanceof CustomerNotFoundError) {
+      sendJson(res, 404, { error: 'customer_not_found' });
+      return;
+    }
+    throw err;
+  }
+
+  let body;
+  try {
+    body = await readJsonBody(req);
+  } catch (err) {
+    if (err instanceof PayloadTooLargeError) throw err;
+    sendJson(res, 422, { error: 'validation_failed', fields: { body: 'invalid JSON' } });
+    return;
+  }
+
+  const result = validateQuickCompleteSubmission(body);
+  if (!result.valid) {
+    sendJson(res, 422, { error: 'validation_failed', fields: result.fields });
+    return;
+  }
+
+  const { entry, created } = await quickCompleteFeedbackEntry(slug, customer.name, {
+    date: body.date,
+    label: body.label.trim(),
+  });
+  sendJson(res, created ? 201 : 200, { created, entry: toFeedbackEntryJson(entry) });
 }
 
 /**
@@ -621,6 +658,11 @@ const ROUTES = [
     method: 'GET',
     pattern: /^\/api\/customers\/([^/]+)\/nutrition\/?$/,
     handler: (req, res, m) => handleGetNutrition(req, res, decodeURIComponent(m[1])),
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/customers\/([^/]+)\/feedback\/quick-complete\/?$/,
+    handler: (req, res, m) => handlePostQuickComplete(req, res, decodeURIComponent(m[1])),
   },
   {
     method: 'POST',

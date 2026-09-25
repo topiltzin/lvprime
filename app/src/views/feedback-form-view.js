@@ -1,8 +1,6 @@
 import { submitFeedback, ApiError } from '../api-client.js';
-
-function todayIso() {
-  return new Date().toISOString().slice(0, 10);
-}
+// Local calendar date, so "today" matches the Program tab's "Mark done" (specs/012).
+import { todayIso } from '../lib/day-completion.js';
 
 // User Story 3: a form built dynamically from the customer's own feedback.md
 // template (research.md §4/§5 — templates differ per customer). Calls
@@ -148,5 +146,14 @@ export function renderFeedbackForm(slug, template, onSuccess) {
   });
 
   wrap.appendChild(form);
+
+  // "Add details" from a Program day card (specs/012): same date + label enriches that
+  // session on save instead of adding a second one.
+  wrap.prefill = ({ date, label }) => {
+    clearErrors();
+    dateInput.value = date || todayIso();
+    labelInput.value = label || '';
+  };
+  wrap.focusFirstField = () => Object.values(fieldInputs)[0]?.focus();
   return wrap;
 }

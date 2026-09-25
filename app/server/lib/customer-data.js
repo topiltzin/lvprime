@@ -13,8 +13,11 @@ import { deriveWeekState, validateNextWeekNumber } from './week-lock-rule.js';
 import {
   extractFeedbackTemplate,
   parseFeedbackEntries,
-  formatFeedbackEntry,
   parseProgramGoal,
+  upsertFeedbackEntryText,
+  setEntryCompleted,
+  notReportedValue,
+  completedYesValue,
 } from '../markdown-parser.js';
 
 // ---- Error classes (contracts/data-api-layer.md "Error Handling") ----
@@ -337,41 +340,84 @@ export async function upsertCustomer(slug, name) {
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
+async function writeFeedbackContent(customerId, content, context) {
+  const supabase = getSupabaseClient();
+  const { error } = await supabase
+    .from('feedbacks')
+    .upsert(
+      { customer_id: customerId, content, updated_at: new Date().toISOString() },
+      { onConflict: 'customer_id' }
+    );
+  if (error) throw dbError(context, error);
+}
+
+/** The last parsed entry with this date + label (same matching as findFeedbackEntryBlock). */
+function findParsedEntry(content, date, label) {
+  const wanted = (label || '').trim().toLowerCase();
+  const matches = parseFeedbackEntries(content).filter(
+    (e) => e.entry_date === date && (e.label || '').trim().toLowerCase() === wanted
+  );
+  return matches[matches.length - 1];
+}
+
 /**
  * DB-backed replacement for feedback-writer.js's appendFeedbackEntry(slug,
  * displayName, {date, label, fields}): reads feedbacks.content, derives that
- * customer's own template, formats + appends the new entry, upserts, and
- * returns the newly parsed entry. Field-level validation (required fields,
- * Completed Yes/No) stays in validateFeedbackSubmission — called by the route
- * handler before this, exactly as today; this function only checks `date`.
+ * customer's own template, formats the entry and upserts it. An existing entry
+ * with the same date + label is replaced instead of appended (specs/012 FR-009),
+ * so one session never counts twice. Returns { entry, created }.
+ * Field-level validation (required fields, Completed Yes/No) stays in
+ * validateFeedbackSubmission — called by the route handler before this; this
+ * function only checks `date`.
  */
 export async function addFeedbackEntry(slug, displayName, { date, label, fields }) {
   if (!DATE_RE.test(date)) throw new ValidationError('date', 'must be in YYYY-MM-DD format');
 
   const customer = await getCustomer(slug);
   const existing = await getCustomerFeedbackById(customer.id);
-  const template = existing.template;
-  const entryText = formatFeedbackEntry(template, { date, label, fieldValues: fields });
+  const { content, replaced } = upsertFeedbackEntryText(
+    existing.content,
+    existing.template,
+    { date, label, fieldValues: fields },
+    `# ${displayName} - Feedback & Progress Log`
+  );
+  await writeFeedbackContent(customer.id, content, `addFeedbackEntry(${slug})`);
 
-  let newContent;
-  if (existing.content.trim() === '') {
-    newContent = `# ${displayName} - Feedback & Progress Log\n\n${entryText}\n`;
-  } else {
-    const separator = existing.content.endsWith('\n\n') ? '' : existing.content.endsWith('\n') ? '\n' : '\n\n';
-    newContent = `${existing.content}${separator}${entryText}\n`;
+  return { entry: findParsedEntry(content, date, label), created: !replaced };
+}
+
+/**
+ * "Mark done" on a Program day (specs/012 contracts/feedback-api.md): marks the
+ * existing date + label entry completed (keeping its other values), or appends a
+ * default entry: completed = yes, every other template field = "not reported".
+ * Returns { entry, created }.
+ */
+export async function quickCompleteFeedbackEntry(slug, displayName, { date, label }) {
+  if (!DATE_RE.test(date)) throw new ValidationError('date', 'must be in YYYY-MM-DD format');
+
+  const customer = await getCustomer(slug);
+  const existing = await getCustomerFeedbackById(customer.id);
+  const { template } = existing;
+  const context = `quickCompleteFeedbackEntry(${slug})`;
+
+  const updated = setEntryCompleted(existing.content, template, { date, label });
+  if (updated) {
+    if (updated.changed) await writeFeedbackContent(customer.id, updated.content, context);
+    return { entry: findParsedEntry(updated.content, date, label), created: false };
   }
 
-  const supabase = getSupabaseClient();
-  const { error } = await supabase
-    .from('feedbacks')
-    .upsert(
-      { customer_id: customer.id, content: newContent, updated_at: new Date().toISOString() },
-      { onConflict: 'customer_id' }
-    );
-  if (error) throw dbError(`addFeedbackEntry(${slug})`, error);
-
-  const parsed = parseFeedbackEntries(newContent);
-  return parsed[parsed.length - 1];
+  const fieldValues = {};
+  for (const field of template.fields) {
+    fieldValues[field] = /^complet/i.test(field.trim()) ? completedYesValue(template) : notReportedValue(template);
+  }
+  const { content } = upsertFeedbackEntryText(
+    existing.content,
+    template,
+    { date, label, fieldValues },
+    `# ${displayName} - Feedback & Progress Log`
+  );
+  await writeFeedbackContent(customer.id, content, context);
+  return { entry: findParsedEntry(content, date, label), created: true };
 }
 
 export async function updateCustomerNotes(slug, content) {

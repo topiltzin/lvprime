@@ -216,6 +216,7 @@ export async function renderCustomer(container, slug) {
   } else {
     const tabsContainer = document.createElement('div');
     container.appendChild(tabsContainer);
+    let tabs = null;
 
     // Callback when new feedback is added - refreshes the feedback data, confirms the
     // save, and hands the coach off to the Feedback tab (FR-016).
@@ -228,12 +229,14 @@ export async function renderCustomer(container, slug) {
 
         // Replace the tab container with updated data
         tabsContainer.innerHTML = '';
-        const refreshed = new TabContainer(tabsContainer, updatedTabConfig, updatedTabData, {
+        tabs = new TabContainer(tabsContainer, updatedTabConfig, updatedTabData, {
           slug,
           feedbackTemplate: data.feedback?.template,
+          feedbackEntries: updatedData.feedback?.entries || [],
           onFeedbackAdded,
+          onSessionLogged,
         });
-        refreshed.setActiveTab('feedback');
+        tabs.setActiveTab('feedback');
         showToast('Saved · view in Feedback');
         // The new check-in changes this client's status in the sidebar.
         invalidateSidebar();
@@ -243,11 +246,29 @@ export async function renderCustomer(container, slug) {
       }
     };
 
+    // "Mark done" on a Program day (specs/012 FR-007): confirm, then refresh the
+    // Feedback panel and the sidebar in place. The coach stays on the Program tab.
+    const onSessionLogged = async () => {
+      showToast('Session logged');
+      try {
+        const updatedData = await getCustomer(slug);
+        tabs.data.feedback = buildTabData(updatedData).feedback;
+        tabs.setFeedbackEntries(updatedData.feedback?.entries || []);
+        tabs.rerenderPanel('feedback');
+        invalidateSidebar();
+        renderSidebar(document.getElementById('sidebar'), slug);
+      } catch (err) {
+        console.error('Failed to refresh after marking a day done:', err);
+      }
+    };
+
     // Create tab container with feedback form support
-    new TabContainer(tabsContainer, tabConfig, tabData, {
+    tabs = new TabContainer(tabsContainer, tabConfig, tabData, {
       slug,
       feedbackTemplate: data.feedback?.template,
+      feedbackEntries: data.feedback?.entries || [],
       onFeedbackAdded,
+      onSessionLogged,
     });
   }
 

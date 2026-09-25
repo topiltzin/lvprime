@@ -7,7 +7,8 @@ import { marked } from 'marked';
 import { renderProgramDay, renderDaySubnav, trackActiveDay } from './program-day.js';
 import { renderWeekSubnav } from './week-subnav.js';
 import { downloadProgramWeekPdf } from './program-pdf.js';
-import { getProgramWeek } from '../api-client.js';
+import { getProgramWeek, quickCompleteSession } from '../api-client.js';
+import { findDoneEntry, sessionLabel, todayIso } from '../lib/day-completion.js';
 import { downloadNutritionPdf } from './nutrition-pdf.js';
 import { renderFeedbackEntry } from './feedback-entry.js';
 import { renderTrendChart } from './trend-chart.js';
@@ -45,6 +46,11 @@ export class TabContainer {
     this.slug = options.slug; // Customer slug for feedback API calls
     this.feedbackTemplate = options.feedbackTemplate; // Feedback template for form rendering
     this.onFeedbackAdded = options.onFeedbackAdded; // Callback when new feedback is added
+    // "Mark done" on Program days (specs/012): raw API feedback entries decide which
+    // cards show as done; onSessionLogged refreshes stats without leaving the tab.
+    this.feedbackEntries = options.feedbackEntries || [];
+    this.onSessionLogged = options.onSessionLogged;
+    this.onAddDetails = (entry) => this.openLogSession({ date: entry.date, label: entry.label });
 
     this.render();
     this.attachEventListeners();
@@ -240,7 +246,12 @@ export class TabContainer {
 
       const scheduleSection = document.createElement('div');
       scheduleSection.className = 'weekly-schedule';
-      const cards = detail.weeklySchedule.map((day, i) => renderProgramDay(day, i));
+      const cards = detail.weeklySchedule.map((day, i) => renderProgramDay(day, i, {
+        editable: !detail.isLocked,
+        doneEntry: findDoneEntry(this.feedbackEntries, sessionLabel(day)),
+        onMarkDone: (d) => this.markDayDone(d),
+        onAddDetails: (entry) => this.onAddDetails(entry),
+      }));
       cards.forEach((card) => scheduleSection.appendChild(card));
       weekBody.appendChild(scheduleSection);
       this.stopDayTracking = trackActiveDay(subnav, cards);
@@ -257,6 +268,39 @@ export class TabContainer {
       setSafeHtml(progression, detail.progressionHtml);
       weekBody.appendChild(progression);
     }
+  }
+
+  /** Logs a completed session for a Program day; resolves with the saved entry. */
+  async markDayDone(day) {
+    const { entry } = await quickCompleteSession(this.slug, { date: todayIso(), label: sessionLabel(day) });
+    this.feedbackEntries = [...this.feedbackEntries, entry];
+    try {
+      await this.onSessionLogged?.(entry);
+    } catch (err) {
+      // The save itself succeeded; stats catch up on the next load.
+      console.error('Failed to refresh after marking a day done:', err);
+    }
+    return entry;
+  }
+
+  /** Entries used for the done state on later week renders. */
+  setFeedbackEntries(entries) {
+    this.feedbackEntries = entries || [];
+  }
+
+  /** Rebuilds one panel from this.data without changing the active tab. */
+  rerenderPanel(tabId) {
+    const tab = this.tabs.find((t) => t.id === tabId);
+    const panel = this.panelElements[tabId];
+    if (!tab || !panel) return;
+    panel.replaceChildren(this.renderTabContent(tab));
+  }
+
+  /** "Add details": open Log Session prefilled with that session's date and label. */
+  openLogSession({ date, label }) {
+    this.feedbackFormEl?.prefill?.({ date, label });
+    this.setActiveTab('add-entry');
+    this.feedbackFormEl?.focusFirstField?.();
   }
 
   renderFeedbackContent(container, feedbackData) {
@@ -352,6 +396,7 @@ export class TabContainer {
       // Use global renderFeedbackForm if available
       if (window.renderFeedbackForm) {
         const formEl = window.renderFeedbackForm(this.slug, this.feedbackTemplate, this.onFeedbackAdded);
+        this.feedbackFormEl = formEl;
         container.appendChild(formEl);
       } else {
         const msg = document.createElement('p');

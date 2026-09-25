@@ -85,6 +85,36 @@ test('customer-data.js integration', { skip: skip && 'SUPABASE_URL/SUPABASE_SECR
     assert.equal(after.entries[0].completed, true);
   });
 
+  await t.test('addFeedbackEntry replaces an entry with the same date + label instead of appending (specs/012)', async () => {
+    const fields = (felt) => ({
+      'How customer felt': felt,
+      Completed: 'Yes',
+      Notes: 'Upsert test',
+      'Overall impression': 'Hard',
+    });
+    const first = await addFeedbackEntry(TEST_SLUG, 'Integration Test Fixture', {
+      date: '2026-09-18', label: 'Upsert Session', fields: fields('First'),
+    });
+    assert.equal(first.created, true);
+
+    const second = await addFeedbackEntry(TEST_SLUG, 'Integration Test Fixture', {
+      date: '2026-09-18', label: 'upsert session', fields: fields('Second'),
+    });
+    assert.equal(second.created, false);
+    assert.equal(second.entry.felt, 'Second');
+
+    let feedback = await getCustomerFeedback(TEST_SLUG);
+    assert.equal(feedback.entries.length, 2); // the 2026-09-17 entry + this one
+    assert.equal(feedback.entries[1].felt, 'Second');
+
+    const other = await addFeedbackEntry(TEST_SLUG, 'Integration Test Fixture', {
+      date: '2026-09-18', label: 'Another Session', fields: fields('Other'),
+    });
+    assert.equal(other.created, true);
+    feedback = await getCustomerFeedback(TEST_SLUG);
+    assert.equal(feedback.entries.length, 3);
+  });
+
   await t.test('syncCoachWrite: fresh write, then conflicting stale-version write', async () => {
     const content1 = 'Sync content v1';
     const hash1 = computeContentHash(content1);

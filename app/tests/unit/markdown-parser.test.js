@@ -8,6 +8,10 @@ import {
   extractFeedbackTemplate,
   formatFeedbackEntry,
   parseProgramDetail,
+  notReportedValue,
+  completedYesValue,
+  upsertFeedbackEntryText,
+  setEntryCompleted,
 } from '../../server/markdown-parser.js';
 import { renderMarkdown } from '../../server/markdown-render.js';
 
@@ -205,4 +209,119 @@ test('parseProgramDetail keeps the progression section as html and no longer ret
   assert.equal('weeklyProgression' in detail, false);
   assert.ok(detail.progressionHtml.includes('Find a comfortable load.'));
   assert.equal(detail.weeklySchedule.length, 1);
+});
+
+// ---- specs/012-program-day-mark-done: sentinel, upsert, quick-complete ----
+
+const EN_TEMPLATE = { headingLevel: 2, fields: ['How customer felt', 'Completed', 'Notes', 'Overall impression'] };
+const ES_TEMPLATE = { headingLevel: 3, fields: ['Energía', 'Completado', 'Notas', 'Dificultad'] };
+
+test('"Not reported" / "No reportado" parse as absent but the entry still counts as matched', () => {
+  const [en, es] = parseFeedbackEntries(`## 2026-09-25 - Lunes - Piernas A
+- How customer felt: Not reported
+- Completed: Yes
+- Notes: not reported
+- Overall impression: Not reported
+
+### 2026-09-26 - Martes
+- Energía: No reportado
+- Completado: Sí
+- Notas: No reportado
+- Dificultad: No reportado
+`);
+  for (const entry of [en, es]) {
+    assert.equal(entry.felt, null);
+    assert.equal(entry.difficulty, null);
+    assert.equal(entry.notes, null);
+    assert.equal(entry.completed, true);
+    assert.equal(entry.raw_matched, true);
+  }
+});
+
+test('language helpers pick the template language', () => {
+  assert.equal(notReportedValue(EN_TEMPLATE), 'Not reported');
+  assert.equal(completedYesValue(EN_TEMPLATE), 'Yes');
+  assert.equal(notReportedValue(ES_TEMPLATE), 'No reportado');
+  assert.equal(completedYesValue(ES_TEMPLATE), 'Sí');
+});
+
+const LOG = `# Test - Feedback & Progress Log
+
+\`\`\`
+## 2026-09-25 - Lunes - Piernas A
+- Completed: [Yes/No]
+\`\`\`
+
+## 2026-09-25 - Lunes - Piernas A
+- How customer felt: first
+- Completed: Yes
+- Notes: first
+- Overall impression: Easy
+
+## 2026-09-25 - Lunes - Piernas A
+- How customer felt: second
+- Completed: No
+- Notes: second
+- Overall impression: Hard
+
+## 2026-09-26
+- How customer felt: unlabelled
+- Completed: Yes
+- Notes: x
+- Overall impression: Easy
+`;
+
+const FIELDS = { 'How customer felt': 'Great', Completed: 'Yes', Notes: 'Heavy squats', 'Overall impression': 'Moderate' };
+
+test('upsertFeedbackEntryText replaces the last matching entry, case-insensitively', () => {
+  const { content, replaced } = upsertFeedbackEntryText(LOG, EN_TEMPLATE, {
+    date: '2026-09-25', label: 'lunes - piernas a', fieldValues: FIELDS,
+  });
+  assert.equal(replaced, true);
+  const entries = parseFeedbackEntries(content);
+  assert.equal(entries.length, 3);
+  assert.equal(entries[0].felt, 'first');
+  assert.equal(entries[1].felt, 'Great');
+  assert.equal(entries[1].label, 'lunes - piernas a');
+  assert.equal(entries[2].felt, 'unlabelled');
+  // The fenced example is untouched.
+  assert.match(content, /```\n## 2026-09-25 - Lunes - Piernas A\n- Completed: \[Yes\/No\]\n```/);
+});
+
+test('upsertFeedbackEntryText appends for a different date or label', () => {
+  for (const key of [{ date: '2026-09-27', label: 'Lunes - Piernas A' }, { date: '2026-09-25', label: 'Martes' }]) {
+    const { content, replaced } = upsertFeedbackEntryText(LOG, EN_TEMPLATE, { ...key, fieldValues: FIELDS });
+    assert.equal(replaced, false);
+    assert.equal(parseFeedbackEntries(content).length, 4);
+  }
+});
+
+test('upsertFeedbackEntryText: an empty label only matches an unlabelled entry', () => {
+  const labelled = upsertFeedbackEntryText(LOG, EN_TEMPLATE, { date: '2026-09-25', label: null, fieldValues: FIELDS });
+  assert.equal(labelled.replaced, false);
+  const unlabelled = upsertFeedbackEntryText(LOG, EN_TEMPLATE, { date: '2026-09-26', label: '', fieldValues: FIELDS });
+  assert.equal(unlabelled.replaced, true);
+  assert.equal(parseFeedbackEntries(unlabelled.content)[2].felt, 'Great');
+});
+
+test('upsertFeedbackEntryText writes the header into empty content', () => {
+  const { content } = upsertFeedbackEntryText('', EN_TEMPLATE, { date: '2026-09-25', label: 'Lunes', fieldValues: FIELDS }, '# A - Log');
+  assert.ok(content.startsWith('# A - Log\n\n## 2026-09-25 - Lunes\n'));
+});
+
+test('setEntryCompleted flips No to yes and keeps the other lines', () => {
+  const result = setEntryCompleted(LOG, EN_TEMPLATE, { date: '2026-09-25', label: 'Lunes - Piernas A' });
+  assert.equal(result.changed, true);
+  const entries = parseFeedbackEntries(result.content);
+  assert.equal(entries.length, 3);
+  assert.equal(entries[1].completed, true);
+  assert.equal(entries[1].felt, 'second');
+  assert.equal(entries[1].difficulty, 'Hard');
+});
+
+test('setEntryCompleted reports no change when already yes, and null with no match', () => {
+  const es = '### 2026-09-26 - Martes\n- Energía: Bien\n- Completado: Sí\n- Notas: x\n- Dificultad: Fácil\n';
+  const result = setEntryCompleted(es, ES_TEMPLATE, { date: '2026-09-26', label: 'Martes' });
+  assert.deepEqual(result, { content: es, changed: false });
+  assert.equal(setEntryCompleted(es, ES_TEMPLATE, { date: '2026-09-27', label: 'Martes' }), null);
 });

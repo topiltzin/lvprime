@@ -46,3 +46,22 @@ export function validateFeedbackSubmission(template, body) {
   }
   return { valid: true };
 }
+
+const MAX_LABEL_LENGTH = 200;
+
+/**
+ * Validates a "Mark done" quick-complete request (specs/012 contracts/feedback-api.md):
+ * { date: ISO YYYY-MM-DD, label: non-empty, max 200 chars }.
+ * Returns { valid: true } or { valid: false, fields }.
+ */
+export function validateQuickCompleteSubmission(body) {
+  const fields = {};
+  if (!body || typeof body.date !== 'string' || !isValidIsoDate(body.date)) {
+    fields.date = 'required (YYYY-MM-DD)';
+  }
+  const label = body && typeof body.label === 'string' ? body.label.trim() : '';
+  if (!label) fields.label = 'required';
+  else if (label.length > MAX_LABEL_LENGTH) fields.label = `must be ${MAX_LABEL_LENGTH} characters or fewer`;
+
+  return Object.keys(fields).length ? { valid: false, fields } : { valid: true };
+}

@@ -27,6 +27,9 @@ const SYNONYMS = {
 };
 
 const PLACEHOLDER = /^\[.*\]$/;
+// Written by "Mark done" quick-complete (specs/012) for every field the coach didn't
+// fill in; treated as absent so it never counts as real felt/difficulty data.
+const NOT_REPORTED = /^(not reported|no reportado)$/i;
 
 function isPlaceholder(value) {
   if (value == null) return true;
@@ -34,6 +37,7 @@ function isPlaceholder(value) {
   if (v === '') return true;
   if (PLACEHOLDER.test(v)) return true;
   if (/^pending$/i.test(v)) return true;
+  if (NOT_REPORTED.test(v)) return true;
   return false;
 }
 
@@ -321,4 +325,123 @@ export function formatFeedbackEntry(template, { date, label, fieldValues }) {
   const heading = `${'#'.repeat(template.headingLevel)} ${date}${label ? ` - ${label}` : ''}`;
   const fieldLines = template.fields.map((f) => `- ${f}: ${fieldValues[f] ?? ''}`);
   return [heading, ...fieldLines].join('\n');
+}
+
+// ---- "Mark done" quick-complete + Log Session upsert (specs/012-program-day-mark-done) ----
+
+function isSpanishLabel(label) {
+  return /[áéíóúñ]/i.test(label) || /completad|energ[íi]a|nota|dificultad/i.test(label);
+}
+
+/** True when the customer's own feedback template is written in Spanish. */
+export function isSpanishTemplate(template) {
+  return template.fields.some(isSpanishLabel);
+}
+
+/** The "not reported" sentinel in the template's language (parsed back as absent). */
+export function notReportedValue(template) {
+  return isSpanishTemplate(template) ? 'No reportado' : 'Not reported';
+}
+
+/** A completed-field value validateFeedbackSubmission and parseCompleted accept as yes. */
+export function completedYesValue(template) {
+  return isSpanishTemplate(template) ? 'Sí' : 'Yes';
+}
+
+function normalizeEntryLabel(label) {
+  return (label || '').trim().toLowerCase();
+}
+
+/**
+ * Line range { start, end } (end exclusive) of the last entry in `content` with this
+ * ISO date and label (trimmed, case-insensitive; an empty label only matches an
+ * unlabelled entry), using the same heading/fence rules as parseFeedbackEntries().
+ * Returns null when there is no such entry.
+ */
+export function findFeedbackEntryBlock(content, { date, label }) {
+  const lines = content.split('\n');
+  const wanted = normalizeEntryLabel(label);
+  let fenced = false;
+  let found = null;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].replace(/\r$/, '');
+    if (line.trim().startsWith('```')) {
+      fenced = !fenced;
+      continue;
+    }
+    if (fenced) continue;
+    const headingMatch = line.match(HEADING_LINE);
+    if (!headingMatch) continue;
+    const headingText = headingMatch[2].trim();
+    const dateMatch = headingText.match(DATE_LIKE);
+    if (!dateMatch || dateMatch[0].trim() !== date) continue;
+    const rest = headingText.slice(dateMatch[0].length).replace(/^\s*-\s*/, '').trim();
+    if (normalizeEntryLabel(rest) !== wanted) continue;
+
+    let end = i + 1;
+    while (end < lines.length) {
+      const next = lines[end].replace(/\r$/, '');
+      if (HEADING_LINE.test(next) || next.trim() === '---' || next.trim().startsWith('```')) break;
+      end++;
+    }
+    found = { start: i, end };
+  }
+  return found;
+}
+
+function appendEntryText(content, entryText, header) {
+  if (content.trim() === '') return `${header ? `${header}\n\n` : ''}${entryText}\n`;
+  const separator = content.endsWith('\n\n') ? '' : content.endsWith('\n') ? '\n' : '\n\n';
+  return `${content}${separator}${entryText}\n`;
+}
+
+/** Swaps lines [start, end) for newLines, keeping the block's trailing blank lines. */
+function replaceBlock(lines, { start, end }, newLines) {
+  let trailing = 0;
+  while (end - trailing - 1 > start && lines[end - trailing - 1].trim() === '') trailing++;
+  return [...lines.slice(0, start), ...newLines, ...lines.slice(end - trailing)].join('\n');
+}
+
+/**
+ * Log Session write (FR-009): replaces the last entry with the same date + label, or
+ * appends a new one. `header` is written first when content is empty.
+ * Returns { content, replaced }.
+ */
+export function upsertFeedbackEntryText(content, template, { date, label, fieldValues }, header = null) {
+  const entryText = formatFeedbackEntry(template, { date, label, fieldValues });
+  const block = findFeedbackEntryBlock(content, { date, label });
+  if (!block) return { content: appendEntryText(content, entryText, header), replaced: false };
+  return { content: replaceBlock(content.split('\n'), block, entryText.split('\n')), replaced: true };
+}
+
+/**
+ * Quick-complete on an existing entry: sets only its completed-like field to yes and
+ * keeps every other line. Returns { content, changed }, or null when no entry matches.
+ */
+export function setEntryCompleted(content, template, { date, label }) {
+  const block = findFeedbackEntryBlock(content, { date, label });
+  if (!block) return null;
+
+  const lines = content.split('\n');
+  const yes = completedYesValue(template);
+  let changed = false;
+  let sawCompleted = false;
+  for (let i = block.start + 1; i < block.end; i++) {
+    const fieldMatch = lines[i].replace(/\r$/, '').match(FIELD_LINE);
+    if (!fieldMatch || !/^complet/i.test(fieldMatch[1].trim())) continue;
+    sawCompleted = true;
+    if (parseCompleted(fieldMatch[2].trim()) !== true) {
+      lines[i] = `- ${fieldMatch[1].trim()}: ${yes}`;
+      changed = true;
+    }
+    break;
+  }
+  if (!sawCompleted) {
+    // An entry written without a completed line: add one right after the heading.
+    const completedLabel = template.fields.find((f) => /^complet/i.test(f.trim())) || 'Completed';
+    lines.splice(block.start + 1, 0, `- ${completedLabel}: ${yes}`);
+    changed = true;
+  }
+  return { content: lines.join('\n'), changed };
 }
