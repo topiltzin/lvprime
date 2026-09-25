@@ -26,6 +26,10 @@ const SYNONYMS = {
   notes: /nota|observ|note/i,
 };
 
+function fallbackTemplate() {
+  return { ...FALLBACK_TEMPLATE, fields: [...FALLBACK_TEMPLATE.fields] };
+}
+
 const PLACEHOLDER = /^\[.*\]$/;
 // Written by "Mark done" quick-complete (specs/012) for every field the coach didn't
 // fill in; treated as absent so it never counts as real felt/difficulty data.
@@ -41,10 +45,6 @@ function isPlaceholder(value) {
   return false;
 }
 
-function normalizeLabelKey(label) {
-  return label.trim().toLowerCase();
-}
-
 function classifyLabel(label) {
   for (const [key, re] of Object.entries(SYNONYMS)) {
     if (re.test(label)) return key;
@@ -56,19 +56,20 @@ function classifyLabel(label) {
  * Extract the per-file entry template from the fenced example block near a
  * "Formato de Entrada" / "Entry Format" / "Session Format" heading. Falls back to
  * FALLBACK_TEMPLATE (the generic shape from CLAUDE.md) if no such block is found.
+ * Pass `entries` when the caller already ran parseFeedbackEntries() on this text.
  */
-export function extractFeedbackTemplate(feedbackMdText) {
+export function extractFeedbackTemplate(feedbackMdText, entries = null) {
   const lines = feedbackMdText.split(/\r?\n/);
   const formatHeadingIdx = lines.findIndex((l) =>
     /^#{1,4}\s*(Formato de Entrada|Entry Format|Session Format)/i.test(l)
   );
   if (formatHeadingIdx === -1) {
-    return { ...FALLBACK_TEMPLATE, fields: [...FALLBACK_TEMPLATE.fields] };
+    return fallbackTemplate();
   }
 
   let i = formatHeadingIdx + 1;
   while (i < lines.length && !lines[i].trim().startsWith('```')) i++;
-  if (i >= lines.length) return { ...FALLBACK_TEMPLATE, fields: [...FALLBACK_TEMPLATE.fields] };
+  if (i >= lines.length) return fallbackTemplate();
   i++; // skip opening fence
 
   const blockLines = [];
@@ -86,15 +87,13 @@ export function extractFeedbackTemplate(feedbackMdText) {
     if (m) fields.push(m[1].trim());
   }
 
-  if (fields.length === 0) {
-    return { ...FALLBACK_TEMPLATE, fields: [...FALLBACK_TEMPLATE.fields] };
-  }
+  if (fields.length === 0) return fallbackTemplate();
 
   // The documented example's heading level can differ from what's actually used
   // by real entries (e.g. entries nested under "## Week N" grouping headings use
   // "###", one level deeper than the "## [Date]..." example). Prefer the level
   // actually in use so new entries match real practice, not just the example.
-  const realEntries = parseFeedbackEntries(feedbackMdText);
+  const realEntries = entries ?? parseFeedbackEntries(feedbackMdText);
   const actualHeadingLevel = realEntries.length
     ? realEntries[realEntries.length - 1].heading_level
     : headingLevel;
@@ -112,7 +111,10 @@ export function parseProgramGoal(programMdText) {
   return match[2].trim().replace(/\s{2,}$/, '') || null;
 }
 
-const DAY_NAME = /^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Lunes|Martes|Mi[ée]rcoles|Jueves|Viernes|S[áa]bado|Domingo)/i;
+const DAY_NAMES = 'Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Lunes|Martes|Mi[ée]rcoles|Jueves|Viernes|S[áa]bado|Domingo';
+const DAY_NAME = new RegExp(`^(${DAY_NAMES})`, 'i');
+// "Lunes y Jueves", "Monday and Thursday", "Mon/Thu"-style second day right after the first.
+const JOINED_DAY_NAME = new RegExp(`^\\s*(y|and|\\/)\\s*(${DAY_NAMES})`, 'i');
 
 // Structured exercise-row extraction (User Story 2 / contracts/exercise-row-parsing.md).
 // Matches the numbered-list shape both existing customer files already use, regardless of
@@ -185,11 +187,11 @@ export function parseProgramDetail(programMdText, renderMarkdown, videoLinkMap) 
     const headingMatch = lines[i].match(HEADING_LINE);
     if (!headingMatch) continue;
     const headingText = headingMatch[2].trim();
-    if (!DAY_NAME.test(headingText)) continue;
-
     const dayMatch = headingText.match(DAY_NAME);
+    if (!dayMatch) continue;
+
     let dayEnd = dayMatch[0].length;
-    const joinMatch = headingText.slice(dayEnd).match(/^\s*(y|and|\/)\s*(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Lunes|Martes|Mi[ée]rcoles|Jueves|Viernes|S[áa]bado|Domingo)/i);
+    const joinMatch = headingText.slice(dayEnd).match(JOINED_DAY_NAME);
     if (joinMatch) dayEnd += joinMatch[0].length;
     const day = headingText.slice(0, dayEnd).trim();
     const focus = headingText.slice(dayEnd).replace(/^\s*[-–]\s*/, '').trim();
@@ -258,10 +260,10 @@ export function parseFeedbackEntries(feedbackMdText) {
     const headingMatch = lines[i].match(HEADING_LINE);
     if (!headingMatch) continue;
     const headingText = headingMatch[2].trim();
-    if (!DATE_LIKE.test(headingText)) continue;
+    const dateMatch = headingText.match(DATE_LIKE);
+    if (!dateMatch) continue;
 
     const headingLevel = headingMatch[1].length;
-    const dateMatch = headingText.match(DATE_LIKE);
     const rawDate = dateMatch[0].trim();
     const rest = headingText.slice(dateMatch[0].length).replace(/^\s*-\s*/, '').trim();
 
@@ -285,12 +287,11 @@ export function parseFeedbackEntries(feedbackMdText) {
       }
     }
 
-    const entryDate = ISO_DATE.test(rawDate) ? rawDate : rawDate;
     const hasAnyRealValue = Object.values(fieldsByKey).some((v) => v != null);
     const rawMatched = fieldsRaw.length > 0 && hasAnyRealValue;
 
     entries.push({
-      entry_date: entryDate,
+      entry_date: rawDate,
       entry_date_iso: ISO_DATE.test(rawDate) ? rawDate : null,
       label: rest || null,
       felt: fieldsByKey.felt ?? null,

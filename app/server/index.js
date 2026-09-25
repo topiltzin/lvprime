@@ -54,6 +54,7 @@ class PayloadTooLargeError extends Error {}
 function isMappedError(err) {
   return (
     err instanceof PayloadTooLargeError ||
+    err instanceof CustomerNotFoundError ||
     err instanceof ValidationError ||
     err instanceof URIError ||
     err.code === 'DATABASE_ERROR'
@@ -85,6 +86,18 @@ function readJsonBody(req) {
     });
     req.on('error', reject);
   });
+}
+
+// Parsed body, or undefined after answering 422 for malformed JSON
+// (JSON.parse never yields undefined, so a literal `null` body still passes through).
+async function readJsonBodyOr422(req, res) {
+  try {
+    return await readJsonBody(req);
+  } catch (err) {
+    if (err instanceof PayloadTooLargeError) throw err;
+    sendJson(res, 422, { error: 'validation_failed', fields: { body: 'invalid JSON' } });
+    return undefined;
+  }
 }
 
 function toFeedbackEntryJson(row) {
@@ -123,13 +136,8 @@ function parseWeekNumber(value) {
 }
 
 async function handleGetProgramWeeks(req, res, slug) {
-  try {
-    const weeks = await listCustomerProgramWeeks(slug);
-    sendJson(res, 200, { weeks });
-  } catch (err) {
-    if (err instanceof CustomerNotFoundError) return sendJson(res, 404, { error: 'customer_not_found' });
-    throw err;
-  }
+  const weeks = await listCustomerProgramWeeks(slug);
+  sendJson(res, 200, { weeks });
 }
 
 async function handleGetProgramWeek(req, res, slug, weekParam) {
@@ -139,7 +147,6 @@ async function handleGetProgramWeek(req, res, slug, weekParam) {
     const [row, videoLinkMap] = await Promise.all([getCustomerProgramWeek(slug, weekNumber), getExerciseVideoLinkMap()]);
     sendJson(res, 200, programWeekJson(row, videoLinkMap, row));
   } catch (err) {
-    if (err instanceof CustomerNotFoundError) return sendJson(res, 404, { error: 'customer_not_found' });
     if (err instanceof WeekNotFoundError) return sendJson(res, 404, { error: 'week_not_found', weekNumber });
     throw err;
   }
@@ -151,22 +158,13 @@ async function handleGetCustomers(req, res) {
 }
 
 async function handleGetCustomer(req, res, slug) {
-  let profile, videoLinkMap;
-  try {
-    // Runs the 4 related-table queries in parallel instead of resolving the
-    // customer 5 times sequentially (per-slug getCustomer* calls) — that was
-    // ~9 sequential Supabase round trips and blew past the <500ms target
-    // (spec SC-004). getExerciseVideoLinkMap() isn't customer-scoped, so it
-    // runs alongside rather than inside that per-customer Promise.all
-    // (specs/007-exercise-library-migration plan.md Performance Goals).
-    [profile, videoLinkMap] = await Promise.all([getCustomerFullProfile(slug), getExerciseVideoLinkMap()]);
-  } catch (err) {
-    if (err instanceof CustomerNotFoundError) {
-      sendJson(res, 404, { error: 'customer_not_found' });
-      return;
-    }
-    throw err;
-  }
+  // Runs the 4 related-table queries in parallel instead of resolving the
+  // customer 5 times sequentially (per-slug getCustomer* calls) — that was
+  // ~9 sequential Supabase round trips and blew past the <500ms target
+  // (spec SC-004). getExerciseVideoLinkMap() isn't customer-scoped, so it
+  // runs alongside rather than inside that per-customer Promise.all
+  // (specs/007-exercise-library-migration plan.md Performance Goals).
+  const [profile, videoLinkMap] = await Promise.all([getCustomerFullProfile(slug), getExerciseVideoLinkMap()]);
   const {
     customer,
     program: programRow,
@@ -220,22 +218,12 @@ async function handleGetCustomer(req, res, slug) {
 }
 
 async function handleGetNutrition(req, res, slug) {
-  try {
-    await getCustomer(slug);
-  } catch (err) {
-    if (err instanceof CustomerNotFoundError) {
-      sendJson(res, 404, { error: 'customer_not_found' });
-      return;
-    }
-    throw err;
-  }
-
+  const nutritionRow = await getCustomerNutritionPlan(slug);
   // Nutrition plans are written outside the app (nutrition specialist skill
   // or manual creation, per specs/005-nutrition-plan-tab Assumption 2), so
   // there's no in-app write path to re-check here — the 100KB limit is
   // enforced at migration/write time in customer-data.js. This defensive
   // re-check just guards against any future out-of-band insert.
-  const nutritionRow = await getCustomerNutritionPlan(slug);
   if (!nutritionRow) {
     sendJson(res, 200, { content: '', isEmpty: true, lastModified: null });
     return;
@@ -258,27 +246,12 @@ async function handleGetNutrition(req, res, slug) {
 }
 
 async function handlePostFeedback(req, res, slug) {
-  let customer;
-  try {
-    customer = await getCustomer(slug);
-  } catch (err) {
-    if (err instanceof CustomerNotFoundError) {
-      sendJson(res, 404, { error: 'customer_not_found' });
-      return;
-    }
-    throw err;
-  }
+  const customer = await getCustomer(slug);
 
-  let body;
-  try {
-    body = await readJsonBody(req);
-  } catch (err) {
-    if (err instanceof PayloadTooLargeError) throw err;
-    sendJson(res, 422, { error: 'validation_failed', fields: { body: 'invalid JSON' } });
-    return;
-  }
+  const body = await readJsonBodyOr422(req, res);
+  if (body === undefined) return;
 
-  const existingFeedback = await getCustomerFeedback(slug);
+  const existingFeedback = await getCustomerFeedback(slug, { customer });
   const result = validateFeedbackSubmission(existingFeedback.template, body);
   if (!result.valid) {
     sendJson(res, 422, { error: 'validation_failed', fields: result.fields });
@@ -290,32 +263,17 @@ async function handlePostFeedback(req, res, slug) {
     date: body.date,
     label: body.label || null,
     fields: body.fields,
-  });
+  }, { customer, feedback: existingFeedback });
 
   sendJson(res, created ? 201 : 200, toFeedbackEntryJson(entry));
 }
 
 // "Mark done" on a Program day (specs/012-program-day-mark-done contracts/feedback-api.md).
 async function handlePostQuickComplete(req, res, slug) {
-  let customer;
-  try {
-    customer = await getCustomer(slug);
-  } catch (err) {
-    if (err instanceof CustomerNotFoundError) {
-      sendJson(res, 404, { error: 'customer_not_found' });
-      return;
-    }
-    throw err;
-  }
+  const customer = await getCustomer(slug);
 
-  let body;
-  try {
-    body = await readJsonBody(req);
-  } catch (err) {
-    if (err instanceof PayloadTooLargeError) throw err;
-    sendJson(res, 422, { error: 'validation_failed', fields: { body: 'invalid JSON' } });
-    return;
-  }
+  const body = await readJsonBodyOr422(req, res);
+  if (body === undefined) return;
 
   const result = validateQuickCompleteSubmission(body);
   if (!result.valid) {
@@ -326,7 +284,7 @@ async function handlePostQuickComplete(req, res, slug) {
   const { entry, created } = await quickCompleteFeedbackEntry(slug, customer.name, {
     date: body.date,
     label: body.label.trim(),
-  });
+  }, { customer });
   sendJson(res, created ? 201 : 200, { created, entry: toFeedbackEntryJson(entry) });
 }
 
@@ -383,12 +341,7 @@ async function handleSyncUpload(req, res) {
       });
     }
 
-    try {
-      await getCustomer(customer_id);
-    } catch (err) {
-      if (err instanceof CustomerNotFoundError) return sendJson(res, 404, { error: 'customer_not_found' });
-      throw err;
-    }
+    const customer = await getCustomer(customer_id);
 
     // Validate file_type
     if (!['program', 'notes', 'nutrition_plan'].includes(file_type)) {
@@ -416,7 +369,7 @@ async function handleSyncUpload(req, res) {
         currentVersion: current_version,
         content,
         contentHash: content_hash,
-      });
+      }, { customer });
     } catch (err) {
       if (err instanceof WeekLockedError) {
         return sendJson(res, 423, { error: 'week_locked', weekNumber: err.weekNumber, currentWeek: err.currentWeek });
@@ -468,14 +421,9 @@ async function handleSyncDownload(req, res) {
       });
     }
 
-    try {
-      await getCustomer(customer_id);
-    } catch (err) {
-      if (err instanceof CustomerNotFoundError) return sendJson(res, 404, { error: 'customer_not_found' });
-      throw err;
-    }
+    const customer = await getCustomer(customer_id);
 
-    const state = await getSyncState(customer_id, file_type, weekNumber);
+    const state = await getSyncState(customer_id, file_type, weekNumber, { customer });
     if (!state) {
       return sendJson(res, 404, { error: 'not_found', message: 'File never synced' });
     }
@@ -489,10 +437,10 @@ async function handleSyncDownload(req, res) {
 
     const row =
       file_type === 'program'
-        ? await getCustomerProgram(customer_id, weekNumber)
+        ? await getCustomerProgram(customer_id, weekNumber, { customer })
         : file_type === 'nutrition_plan'
-          ? await getCustomerNutritionPlan(customer_id)
-          : await getCustomerNotes(customer_id);
+          ? await getCustomerNutritionPlan(customer_id, { customer })
+          : await getCustomerNotes(customer_id, { customer });
     if (!row) {
       return sendJson(res, 404, { error: 'not_found', message: 'File missing from database' });
     }
@@ -532,28 +480,25 @@ async function handleSyncStatus(req, res) {
       return sendJson(res, 422, { error: 'validation_failed', fields: { week_number: 'must be a positive integer' } });
     }
 
-    try {
-      await getCustomer(customer_id);
-    } catch (err) {
-      if (err instanceof CustomerNotFoundError) return sendJson(res, 404, { error: 'customer_not_found' });
-      throw err;
-    }
+    const customer = await getCustomer(customer_id);
 
-    // Get status for program/notes (version-tracked, per sync-engine.js)
-    const files = {};
-    for (const fileType of ['program', 'notes']) {
-      const state = await getSyncState(customer_id, fileType, fileType === 'program' ? weekNumber : null);
-      files[fileType] = state
+    // Status for program/notes (version-tracked, per sync-engine.js), plus feedback, fetched in parallel.
+    const [programState, notesState, feedback] = await Promise.all([
+      getSyncState(customer_id, 'program', weekNumber, { customer }),
+      getSyncState(customer_id, 'notes', null, { customer }),
+      getCustomerFeedback(customer_id, { customer }),
+    ]);
+    const toFileStatus = (state) =>
+      state
         ? { status: state.syncStatus, current_version: state.version, last_sync_timestamp: state.updatedAt }
         : { status: 'not_initialized' };
-    }
+    const files = { program: toFileStatus(programState), notes: toFileStatus(notesState) };
 
     // Feedback was never version-tracked by sync-engine.js either (upload
     // only accepts file_type program/notes); kept as 'not_initialized' to
     // match, but entry_count now reflects the real parsed count instead of
     // the original heading-regex count (which never matched real dated
     // headings and always returned 0 for actual customer files).
-    const feedback = await getCustomerFeedback(customer_id);
     files.feedback = { status: 'not_initialized', entry_count: feedback.entries.length };
 
     const allSynced = Object.values(files).every(f => !f.status || f.status === 'synced');
@@ -579,13 +524,8 @@ const CHATBOT_ERRORS = {
 };
 
 async function handlePostChat(req, res) {
-  let body;
-  try {
-    body = await readJsonBody(req);
-  } catch (err) {
-    if (err instanceof PayloadTooLargeError) throw err;
-    return sendJson(res, 422, { error: 'validation_failed', fields: { body: 'invalid JSON' } });
-  }
+  const body = await readJsonBodyOr422(req, res);
+  if (body === undefined) return;
 
   const result = validateChatQuestion(body);
   if (!result.ok) return sendJson(res, 422, { error: 'validation_failed', fields: result.fields });
@@ -754,6 +694,7 @@ export async function handleApiRequest(req, res) {
     // Malformed %-escapes in the path (decodeURIComponent).
     if (err instanceof URIError) return sendJson(res, 400, { error: 'bad_request' });
     if (err instanceof PayloadTooLargeError) return sendJson(res, 413, { error: 'payload_too_large' });
+    if (err instanceof CustomerNotFoundError) return sendJson(res, 404, { error: 'customer_not_found' });
     // A slug that fails assertValidSlug can't name an existing customer.
     if (err instanceof ValidationError && err.field === 'slug') {
       return sendJson(res, 404, { error: 'customer_not_found' });

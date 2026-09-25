@@ -6,11 +6,10 @@
 import { marked } from 'marked';
 import { renderProgramDay, renderDaySubnav, trackActiveDay } from './program-day.js';
 import { renderWeekSubnav } from './week-subnav.js';
-import { downloadProgramWeekPdf } from './program-pdf.js';
 import { getProgramWeek, quickCompleteSession } from '../api-client.js';
 import { findDoneEntry, sessionLabel, todayIso } from '../lib/day-completion.js';
-import { downloadNutritionPdf } from './nutrition-pdf.js';
 import { renderFeedbackEntry } from './feedback-entry.js';
+import { renderFeedbackForm } from '../views/feedback-form-view.js';
 import { renderTrendChart } from './trend-chart.js';
 import { showToast } from './toast.js';
 import { setSafeHtml } from '../lib/safe-html.js';
@@ -18,6 +17,7 @@ import { icon } from '../lib/icons.js';
 import { formatDate } from '../lib/format.js';
 import { formatRelativeCheckIn } from '../lib/status.js';
 
+// The PDF modules pull in jsPDF (most of the bundle), so they load on first click.
 function createPdfButton() {
   const button = document.createElement('button');
   button.type = 'button';
@@ -165,7 +165,7 @@ export class TabContainer {
         this.renderNotesContent(container, data);
         break;
       case 'add-entry':
-        this.renderAddEntryContent(container, data);
+        this.renderAddEntryContent(container);
         break;
     }
 
@@ -213,10 +213,11 @@ export class TabContainer {
 
     // Acts on whichever week is showing at click time, not the one at render time.
     const pdfButton = createPdfButton();
-    pdfButton.addEventListener('click', () => {
+    pdfButton.addEventListener('click', async () => {
       const detail = weekCache.get(this.activeWeek);
       if (!detail) return;
       try {
+        const { downloadProgramWeekPdf } = await import('./program-pdf.js');
         downloadProgramWeekPdf(detail, this.slug);
       } catch (err) {
         showToast('Could not generate the PDF. Please try again.', 3000, 'error');
@@ -389,21 +390,10 @@ export class TabContainer {
     return strip;
   }
 
-  renderAddEntryContent(container, feedbackData) {
-
-    // Add feedback form if available
+  renderAddEntryContent(container) {
     if (this.slug && this.feedbackTemplate && this.onFeedbackAdded) {
-      // Use global renderFeedbackForm if available
-      if (window.renderFeedbackForm) {
-        const formEl = window.renderFeedbackForm(this.slug, this.feedbackTemplate, this.onFeedbackAdded);
-        this.feedbackFormEl = formEl;
-        container.appendChild(formEl);
-      } else {
-        const msg = document.createElement('p');
-        msg.className = 'empty-state';
-        msg.textContent = 'Feedback form is not available. Please refresh the page.';
-        container.appendChild(msg);
-      }
+      this.feedbackFormEl = renderFeedbackForm(this.slug, this.feedbackTemplate, this.onFeedbackAdded);
+      container.appendChild(this.feedbackFormEl);
     } else {
       const msg = document.createElement('p');
       msg.className = 'empty-state';
@@ -442,8 +432,9 @@ export class TabContainer {
 
       // Add PDF download button
       const pdfButton = createPdfButton();
-      pdfButton.addEventListener('click', () => {
+      pdfButton.addEventListener('click', async () => {
         try {
+          const { downloadNutritionPdf } = await import('./nutrition-pdf.js');
           // Extract customer name from slug or use default
           const customerName = this.slug ? this.slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Nutrition Plan';
           downloadNutritionPdf(customerName, nutrition.content);

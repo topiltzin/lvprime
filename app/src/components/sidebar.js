@@ -7,7 +7,12 @@ import { icon } from '../lib/icons.js';
 // the main view so a 401 is handled once by the view's own request, not raced here.
 let customersPromise = null;
 
-function loadCustomers() {
+/**
+ * The shared GET /api/customers result. `fresh` refetches (the overview wants
+ * current data); the sidebar rendered right after then reuses that response.
+ */
+export function loadCustomers({ fresh = false } = {}) {
+  if (fresh) customersPromise = null;
   if (!customersPromise) {
     customersPromise = getCustomers().catch((err) => {
       customersPromise = null;

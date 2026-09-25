@@ -100,8 +100,14 @@ export async function getCustomer(slug) {
   return data;
 }
 
+// Callers that already resolved the customer row (e.g. a route handler's 404
+// check) pass it through to skip a redundant slug -> customer round trip.
+function resolveCustomer(slug, customer) {
+  return customer ?? getCustomer(slug);
+}
+
 // "ById" variants take an already-resolved customer_id and skip the slug ->
-// customer lookup. Used internally (handleGetCustomer, listAllCustomers) to
+// customer lookup. Used internally (getCustomerFullProfile, writes) to
 // run the 4 per-customer queries in parallel via Promise.all instead of each
 // one separately re-resolving the customer — that redundant resolution was
 // turning 1 logical "load a customer" into ~9 sequential Supabase round
@@ -151,10 +157,11 @@ async function getCustomerFeedbackById(customerId) {
   if (error) throw dbError(`getCustomerFeedbackById(${customerId})`, error);
 
   const content = data ? data.content : '';
+  const entries = parseFeedbackEntries(content);
   return {
     content,
-    entries: parseFeedbackEntries(content),
-    template: extractFeedbackTemplate(content),
+    entries,
+    template: extractFeedbackTemplate(content, entries),
     updatedAt: data ? data.updated_at : null,
   };
 }
@@ -177,8 +184,8 @@ async function getCustomerNutritionPlanById(customerId) {
   return data || null;
 }
 
-export async function getCustomerProgram(slug, weekNumber = null) {
-  const customer = await getCustomer(slug);
+export async function getCustomerProgram(slug, weekNumber = null, { customer } = {}) {
+  customer = await resolveCustomer(slug, customer);
   return getCustomerProgramById(customer.id, weekNumber);
 }
 
@@ -206,18 +213,18 @@ export async function getCustomerProgramWeek(slug, weekNumber) {
  * markdown-parser.js). This mirrors what app/server/index.js's
  * handleGetCustomer currently does via fs.readFileSync + parseFeedbackEntries.
  */
-export async function getCustomerFeedback(slug) {
-  const customer = await getCustomer(slug);
+export async function getCustomerFeedback(slug, { customer } = {}) {
+  customer = await resolveCustomer(slug, customer);
   return getCustomerFeedbackById(customer.id);
 }
 
-export async function getCustomerNotes(slug) {
-  const customer = await getCustomer(slug);
+export async function getCustomerNotes(slug, { customer } = {}) {
+  customer = await resolveCustomer(slug, customer);
   return getCustomerNotesById(customer.id);
 }
 
-export async function getCustomerNutritionPlan(slug) {
-  const customer = await getCustomer(slug);
+export async function getCustomerNutritionPlan(slug, { customer } = {}) {
+  customer = await resolveCustomer(slug, customer);
   return getCustomerNutritionPlanById(customer.id);
 }
 
@@ -276,50 +283,43 @@ export function computeFeedbackTrend(entries) {
   return { completionRate, points };
 }
 
+// A to-one embed comes back as an object (unique customer_id) and a to-many
+// embed as an array; normalize both to "the first row or null".
+function firstEmbedded(value) {
+  return (Array.isArray(value) ? value[0] : value) ?? null;
+}
+
 /**
  * Replaces customers-repo.js's listCustomers() (which reindexed from the
- * filesystem into SQLite then read back). Coach-only tool with 10-50
- * customers (per plan.md Scale/Scope) — the 3 queries per customer run in
- * parallel, and all customers are processed in parallel with each other too
- * (not one customer at a time), so this is bounded by one network round
- * trip's worth of latency rather than 3x the customer count.
+ * filesystem into SQLite then read back). One round trip: the latest program
+ * week, notes and feedback are embedded per customer via their customer_id
+ * foreign keys, instead of 1 + 3 queries per customer.
  */
 export async function listAllCustomers() {
   const supabase = getSupabaseClient();
-  const { data: customers, error } = await supabase.from('customers').select('*').order('name');
+  const { data: customers, error } = await supabase
+    .from('customers')
+    .select('slug, name, programs(content), notes(id), feedbacks(content)')
+    .order('name')
+    .order('week_number', { referencedTable: 'programs', ascending: false })
+    .limit(1, { referencedTable: 'programs' });
   if (error) throw dbError('listAllCustomers', error);
 
-  return Promise.all(
-    customers.map(async (customer) => {
-      const [programRes, notesRes, feedbackRes] = await Promise.all([
-        supabase
-          .from('programs')
-          .select('content')
-          .eq('customer_id', customer.id)
-          .order('week_number', { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-        supabase.from('notes').select('id').eq('customer_id', customer.id).maybeSingle(),
-        supabase.from('feedbacks').select('content').eq('customer_id', customer.id).maybeSingle(),
-      ]);
-      if (programRes.error) throw dbError(`listAllCustomers(${customer.slug}) program`, programRes.error);
-      if (notesRes.error) throw dbError(`listAllCustomers(${customer.slug}) notes`, notesRes.error);
-      if (feedbackRes.error) throw dbError(`listAllCustomers(${customer.slug}) feedback`, feedbackRes.error);
+  return customers.map((customer) => {
+    const program = firstEmbedded(customer.programs);
+    const feedback = firstEmbedded(customer.feedbacks);
+    const entries = feedback?.content ? parseFeedbackEntries(feedback.content) : [];
+    const lastMatched = entries.findLast((e) => e.raw_matched && e.entry_date_iso);
 
-      const programGoal = programRes.data?.content ? parseProgramGoal(programRes.data.content) : null;
-      const entries = feedbackRes.data?.content ? parseFeedbackEntries(feedbackRes.data.content) : [];
-      const lastMatched = [...entries].reverse().find((e) => e.raw_matched && e.entry_date_iso);
-
-      return {
-        slug: customer.slug,
-        displayName: customer.name,
-        hasProgram: !!programRes.data,
-        hasNotes: !!notesRes.data,
-        programGoal,
-        lastFeedbackDate: lastMatched ? lastMatched.entry_date_iso : null,
-      };
-    })
-  );
+    return {
+      slug: customer.slug,
+      displayName: customer.name,
+      hasProgram: !!program,
+      hasNotes: !!firstEmbedded(customer.notes),
+      programGoal: program?.content ? parseProgramGoal(program.content) : null,
+      lastFeedbackDate: lastMatched ? lastMatched.entry_date_iso : null,
+    };
+  });
 }
 
 // ---- Customer upsert (used by the migration script) ----
@@ -368,13 +368,14 @@ function findParsedEntry(content, date, label) {
  * so one session never counts twice. Returns { entry, created }.
  * Field-level validation (required fields, Completed Yes/No) stays in
  * validateFeedbackSubmission — called by the route handler before this; this
- * function only checks `date`.
+ * function only checks `date`. Pass { customer, feedback } when the caller
+ * already loaded them (the route handler reads the template to validate).
  */
-export async function addFeedbackEntry(slug, displayName, { date, label, fields }) {
+export async function addFeedbackEntry(slug, displayName, { date, label, fields }, { customer, feedback } = {}) {
   if (!DATE_RE.test(date)) throw new ValidationError('date', 'must be in YYYY-MM-DD format');
 
-  const customer = await getCustomer(slug);
-  const existing = await getCustomerFeedbackById(customer.id);
+  customer = await resolveCustomer(slug, customer);
+  const existing = feedback ?? (await getCustomerFeedbackById(customer.id));
   const { content, replaced } = upsertFeedbackEntryText(
     existing.content,
     existing.template,
@@ -392,10 +393,10 @@ export async function addFeedbackEntry(slug, displayName, { date, label, fields 
  * default entry: completed = yes, every other template field = "not reported".
  * Returns { entry, created }.
  */
-export async function quickCompleteFeedbackEntry(slug, displayName, { date, label }) {
+export async function quickCompleteFeedbackEntry(slug, displayName, { date, label }, { customer } = {}) {
   if (!DATE_RE.test(date)) throw new ValidationError('date', 'must be in YYYY-MM-DD format');
 
-  const customer = await getCustomer(slug);
+  customer = await resolveCustomer(slug, customer);
   const existing = await getCustomerFeedbackById(customer.id);
   const { template } = existing;
   const context = `quickCompleteFeedbackEntry(${slug})`;
@@ -492,13 +493,18 @@ function assertSyncFileType(fileType) {
  * past week or skipping ahead throws WeekLockedError / WeekNumberGapError
  * before any version resolution — coach-always-wins never overrides a lock.
  */
-export async function syncCoachWrite(slug, fileType, { weekNumber = null, currentVersion, content, contentHash }) {
+export async function syncCoachWrite(
+  slug,
+  fileType,
+  { weekNumber = null, currentVersion, content, contentHash },
+  { customer } = {}
+) {
   assertSyncFileType(fileType);
   if (!verifyContentHash(content, contentHash)) {
     throw new ValidationError('contentHash', 'does not match computed hash of content');
   }
 
-  const customer = await getCustomer(slug);
+  customer = await resolveCustomer(slug, customer);
   const table = SYNC_TABLE_BY_FILE_TYPE[fileType];
   const supabase = getSupabaseClient();
 
@@ -539,7 +545,7 @@ export async function syncCoachWrite(slug, fileType, { weekNumber = null, curren
     versionTo: resolution.new_version,
     contentHash,
     conflictDescription: resolution.conflicted ? resolution.message : undefined,
-  });
+  }, { customer });
 
   return {
     status: 'synced',
@@ -551,9 +557,9 @@ export async function syncCoachWrite(slug, fileType, { weekNumber = null, curren
 }
 
 /** Replaces sync-state.js's getSyncState. For 'program', weekNumber defaults to the current week. */
-export async function getSyncState(slug, fileType, weekNumber = null) {
+export async function getSyncState(slug, fileType, weekNumber = null, { customer } = {}) {
   assertSyncFileType(fileType);
-  const customer = await getCustomer(slug);
+  customer = await resolveCustomer(slug, customer);
   const table = SYNC_TABLE_BY_FILE_TYPE[fileType];
   const supabase = getSupabaseClient();
   let query = supabase
@@ -665,8 +671,8 @@ export async function clearOfflineQueue(slug, fileType) {
 }
 
 /** Replaces sync-state.js's recordSyncEvent. */
-export async function recordSyncEvent(slug, fileType, eventType, metadata = {}) {
-  const customer = await getCustomer(slug);
+export async function recordSyncEvent(slug, fileType, eventType, metadata = {}, { customer } = {}) {
+  customer = await resolveCustomer(slug, customer);
   const supabase = getSupabaseClient();
   const { error } = await supabase.from('sync_events').insert({
     customer_id: customer.id,

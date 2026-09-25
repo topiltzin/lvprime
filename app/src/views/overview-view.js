@@ -1,4 +1,4 @@
-import { getCustomers } from '../api-client.js';
+import { loadCustomers } from '../components/sidebar.js';
 import { renderCustomerCard } from '../components/customer-card.js';
 import { deriveStatus, STATUS_RANK } from '../lib/status.js';
 import { icon } from '../lib/icons.js';
@@ -69,19 +69,24 @@ function renderOverviewSkeleton(container) {
   `;
 }
 
+function renderPageHeader(container, extraHtml = '') {
+  const header = document.createElement('div');
+  header.className = 'page-header';
+  header.innerHTML = `<h1>Clients</h1>${extraHtml}`;
+  container.appendChild(header);
+  return header;
+}
+
 export async function renderOverview(container) {
   renderOverviewSkeleton(container);
 
   let data;
   try {
-    data = await getCustomers();
+    data = await loadCustomers({ fresh: true });
   } catch (err) {
     container.removeAttribute('aria-busy');
     container.innerHTML = '';
-    const header = document.createElement('div');
-    header.className = 'page-header';
-    header.innerHTML = '<h1>Clients</h1>';
-    container.appendChild(header);
+    renderPageHeader(container);
     const banner = document.createElement('div');
     banner.className = 'error-banner';
     banner.textContent = err.message || 'Failed to load clients.';
@@ -93,10 +98,7 @@ export async function renderOverview(container) {
   container.innerHTML = '';
 
   if (!data.customers.length) {
-    const header = document.createElement('div');
-    header.className = 'page-header';
-    header.innerHTML = '<h1>Clients</h1>';
-    container.appendChild(header);
+    renderPageHeader(container);
 
     const empty = document.createElement('div');
     empty.className = 'empty-state-card';
@@ -107,16 +109,15 @@ export async function renderOverview(container) {
 
   const sorted = sortByUrgency(data.customers);
 
-  const header = document.createElement('div');
-  header.className = 'page-header';
-  header.innerHTML = `
-    <h1>Clients</h1>
+  const header = renderPageHeader(
+    container,
+    `
     <label class="client-search-wrap">
       <input type="search" class="client-search" placeholder="Search by name" aria-label="Search clients">
     </label>
-  `;
+  `
+  );
   header.querySelector('.client-search-wrap').prepend(icon('magnifying-glass', 'client-search-icon'));
-  container.appendChild(header);
   container.appendChild(renderScoreboard(sorted));
 
   const list = document.createElement('div');

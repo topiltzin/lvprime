@@ -1,13 +1,9 @@
 import { getCustomer } from '../api-client.js';
-import { renderFeedbackForm } from './feedback-form-view.js';
 import { TabContainer } from '../components/tab-container.js';
 import { renderClientHero } from '../components/client-hero.js';
 import { showToast } from '../components/toast.js';
 import { icon } from '../lib/icons.js';
 import { renderSidebar, invalidateSidebar } from '../components/sidebar.js';
-
-// Make renderFeedbackForm available globally for TabContainer
-window.renderFeedbackForm = renderFeedbackForm;
 
 function formatBytes(bytes) {
   if (bytes == null) return '';
@@ -202,75 +198,58 @@ export async function renderCustomer(container, slug) {
   container.innerHTML = '';
   container.appendChild(renderClientHero(data));
 
-  // Build tab configuration and data
-  const tabConfig = buildTabConfig(data);
-  const tabData = buildTabData(data);
+  // Nutrition, Feedback, Log Session and Notes are always enabled, so there is
+  // always at least one tab to show.
+  const tabsContainer = document.createElement('div');
+  container.appendChild(tabsContainer);
+  let tabs = null;
 
-  // Create tab container with at least one tab enabled
-  const enabledTabs = tabConfig.filter((t) => t.isEnabled);
-  if (enabledTabs.length === 0) {
-    const noData = document.createElement('p');
-    noData.className = 'empty-state';
-    noData.textContent = 'No data available for this customer.';
-    container.appendChild(noData);
-  } else {
-    const tabsContainer = document.createElement('div');
-    container.appendChild(tabsContainer);
-    let tabs = null;
+  // The new check-in changes this client's status in the sidebar.
+  const refreshSidebar = () => {
+    invalidateSidebar();
+    renderSidebar(document.getElementById('sidebar'), slug);
+  };
 
-    // Callback when new feedback is added - refreshes the feedback data, confirms the
-    // save, and hands the coach off to the Feedback tab (FR-016).
-    const onFeedbackAdded = async (newEntry) => {
-      // Reload customer data to get updated feedback
-      try {
-        const updatedData = await getCustomer(slug);
-        const updatedTabConfig = buildTabConfig(updatedData);
-        const updatedTabData = buildTabData(updatedData);
-
-        // Replace the tab container with updated data
-        tabsContainer.innerHTML = '';
-        tabs = new TabContainer(tabsContainer, updatedTabConfig, updatedTabData, {
-          slug,
-          feedbackTemplate: data.feedback?.template,
-          feedbackEntries: updatedData.feedback?.entries || [],
-          onFeedbackAdded,
-          onSessionLogged,
-        });
-        tabs.setActiveTab('feedback');
-        showToast('Saved · view in Feedback');
-        // The new check-in changes this client's status in the sidebar.
-        invalidateSidebar();
-        renderSidebar(document.getElementById('sidebar'), slug);
-      } catch (err) {
-        console.error('Failed to refresh feedback:', err);
-      }
-    };
-
-    // "Mark done" on a Program day (specs/012 FR-007): confirm, then refresh the
-    // Feedback panel and the sidebar in place. The coach stays on the Program tab.
-    const onSessionLogged = async () => {
-      showToast('Session logged');
-      try {
-        const updatedData = await getCustomer(slug);
-        tabs.data.feedback = buildTabData(updatedData).feedback;
-        tabs.setFeedbackEntries(updatedData.feedback?.entries || []);
-        tabs.rerenderPanel('feedback');
-        invalidateSidebar();
-        renderSidebar(document.getElementById('sidebar'), slug);
-      } catch (err) {
-        console.error('Failed to refresh after marking a day done:', err);
-      }
-    };
-
-    // Create tab container with feedback form support
-    tabs = new TabContainer(tabsContainer, tabConfig, tabData, {
+  const mountTabs = (customerData) => {
+    tabsContainer.innerHTML = '';
+    tabs = new TabContainer(tabsContainer, buildTabConfig(customerData), buildTabData(customerData), {
       slug,
       feedbackTemplate: data.feedback?.template,
-      feedbackEntries: data.feedback?.entries || [],
+      feedbackEntries: customerData.feedback?.entries || [],
       onFeedbackAdded,
       onSessionLogged,
     });
-  }
+  };
+
+  // Callback when new feedback is added - refreshes the feedback data, confirms the
+  // save, and hands the coach off to the Feedback tab (FR-016).
+  const onFeedbackAdded = async () => {
+    try {
+      mountTabs(await getCustomer(slug));
+      tabs.setActiveTab('feedback');
+      showToast('Saved · view in Feedback');
+      refreshSidebar();
+    } catch (err) {
+      console.error('Failed to refresh feedback:', err);
+    }
+  };
+
+  // "Mark done" on a Program day (specs/012 FR-007): confirm, then refresh the
+  // Feedback panel and the sidebar in place. The coach stays on the Program tab.
+  const onSessionLogged = async () => {
+    showToast('Session logged');
+    try {
+      const updatedData = await getCustomer(slug);
+      tabs.data.feedback = buildTabData(updatedData).feedback;
+      tabs.setFeedbackEntries(updatedData.feedback?.entries || []);
+      tabs.rerenderPanel('feedback');
+      refreshSidebar();
+    } catch (err) {
+      console.error('Failed to refresh after marking a day done:', err);
+    }
+  };
+
+  mountTabs(data);
 
   renderAttachments(container, data.attachments);
 }
