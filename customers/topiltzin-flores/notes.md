@@ -113,6 +113,25 @@ Resolved by spec 010 (commit d571929): each week is now its own routine in the a
 
 ---
 
+## Week 3 Plan (2026-09-26)
+
+### What changed and why
+- **Twist: barbell compounds added**, requested by the customer. Each of four days gets one barbell main lift: Barbell Bench Press (Mon), Bent-Over Barbell Rows (Tue), Barbell Back Squat (Wed), Deadlifts (Conventional) (Fri). Each replaces the kettlebell/dumbbell version of the same movement pattern.
+- **One accessory cut per barbell day** (DB Incline Press + KB Push Press, Inverted Rows, KB Swings) to pay for the ~4 min barbell ramp-up and keep sessions ≤60 min. Dips dropped 4 → 3 sets because bench adds pressing volume.
+- **Thursday kept barbell-free** so there's only one heavy-bar pressing day per week (elbow).
+- **Elbow-specific barbell rules:** overhand grip on rows, double overhand/straps on deadlifts (no mixed grip), medium grip on bench (no close-grip), loose grip on back squat.
+
+### Evidence behind it
+- Week 2 sessions logged: 2026-09-24 (full training), 2026-09-25 Thursday (Push + Pseudo Planche) and Friday (Full Body), all **completed**. The 09-24 entry reports **elbow "todo bien"** and a positive session; the 09-25 entries only record completion.
+- No pain signal from dips, pike push-ups or planche work, so it's reasonable to add a heavier barbell stimulus now, one lift per day.
+
+### Watch next
+- **Working weights:** Week 3 is calibration at RPE 7. Ask the customer to log the weight used on each barbell lift, since Week 4's jumps depend on it. This also fills in the Bench/Squat/Deadlift baselines (still "TBD") in the Strength Progression Tracking table.
+- Elbow response to Monday bench + dips together (highest elbow-load day).
+- Lower-back fatigue with back squat (Wed) and deadlift (Fri) in the same week. If Friday feels flat, move the deadlift to 3 sets.
+
+---
+
 ## Archived: Original Week 1 Plan (2026-09-14 to 2026-09-22, superseded 2026-09-23)
 
 Upper/Lower split, 6 days/week, 60 min/session. Kept here for reference only — no longer the active program.md schedule.
