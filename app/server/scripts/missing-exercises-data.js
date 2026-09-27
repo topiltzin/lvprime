@@ -147,4 +147,8 @@ export const MISSING_EXERCISES = [
   { name: 'Desplante fijo', category: 'Strength — Lower Body', videoUrl: 'https://www.youtube.com/watch?v=Ca9P1Te6vvA' },
   { name: 'Patada lateral en polea', category: 'Strength — Lower Body', videoUrl: 'https://www.youtube.com/watch?v=Jge8zqHf5Xs' },
   { name: 'Jalón con triángulo', category: 'Strength — Upper Body', videoUrl: 'https://www.youtube.com/watch?v=wrt5Y25QbH4' },
+
+  // liliana-valdez's 2026-09-27 adjustment (copa → pushdown for shoulder bursa / cervical hernia).
+  // Same movement as 'Triceps rope pushdown', so it reuses that library link.
+  { name: 'Tríceps en polea con cuerda', category: 'Strength — Upper Body', videoUrl: 'https://www.youtube.com/watch?v=vPeQu_L-1n0' },
 ];

@@ -2,8 +2,8 @@
 
 ## Perfil inicial (2026-09-26)
 - 47 años, 1.61 m, 58 kg (57 kg en la Fase 5). Lleva 5 meses de recomposición corporal y fuerza 5 días por semana.
-- Metas: bajar % de grasa (abdomen), más glúteo, hombros más redondos y correr medio maratón en ~6 meses (finales de marzo 2027).
-- Lesión en la cadera derecha. Ella escribió "abductor"; en corredores es más común el **aductor** (ingle). **Confirmar con ella** cuál zona es y si tiene diagnóstico o fisio. Mientras tanto, el plan trabaja los dos (Copenhague + isométrico para aductores; abducción, plancha lateral y banda para glúteo medio).
+- Metas: bajar % de grasa (abdomen), más glúteo, hombros más redondos y volver a correr sin dolor (actualizado 2026-09-27: ya no busca medio maratón en 6 meses).
+- Lesión en la cadera derecha. Ella escribió "abductor"; en corredores es más común el **aductor** (ingle). Confirmado 2026-09-27: aductor/ingle. Pendiente saber si tiene diagnóstico o fisio. Mientras tanto, el plan trabaja los dos (Copenhague + isométrico para aductores; abducción, plancha lateral y banda para glúteo medio).
 - Adherencia a la dieta: lo dice ella misma, no cumple al 100%. Come dulces a veces y a veces no se hace el licuado de la cena.
 
 ## Observaciones
@@ -24,11 +24,33 @@
 - 2026-09-27: En septiembre hizo aducción 55 kg al fallo y sumo 20–26 kg. **Confirmar con ella** si fue antes o después de la lesión. Mientras tanto se mantiene el tope de 50 kg y el sumo regresa en semana 4 a 16 kg.
 - 2026-09-27: Su patrón es entrenar mucho al fallo y con poco descanso. Con la cadera en rehabilitación se pide RIR 2 sin fallo en semanas 1–2.
 
+- 2026-09-27: **Datos nuevos de ella (medidas mayo–sep, historial de lesiones, horario).** Correcciones al perfil: son **22 años** entrenando (no 30+): fuerza, CrossFit 2014–2018, calistenia desde 2019 (certificación nivel 2 y 3), gimnasio desde 2020 y 2 medios maratones (uno por año desde hace 3 años). La meta **ya no es el medio maratón en 6 meses**, sino volver a correr sin dolor después de 8 meses parada.
+- 2026-09-27: **Orden de las lesiones:** en 2025 se lesionó el metatarso del pie izquierdo entrenando para medio maratón. 2 meses después se lesionó el aductor/ingle; siguió entrenando hasta que tuvo que parar. Otras lesiones: hernia cervical C4–C6, fisura en la bursa del hombro derecho, codo derecho con dolor en bíceps pesado y hernia lumbar (evita peso sobre la espalda).
+- 2026-09-27: **Medidas:** mayo→junio fue muy bueno (cintura 73→69, abdomen 80→75). De julio a septiembre regresó: peso 55→58 kg, cintura 69→70.5, abdomen 75→77, pecho 88→87, mientras pierna (49) y bíceps (30) no cambiaron → la subida es sobre todo **grasa**, no músculo. El "20 cm" de bíceps en su tabla es un error de captura (30).
+- 2026-09-27: Hay que ajustar la nutrición, no la fuerza. El pre-entreno de la tarde (~300 kcal) ya no tenía sentido porque entrena en la mañana en ayunas → se cambió por merienda ligera (~200 kcal). El dulce pasa de diario a 3/semana. Objetivo ~1,500 kcal en día de fuerza, 125–135 g de proteína. **Revisar en 4 semanas:** si el abdomen no baja de 77, revisar adherencia antes de recortar más. A los 47 también puede influir la perimenopausia: priorizar proteína, fuerza y sueño.
+- 2026-09-27: Cargas confirmadas: hip thrust 60 kg, peso muerto 30 kg. Rumano con tope de 35 kg y progresión de +2.5 kg por la hernia lumbar.
+- 2026-09-27: Cambios por la columna y el hombro: copa (tríceps por encima de la cabeza) → tríceps en polea con cuerda. Hiperextensión con espalda redondeada → puente a una pierna. Sentadilla de activación sin barra. Hip thrust con cuello neutro (no "barbilla al pecho").
+- 2026-09-27: Entrena por la mañana en ayunas → no hace flexión de columna con carga en la primera hora después de despertar (discos más hidratados), el calentamiento dura 8–10 min si es muy temprano y tiene ½ plátano opcional antes.
+- 2026-09-27: Ya hace 20–30 min diarios de cardio (caminata, elíptica, trote) → queda dentro del plan. El trote solo se hace en días marcados (sábado, y jueves desde la semana 2), nunca en días seguidos. Se quitó el trote del domingo. Se agregó pie corto y elevación de talones por el metatarso.
+
+## Medidas
+
+| Fecha | Peso | Pecho | Cintura | Abdomen | Pierna | Bíceps | Pantorrilla |
+|---|---|---|---|---|---|---|---|
+| 2026-05-01 | — | 90 | 73 | 80 | 49 | 30 | 33 |
+| 2026-05-28 | — | 87 | 70 | 77 | 47 | 28 | 33.5 |
+| 2026-06-27 | — | 88 | 69 | 75 | 48 | 30 | 34 |
+| 2026-07-31 | 55 | 88 | 69.5 | 75.5 | 49 | 30 | 33.5 |
+| 2026-08-29 | 57 | 88 | 70 | 76 | 49 | 30 | 33 |
+| 2026-09-27 | 58 | 87 | 70.5 | 77 | 49 | 30 | 33 |
+
 ## Qué vigilar
 - Codo: volumen de tirón en semana 1 = 100 reps de jalón (mar y jue) + 4x5 dominadas + toes to bar. Si el codo sube de 2/10, quitar primero las dominadas del martes.
 - Hombro: vigilar en press militar, Arnold, press inclinado y copa. Si sube de 2/10, cambiar la copa por tríceps en polea y bajar el press a 6 kg.
 - Dolor de cadera a la mañana siguiente del sábado → decide si trota el domingo y si progresa la carrera.
 - La cadera derecha más débil en ejercicios unilaterales (búlgara, puente a una pierna) → reps extra de ese lado.
 - Si cumple las cenas con las opciones D–G.
-- Energía en la sesión del lunes (viene de 2 días de carrera): si está baja, cambiar el trote del domingo por caminata.
-- Mes 3: agregar la carrera entre semana. Con solo fines de semana no alcanza para 21 km.
+- Energía al entrenar en ayunas, sobre todo lunes y viernes (pierna/glúteo): si está baja, ½ plátano antes.
+- Pie izquierdo: dolor en un punto del metatarso al apretarlo → parar el trote y mandar al médico (riesgo de fractura por estrés).
+- Cuello y espalda baja: hormigueo o dolor que baja por el brazo o la pierna → parar y mandar al médico.
+- Próxima medición: ~2026-10-11 (cintura y abdomen) y 2026-10-25 (completa). Meta: abdomen 75–76, cintura 69–70.
