@@ -135,4 +135,16 @@ export const MISSING_EXERCISES = [
   { name: 'Hiperextensión enfocada a glúteo', category: 'Strength — Lower Body', videoUrl: 'https://www.youtube.com/watch?v=GFqfIInCuUQ' },
   { name: 'Plancha lateral con elevación de pierna', category: 'Core', videoUrl: 'https://www.youtube.com/watch?v=ZR84WQVhdIE' },
   { name: 'Elevaciones de piernas colgada lentas', category: 'Core', videoUrl: 'https://www.youtube.com/watch?v=zF6r1Pgg2Ak' },
+
+  // liliana-valdez's Phase 6 rebuild from her Jun–Sep 2026 logs (2026-09-27). Same-movement
+  // entries reuse links already in the library; the rest were searched and confirmed live via oEmbed.
+  { name: 'Sentadilla neutra', category: 'Strength — Lower Body', videoUrl: 'https://www.youtube.com/watch?v=Dy28eq2PjcM' },
+  { name: 'Prensa pies juntos', category: 'Strength — Lower Body', videoUrl: 'https://www.youtube.com/watch?v=P-FZknD_DxM' },
+  { name: 'Puente de glúteo con mancuerna', category: 'Strength — Lower Body', videoUrl: 'https://www.youtube.com/watch?v=nbjJjSa0cKo' },
+  { name: 'Jalón abierto', category: 'Strength — Upper Body', videoUrl: 'https://www.youtube.com/watch?v=SALxEARiMkw' },
+  { name: 'Remo con mancuerna', category: 'Strength — Upper Body', videoUrl: 'https://www.youtube.com/watch?v=PQ1X977ag5E' },
+  { name: 'Copa a dos manos', category: 'Strength — Upper Body', videoUrl: 'https://www.youtube.com/watch?v=IJ6J7EKprsc' },
+  { name: 'Desplante fijo', category: 'Strength — Lower Body', videoUrl: 'https://www.youtube.com/watch?v=Ca9P1Te6vvA' },
+  { name: 'Patada lateral en polea', category: 'Strength — Lower Body', videoUrl: 'https://www.youtube.com/watch?v=Jge8zqHf5Xs' },
+  { name: 'Jalón con triángulo', category: 'Strength — Upper Body', videoUrl: 'https://www.youtube.com/watch?v=wrt5Y25QbH4' },
 ];
