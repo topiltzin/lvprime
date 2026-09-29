@@ -2,12 +2,18 @@ import { loadCustomers } from '../components/sidebar.js';
 import { renderCustomerCard } from '../components/customer-card.js';
 import { deriveStatus, STATUS_RANK } from '../lib/status.js';
 import { icon } from '../lib/icons.js';
+import { FILTERS, countByFilter, filterClients } from '../lib/client-filter.js';
 import { renderNewClientControl } from '../components/new-client-form.js';
 
 // User Story 1: a single screen listing every client sorted by urgency, so a coach
 // knows who needs attention within seconds (FR-001, FR-002, FR-003, FR-004).
 function sortByUrgency(customers) {
   return [...customers].sort((a, b) => {
+    // A client with a pain/"brutal" flag from a recent session comes first.
+    const flagA = a.signals?.flags?.length ? 0 : 1;
+    const flagB = b.signals?.flags?.length ? 0 : 1;
+    if (flagA !== flagB) return flagA - flagB;
+
     const rankA = STATUS_RANK[deriveStatus(a.lastFeedbackDate)];
     const rankB = STATUS_RANK[deriveStatus(b.lastFeedbackDate)];
     if (rankA !== rankB) return rankA - rankB;
@@ -125,29 +131,125 @@ export async function renderOverview(container) {
 
   const list = document.createElement('div');
   list.className = 'customer-list';
+  const cards = new Map();
   for (const customer of sorted) {
-    list.appendChild(renderCustomerCard(customer));
+    const card = renderCustomerCard(customer);
+    cards.set(customer.slug, card);
+    list.appendChild(card);
   }
+
+  // Filter chips + search work together. State survives opening a client and coming back.
+  const state = loadFilterState();
+  const bar = document.createElement('div');
+  bar.className = 'filter-bar';
+  const chipGroup = document.createElement('div');
+  chipGroup.className = 'filter-chips';
+  chipGroup.setAttribute('role', 'group');
+  chipGroup.setAttribute('aria-label', 'Filter clients');
+  const chips = new Map();
+  const totals = countByFilter(sorted);
+  for (const { id, label } of FILTERS) {
+    // "No feedback yet" only appears when someone is in that state, like the scoreboard.
+    if (id === 'no-feedback' && !totals[id]) continue;
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'filter-chip';
+    chip.dataset.filter = id;
+    const text = document.createElement('span');
+    text.textContent = label;
+    const count = document.createElement('span');
+    count.className = 'filter-chip-count';
+    chip.append(text, count);
+    chip.addEventListener('click', () => {
+      state.filter = id;
+      update();
+    });
+    chips.set(id, { chip, count });
+    chipGroup.appendChild(chip);
+  }
+  if (!chips.has(state.filter)) state.filter = 'all';
+  const status = document.createElement('p');
+  status.className = 'filter-status';
+  status.setAttribute('role', 'status');
+  status.setAttribute('aria-atomic', 'true');
+  bar.append(chipGroup, status);
+  container.appendChild(bar);
   container.appendChild(list);
 
   const noResults = document.createElement('div');
-  noResults.className = 'no-search-results';
-  noResults.setAttribute('aria-hidden', 'true');
-  noResults.setAttribute('role', 'status');
-  noResults.textContent = 'No clients match your search.';
+  noResults.className = 'empty-state-card empty-state-with-cta filter-empty';
+  noResults.hidden = true;
+  const noResultsText = document.createElement('p');
+  const clear = document.createElement('button');
+  clear.type = 'button';
+  clear.className = 'empty-state-cta';
+  clear.textContent = 'Show all clients';
+  noResults.append(noResultsText, clear);
   container.appendChild(noResults);
 
   const searchInput = header.querySelector('.client-search');
-  searchInput.addEventListener('input', () => {
-    const query = searchInput.value.trim().toLowerCase();
-    let visible = 0;
-    for (const card of list.children) {
-      const name = card.querySelector('h2')?.textContent.toLowerCase() || '';
-      const match = query.length === 0 || name.includes(query);
-      card.hidden = !match;
-      if (match) visible += 1;
+  searchInput.value = state.query;
+
+  function update() {
+    const visible = new Set(filterClients(sorted, state).map((c) => c.slug));
+    for (const [slug, card] of cards) card.hidden = !visible.has(slug);
+
+    const counts = countByFilter(sorted, state.query);
+    for (const [id, { chip, count }] of chips) {
+      count.textContent = String(counts[id]);
+      chip.setAttribute('aria-pressed', String(id === state.filter));
     }
-    const showEmpty = query.length > 0 && visible === 0;
-    noResults.setAttribute('aria-hidden', showEmpty ? 'false' : 'true');
+
+    const filterLabel = FILTERS.find((f) => f.id === state.filter).label;
+    const searching = state.query.trim().length > 0;
+    status.textContent = visible.size === sorted.length
+      ? `${sorted.length} ${sorted.length === 1 ? 'client' : 'clients'}`
+      : `Showing ${visible.size} of ${sorted.length} clients`;
+
+    noResults.hidden = visible.size > 0;
+    if (visible.size === 0) {
+      noResultsText.textContent = state.filter === 'flagged' && !searching
+        ? 'No client has a pain or "brutal" flag in their last sessions.'
+        : searching
+          ? `No clients match "${state.query.trim()}"${state.filter === 'all' ? '' : ` under ${filterLabel}`}.`
+          : `No clients under ${filterLabel} right now.`;
+    }
+    saveFilterState(state);
+  }
+
+  searchInput.addEventListener('input', () => {
+    state.query = searchInput.value;
+    update();
   });
+  clear.addEventListener('click', () => {
+    state.filter = 'all';
+    state.query = '';
+    searchInput.value = '';
+    update();
+    searchInput.focus();
+  });
+  update();
+}
+
+const FILTER_STORAGE_KEY = 'lvprime.overview.filter';
+
+// Per-viewer convenience only; the overview works the same when storage is unavailable.
+function loadFilterState() {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(FILTER_STORAGE_KEY) || '{}');
+    return {
+      filter: FILTERS.some((f) => f.id === saved.filter) ? saved.filter : 'all',
+      query: typeof saved.query === 'string' ? saved.query : '',
+    };
+  } catch {
+    return { filter: 'all', query: '' };
+  }
+}
+
+function saveFilterState(state) {
+  try {
+    sessionStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // ignore: private mode or blocked storage
+  }
 }

@@ -9,6 +9,7 @@
 import { getSupabaseClient } from './database-client.js';
 import { computeContentHash, verifyContentHash } from '../hash-utils.js';
 import { resolveCoachSync } from '../sync-engine.js';
+import { computeClientSignals } from './client-signals.js';
 import { deriveWeekState, validateNextWeekNumber } from './week-lock-rule.js';
 import {
   extractFeedbackTemplate,
@@ -308,7 +309,7 @@ export async function listAllCustomers() {
   const supabase = getSupabaseClient();
   const { data: customers, error } = await supabase
     .from('customers')
-    .select('slug, name, programs(content), notes(id), feedbacks(content)')
+    .select('slug, name, programs(content, week_number, updated_at), notes(id), feedbacks(content)')
     .order('name')
     .order('week_number', { referencedTable: 'programs', ascending: false })
     .limit(1, { referencedTable: 'programs' });
@@ -327,6 +328,10 @@ export async function listAllCustomers() {
       hasNotes: !!firstEmbedded(customer.notes),
       programGoal: program?.content ? parseProgramGoal(program.content) : null,
       lastFeedbackDate: lastMatched ? lastMatched.entry_date_iso : null,
+      signals: computeClientSignals(entries, {
+        weekNumber: program?.week_number ?? null,
+        weekUpdatedAt: program?.updated_at ?? null,
+      }),
     };
   });
 }
