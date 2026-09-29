@@ -1,4 +1,5 @@
 import { askCoach } from '../api-client.js';
+import { applyLang } from '../lib/lang.js';
 import { icon } from '../lib/icons.js';
 
 // Floating "Coach assistant" chat (specs/013-fitness-coach-chatbot contracts/chat-panel-ui.md).
@@ -92,7 +93,9 @@ export function mountChatPanel(root) {
   function renderLog() {
     log.replaceChildren(el('p', 'chat-greeting', GREETING));
     for (const msg of messages) {
-      log.appendChild(el('p', `chat-msg chat-msg--${msg.role}`, msg.text));
+      const line = el('p', `chat-msg chat-msg--${msg.role}`, msg.text);
+      applyLang(line, msg.text);
+      log.appendChild(line);
       if (msg.status === 'failed') log.appendChild(errorRow(msg));
     }
     if (pending) {

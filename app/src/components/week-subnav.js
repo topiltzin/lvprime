@@ -26,6 +26,7 @@ export function renderWeekSubnav(weeks, activeWeek, onSelect) {
       const isActive = wn === weekNumber;
       chips[wn].classList.toggle('active', isActive);
       chips[wn].setAttribute('aria-selected', String(isActive));
+      chips[wn].tabIndex = isActive ? 0 : -1; // roving tabindex: one Tab stop, arrows move within
     }
   }
 
@@ -37,6 +38,7 @@ export function renderWeekSubnav(weeks, activeWeek, onSelect) {
     chip.classList.toggle('locked', isLocked);
     chip.setAttribute('role', 'tab');
     chip.setAttribute('aria-selected', String(weekNumber === activeWeek));
+    chip.tabIndex = weekNumber === activeWeek ? 0 : -1;
     chip.textContent = `Week ${weekNumber}`;
     if (isLocked) {
       chip.title = 'Past week (read-only)';

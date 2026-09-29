@@ -1,0 +1,118 @@
+/* ---------- Coach markdown (progression, notes, nutrition) ---------- */
+
+.prose {
+  padding: clamp(1.25rem, 3.5vw, 2.25rem);
+  line-height: 1.7;
+  color: var(--ink);
+}
+
+.prose > * {
+  max-width: 72ch;
+}
+
+.prose h1 {
+  font-size: clamp(1.75rem, 3.5vw, 2.25rem);
+  margin: 0 0 1.25rem;
+}
+
+.prose h2 {
+  max-width: none;
+  margin: 2.25rem 0 0.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  font-size: 1.625rem;
+}
+
+.prose h1 + h2,
+.prose > h2:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.prose h3 {
+  margin: 1.5rem 0 0.5rem;
+  font-size: 1.0625rem;
+}
+
+.prose h4,
+.prose h5,
+.prose h6 {
+  margin: 1.25rem 0 0.4rem;
+  font-size: 1rem;
+}
+
+.prose p {
+  margin: 0 0 0.75rem;
+}
+
+.prose strong {
+  font-weight: 600;
+}
+
+.prose ul,
+.prose ol {
+  margin: 0.4rem 0 1rem;
+  padding-left: 1.25rem;
+}
+
+.prose li {
+  margin: 0.3rem 0;
+  padding-left: 0.25rem;
+}
+
+.prose li > ul,
+.prose li > ol {
+  margin: 0.25rem 0 0.4rem;
+}
+
+.prose li::marker {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.prose hr {
+  border: none;
+  margin: 0;
+}
+
+.prose a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.prose blockquote {
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--accent-fill);
+  border-radius: 0 12px 12px 0;
+  background: var(--muted-bg);
+}
+
+.prose code {
+  padding: 0.1rem 0.4rem;
+  border-radius: 6px;
+  background: var(--muted-bg);
+  font-size: 0.9em;
+}
+
+.prose table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.prose th,
+.prose td {
+  padding: 0.6rem 0.9rem 0.6rem 0;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.prose th {
+  font-weight: 600;
+  color: var(--muted);
+}

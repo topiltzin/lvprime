@@ -1,0 +1,245 @@
+/* ---------- App header ---------- */
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--header-bg);
+  color: var(--on-header);
+  border-bottom: 1px solid rgba(244, 245, 242, 0.08);
+}
+
+.header-content {
+  height: var(--header-height);
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--on-header);
+}
+
+/* One SVG serves the header and the sign-in panel (login-view.js clones it).
+   The "Lv" monogram: chalk L and v, with the v's right arm in volt rising past the
+   L's cap height. A faint inner edge keeps the tile readable on the graphite header. */
+.logo-mark {
+  --mark-tile: var(--brand-graphite-deep);
+  --mark-ink: var(--brand-chalk);
+  --mark-rise: var(--brand-volt);
+  width: 40px;
+  height: 40px;
+  flex: none;
+}
+
+.mark-tile {
+  fill: var(--mark-tile);
+}
+
+.mark-edge {
+  fill: none;
+  stroke: var(--brand-chalk);
+  stroke-opacity: 0.1;
+  stroke-width: 1.5;
+}
+
+.mark-ink {
+  stroke: var(--mark-ink);
+  fill: none;
+}
+
+.mark-rise {
+  stroke: var(--mark-rise);
+  fill: none;
+}
+
+.logo-lockup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.logo-text {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  line-height: 0.9;
+  font-weight: 700;
+  letter-spacing: var(--logo-tracking);
+  color: var(--brand-chalk);
+}
+
+.logo-text em {
+  font-style: italic;
+  color: var(--brand-volt);
+  padding-right: 0.05em;
+}
+
+.logo-subtitle {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--on-header-muted);
+}
+
+/* Static context label, not an action: no border, so it doesn't read as a button. */
+.header-chip {
+  font-size: var(--meta-size);
+  font-weight: 500;
+  color: var(--on-header-muted);
+}
+
+/* ---------- Shell: sidebar + main ---------- */
+
+.shell {
+  display: block;
+}
+
+#app {
+  max-width: var(--page-max-width);
+  margin: 0 auto;
+  padding: 2rem 1.5rem 5rem;
+  min-width: 0;
+}
+
+.sidebar {
+  display: none;
+}
+
+@media (min-width: 1100px) {
+  body.has-sidebar .shell {
+    display: grid;
+    grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  }
+
+  body.has-sidebar .sidebar:not([hidden]) {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    position: sticky;
+    top: var(--header-height);
+    z-index: 30;
+    height: calc(100dvh - var(--header-height));
+    overflow-y: auto;
+    padding: 1.5rem 0.9rem;
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  body.has-sidebar #app {
+    width: 100%;
+    padding: 2rem 2.5rem 5rem;
+  }
+}
+
+.sidebar-home {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--radius-input);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.sidebar-home:hover,
+.sidebar-client:hover {
+  background: var(--muted-bg);
+}
+
+.sidebar-home[aria-current='page'] {
+  background: var(--accent-tint);
+  color: var(--accent-deep);
+}
+
+.sidebar-count {
+  margin-left: auto;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--muted);
+}
+
+.sidebar-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.75rem 0 0;
+  border-top: 1px solid var(--border);
+  display: grid;
+  gap: 0.2rem;
+}
+
+.sidebar-client {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--radius-input);
+  color: var(--ink);
+}
+
+.sidebar-client[aria-current='page'] {
+  background: var(--accent-tint);
+}
+
+.sidebar-client[aria-current='page']::before {
+  content: '';
+  position: absolute;
+  left: -0.9rem;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--accent-fill);
+}
+
+.sidebar-avatar,
+.customer-avatar {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--brand-graphite);
+  color: var(--brand-volt);
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.sidebar-avatar {
+  width: 2.1rem;
+  height: 2.1rem;
+  font-size: 0.95rem;
+}
+
+.sidebar-client-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sidebar-client-name {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-client-status {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.sidebar-client--needs-checkin .sidebar-client-status {
+  color: var(--warning-deep);
+  font-weight: 600;
+}

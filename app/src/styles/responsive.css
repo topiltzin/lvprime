@@ -1,0 +1,127 @@
+/* ---------- Small screens ---------- */
+
+@media (max-width: 700px) {
+  .form-row,
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .login-wrap {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .login-panel {
+    padding: 2rem 1.5rem 1.75rem;
+  }
+
+  .login-tagline {
+    max-width: none;
+    padding-top: 1.25rem;
+    font-size: 2.25rem;
+  }
+
+  .login-form-side h1 {
+    font-size: 2.25rem;
+  }
+
+  .header-email {
+    display: none;
+  }
+
+  .exercise-row {
+    grid-template-columns: 2.25rem minmax(0, 1fr);
+  }
+
+  .exercise-dose {
+    grid-column: 2;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem 0.9rem;
+  }
+
+  .program-day-header {
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  /* One row whatever the count, so there is never an empty cell. */
+  .scoreboard {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+  }
+
+  .scoreboard-item {
+    padding: 0.85rem 0.9rem;
+  }
+
+  .scoreboard-value {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  #app {
+    padding: 1.25rem 1rem 4rem;
+  }
+
+  .header-content {
+    padding: 0 1rem;
+  }
+
+  .logo-subtitle,
+  .header-chip {
+    display: none;
+  }
+
+  .stat-strip,
+  .feedback-fact-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .client-search {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .program-toolbar .pdf-download-button,
+  .day-done-button,
+  form.feedback-form button {
+    width: 100%;
+  }
+
+  .hero-progress-segments span {
+    width: 32px;
+  }
+}
+
+/* ---------- Reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .customer-card:hover,
+  .customer-card:active,
+  .empty-state-cta:active,
+  .day-done-button:active:not(:disabled),
+  form.feedback-form button:active:not(:disabled),
+  .pdf-download-button:active:not(:disabled) {
+    transform: none;
+  }
+
+  .toast {
+    transform: translate(-50%, 0);
+  }
+}

@@ -96,6 +96,7 @@ export class TabContainer {
       if (tab.isEnabled) {
         const button = document.createElement('button');
         button.className = 'tab-button';
+        button.id = `tab-${tab.id}`;
         button.setAttribute('role', 'tab');
         button.setAttribute('aria-selected', 'false');
         button.setAttribute('aria-controls', `tab-panel-${tab.id}`);
@@ -109,14 +110,18 @@ export class TabContainer {
 
     // Left/Right arrow navigation between enabled tabs (FR-007), wrapping at the ends.
     header.addEventListener('keydown', (e) => {
-      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
       const enabledIds = this.tabs.filter((t) => t.isEnabled).map((t) => t.id);
       const currentIndex = enabledIds.indexOf(this.activeTabId);
       if (currentIndex === -1) return;
 
       e.preventDefault();
       const delta = e.key === 'ArrowRight' ? 1 : -1;
-      const nextId = enabledIds[(currentIndex + delta + enabledIds.length) % enabledIds.length];
+      const nextId = e.key === 'Home'
+        ? enabledIds[0]
+        : e.key === 'End'
+          ? enabledIds[enabledIds.length - 1]
+          : enabledIds[(currentIndex + delta + enabledIds.length) % enabledIds.length];
       this.setActiveTab(nextId);
       this.tabElements[nextId]?.focus();
     });
@@ -129,6 +134,8 @@ export class TabContainer {
     panel.className = 'tab-panel';
     panel.id = `tab-panel-${tab.id}`;
     panel.setAttribute('role', 'tabpanel');
+    panel.setAttribute('aria-labelledby', `tab-${tab.id}`);
+    panel.tabIndex = 0; // lets keyboard users reach panels whose content has no focusable element
     panel.hidden = true;
 
     // Render content based on contentType
@@ -542,6 +549,7 @@ export class TabContainer {
       const isActive = id === tabId;
       button.classList.toggle('active', isActive);
       button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      button.tabIndex = isActive ? 0 : -1; // roving tabindex: Tab enters the active tab, arrows move
     });
 
     // Update panel visibility and reset scroll

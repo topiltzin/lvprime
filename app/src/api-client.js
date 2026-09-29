@@ -28,7 +28,7 @@ async function request(path, options = {}, skipAuthHandler = false) {
   } catch (err) {
     // A caller's own abort/timeout (askCoach's signal) is not "server unreachable".
     if (err.name === 'AbortError' || err.name === 'TimeoutError') throw err;
-    throw new ApiError('Cannot reach the local server. Is `npm run dev` running?', 0);
+    throw new ApiError('Cannot reach the server. Check your connection and try again.', 0);
   }
 
   let body = null;

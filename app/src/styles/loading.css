@@ -1,0 +1,53 @@
+/* ---------- Loading skeleton ---------- */
+
+.loading-skeleton {
+  display: grid;
+  gap: 1rem;
+}
+
+.skeleton-block {
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border);
+  background: linear-gradient(90deg, var(--muted-bg) 0%, color-mix(in srgb, var(--muted-bg) 55%, var(--surface)) 50%,
+    var(--muted-bg) 100%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.2s ease-in-out infinite;
+}
+
+.skeleton-header {
+  height: 2.75rem;
+  max-width: 280px;
+}
+
+.skeleton-card {
+  min-height: 190px;
+}
+
+.skeleton-hero {
+  height: 15rem;
+  border-radius: var(--radius-hero);
+}
+
+.skeleton-tabs {
+  height: 52px;
+}
+
+.skeleton-panel {
+  min-height: 240px;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

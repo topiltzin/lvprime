@@ -1,0 +1,27 @@
+/* ---------- Toast ---------- */
+
+.toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  z-index: 1000;
+  transform: translate(-50%, 8px);
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-pill);
+  background: var(--brand-graphite);
+  color: var(--brand-chalk);
+  box-shadow: var(--shadow-hover);
+  font-weight: 500;
+  opacity: 0;
+  transition: opacity var(--motion-base) var(--motion-ease), transform var(--motion-base) var(--motion-ease);
+}
+
+.toast-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.toast-error {
+  background: #B42318;
+  color: #FFFFFF;
+}

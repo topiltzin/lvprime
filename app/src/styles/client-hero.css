@@ -1,0 +1,174 @@
+/* ---------- Client hero ---------- */
+
+.client-hero {
+  margin-bottom: 1.25rem;
+}
+
+/* Graphite athlete card in both themes: the one feature panel on the page.
+   The faint diagonal lines are a track-lane texture, faded out towards the text. */
+.client-hero-card {
+  position: relative;
+  overflow: hidden;
+  margin-top: 0.5rem;
+  padding: clamp(1.5rem, 4vw, 2.25rem);
+  border-radius: var(--radius-hero);
+  background: var(--brand-graphite);
+  border: 1px solid rgba(244, 245, 242, 0.06);
+  color: var(--brand-chalk);
+  box-shadow: var(--shadow-hero);
+  animation: rise-in 500ms var(--motion-out) both;
+}
+
+.client-hero-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: clamp(1.5rem, 4vw, 2.25rem);
+  width: 72px;
+  height: 4px;
+  border-radius: 0 0 4px 4px;
+  background: var(--brand-volt);
+}
+
+.client-hero-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(115deg, transparent 0 26px, rgba(194, 235, 87, 0.06) 26px 27px);
+  -webkit-mask-image: linear-gradient(270deg, #000 0%, transparent 55%);
+  mask-image: linear-gradient(270deg, #000 0%, transparent 55%);
+}
+
+.client-hero-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.client-hero-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
+}
+
+.client-hero-card .status-pill.status-on-track {
+  background: rgba(194, 235, 87, 0.14);
+  color: var(--brand-volt);
+}
+
+.client-hero-card .status-pill.status-needs-checkin {
+  background: rgba(240, 179, 74, 0.16);
+  color: #F0B34A;
+}
+
+.client-hero-card .status-pill.status-no-feedback {
+  border-color: rgba(244, 245, 242, 0.25);
+  color: var(--on-header-muted);
+}
+
+.client-hero-checkin {
+  font-size: var(--meta-size);
+  color: var(--on-header-muted);
+}
+
+.client-hero-name {
+  color: var(--brand-chalk);
+  font-size: clamp(2.25rem, 5.5vw, 3.5rem);
+  line-height: 1;
+}
+
+.client-hero-goal {
+  margin: 0.8rem 0 0;
+  max-width: 64ch;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: #C9CDC9;
+}
+
+.hero-progress {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+  margin-top: 1.4rem;
+}
+
+.hero-progress-label {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--brand-volt);
+}
+
+.hero-progress-segments {
+  display: flex;
+  gap: 6px;
+}
+
+.hero-progress-segments span {
+  width: 44px;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(244, 245, 242, 0.14);
+}
+
+.hero-progress-segments .is-past {
+  background: rgba(194, 235, 87, 0.5);
+}
+
+.hero-progress-segments .is-current {
+  background: var(--brand-volt);
+}
+
+.hero-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 1rem 1.5rem;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(244, 245, 242, 0.1);
+}
+
+.hero-fact {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.hero-fact > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.hero-fact-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0.5rem;
+  border-radius: 10px;
+  background: rgba(194, 235, 87, 0.12);
+  color: var(--brand-volt);
+}
+
+.hero-fact-label {
+  font-size: 0.8125rem;
+  color: var(--on-header-muted);
+}
+
+.hero-fact-value {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.375rem;
+  line-height: 1.15;
+  color: var(--brand-chalk);
+}
+
+.hero-fact-detail {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--on-header-muted);
+}

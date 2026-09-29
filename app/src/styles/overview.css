@@ -1,0 +1,280 @@
+/* ---------- Page header (overview) ---------- */
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0;
+  font-size: var(--meta-size);
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.back-link:hover {
+  color: var(--accent);
+}
+
+.client-search-wrap {
+  position: relative;
+  display: block;
+}
+
+.client-search-icon {
+  position: absolute;
+  left: 0.95rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.client-search {
+  font: inherit;
+  min-height: 46px;
+  min-width: 280px;
+  padding: 0.6rem 1rem 0.6rem 2.6rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--ink);
+  transition: border-color var(--motion-fast) var(--motion-ease), box-shadow var(--motion-fast) var(--motion-ease);
+}
+
+.client-search::placeholder {
+  color: var(--muted);
+}
+
+.client-search:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-fill) 40%, transparent);
+}
+
+/* Scoreboard: real counts from client status, read like a stats bar. */
+.scoreboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  margin: 0 0 1.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+
+.scoreboard-item {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  padding: 1rem 1.25rem;
+}
+
+.scoreboard-item + .scoreboard-item {
+  border-left: 1px solid var(--border);
+}
+
+.scoreboard-value {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2.5rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.scoreboard-label {
+  margin-top: 0.3rem;
+  font-size: var(--meta-size);
+  color: var(--muted);
+}
+
+.scoreboard-item.is-warning .scoreboard-value {
+  color: var(--warning-deep);
+}
+
+.scoreboard-item.is-good .scoreboard-value {
+  color: var(--accent);
+}
+
+/* ---------- Client cards (overview) ---------- */
+
+.customer-list {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+.customer-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-height: 190px;
+  padding: 1.25rem;
+  color: inherit;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-rest);
+  overflow: hidden;
+  transition: box-shadow var(--motion-base) var(--motion-ease), transform var(--motion-base) var(--motion-ease),
+    border-color var(--motion-base) var(--motion-ease);
+  animation: rise-in 450ms var(--motion-out) both;
+}
+
+.customer-list .customer-card:nth-child(2) { animation-delay: 60ms; }
+.customer-list .customer-card:nth-child(3) { animation-delay: 120ms; }
+.customer-list .customer-card:nth-child(n + 4) { animation-delay: 180ms; }
+
+/* Urgency reads from the top edge as well as the pill. */
+.customer-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: transparent;
+}
+
+.customer-card--needs-checkin::before {
+  background: var(--warning-deep);
+}
+
+.customer-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-2px);
+}
+
+.customer-card:active {
+  transform: translateY(0) scale(0.99);
+}
+
+.customer-card[hidden] {
+  display: none;
+}
+
+.customer-card-top {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.customer-avatar {
+  width: 3rem;
+  height: 3rem;
+  font-size: 1.2rem;
+  border-radius: 12px;
+}
+
+.customer-card h2 {
+  flex: 1;
+  min-width: 0;
+  font-size: 1.5rem;
+  line-height: 1.1;
+}
+
+.customer-card-arrow {
+  color: var(--muted);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity var(--motion-base) var(--motion-ease), transform var(--motion-base) var(--motion-ease);
+}
+
+.customer-card:hover .customer-card-arrow,
+.customer-card:focus-visible .customer-card-arrow {
+  opacity: 1;
+  transform: none;
+  color: var(--accent);
+}
+
+.customer-card .goal-line {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.customer-card-footer {
+  flex-wrap: wrap;
+  margin-top: auto;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.check-in-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: var(--meta-size);
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-pill.status-on-track {
+  background: var(--accent-tint);
+  color: var(--accent-deep);
+}
+
+.status-pill.status-needs-checkin {
+  background: var(--warning-tint);
+  color: var(--warning-deep);
+}
+
+.status-pill.status-no-feedback {
+  border: 1px dashed var(--border);
+  color: var(--muted);
+}
+
+.badge {
+  display: inline-block;
+  font-size: 0.8125rem;
+  padding: 0.1rem 0.55rem;
+  border-radius: var(--radius-pill);
+  background: var(--muted-bg);
+  color: var(--muted);
+}
+
+.badge.missing {
+  background: transparent;
+  border: 1px dashed var(--border);
+}
+
+.no-search-results {
+  display: none;
+  margin-top: 0.75rem;
+  padding: 1.5rem;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-card);
+  text-align: center;
+  color: var(--muted);
+}
+
+.no-search-results[aria-hidden='false'] {
+  display: block;
+}

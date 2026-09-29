@@ -1,0 +1,114 @@
+/* ---------- Log session form ---------- */
+
+.log-session-form-wrap {
+  margin-bottom: 0;
+  padding: clamp(1.25rem, 3.5vw, 2rem);
+}
+
+.log-session-form-wrap h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+
+.log-session-form-wrap .form-intro {
+  margin: 0.25rem 0 1.5rem;
+  color: var(--muted);
+}
+
+form.feedback-form {
+  display: grid;
+  gap: 1.25rem;
+}
+
+form.feedback-form label {
+  display: grid;
+  gap: 0.45rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+form.feedback-form input,
+form.feedback-form select,
+form.feedback-form textarea {
+  font: inherit;
+  font-weight: 400;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-input);
+  background: var(--bg);
+  color: var(--ink);
+  transition: border-color var(--motion-fast) var(--motion-ease), box-shadow var(--motion-fast) var(--motion-ease);
+}
+
+form.feedback-form input,
+form.feedback-form select {
+  height: 3.25rem;
+}
+
+form.feedback-form input:focus,
+form.feedback-form select:focus,
+form.feedback-form textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-fill) 40%, transparent);
+}
+
+form.feedback-form textarea {
+  resize: vertical;
+  min-height: 92px;
+  line-height: 1.5;
+}
+
+form.feedback-form input::placeholder,
+form.feedback-form textarea::placeholder {
+  color: var(--muted);
+}
+
+form.feedback-form select {
+  appearance: none;
+  padding-right: 2.5rem;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 1.25rem) 50%, calc(100% - 0.9rem) 50%;
+  background-size: 0.35rem 0.35rem;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+form.feedback-form .field-error {
+  color: var(--danger);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+form.feedback-form .field-error:empty {
+  display: none;
+}
+
+.form-row,
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.form-row {
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.form-actions .field-error {
+  margin-right: auto;
+}

@@ -1,0 +1,54 @@
+/* ---------- Attachments ---------- */
+
+.attachments h2 {
+  margin-bottom: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 1.375rem;
+  letter-spacing: 0.02em;
+}
+
+.attachment-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.attachment-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--ink);
+  transition: border-color var(--motion-fast) var(--motion-ease), background var(--motion-fast) var(--motion-ease);
+}
+
+.attachment-link:hover {
+  border-color: var(--accent);
+  background: var(--muted-bg);
+}
+
+.attachment-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--accent);
+}
+
+.attachment-name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachment-size {
+  font-size: var(--meta-size);
+  color: var(--muted);
+  white-space: nowrap;
+}

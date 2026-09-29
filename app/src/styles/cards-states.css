@@ -1,0 +1,90 @@
+/* ---------- Cards, empty and error states ---------- */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: var(--card-padding);
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-rest);
+}
+
+.empty-state {
+  color: var(--muted);
+  padding: 1rem 0;
+}
+
+.empty-state-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 2.5rem 1.5rem;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  text-align: center;
+  color: var(--muted);
+}
+
+.empty-state-card p {
+  margin: 0;
+  max-width: 44ch;
+}
+
+.empty-state-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  color: var(--accent);
+}
+
+.error-banner {
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--danger-border);
+  border-left: 4px solid var(--danger);
+  border-radius: var(--radius-card);
+  background: var(--danger-tint);
+  color: var(--danger);
+}
+
+/* Primary action style, shared by every filled button. */
+.empty-state-cta,
+.day-done-button,
+form.feedback-form button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 48px;
+  padding: 0.7rem 1.75rem;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--accent-fill);
+  color: var(--accent-contrast);
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background var(--motion-fast) var(--motion-ease), transform var(--motion-fast) var(--motion-ease);
+}
+
+.empty-state-cta:hover,
+.day-done-button:hover:not(:disabled),
+form.feedback-form button:hover:not(:disabled) {
+  background: var(--accent-fill-hover);
+}
+
+.empty-state-cta:active,
+.day-done-button:active:not(:disabled),
+form.feedback-form button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.day-done-button:disabled,
+form.feedback-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
