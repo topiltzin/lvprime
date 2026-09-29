@@ -45,7 +45,8 @@ function buildTabConfig(data) {
     {
       id: 'program',
       label: 'Program',
-      isEnabled: data.program && data.program.present,
+      // Always enabled: a client with no program yet gets a "Create week 1" prompt.
+      isEnabled: true,
       contentType: 'program',
       order: 0,
     },
@@ -66,11 +67,18 @@ function buildTabConfig(data) {
       order: 2,
     },
     {
+      id: 'progress',
+      label: 'Progress',
+      isEnabled: true, // Always enabled; shows the measurements form when there is no data yet
+      contentType: 'progress',
+      order: 3,
+    },
+    {
       id: 'add-entry',
       label: 'Log Session',
       isEnabled: true, // Always enabled for adding feedback
       contentType: 'add-entry',
-      order: 3,
+      order: 4,
     },
     {
       id: 'notes',
@@ -79,7 +87,7 @@ function buildTabConfig(data) {
       label: 'Notes',
       isEnabled: true,
       contentType: 'notes',
-      order: 4,
+      order: 5,
     },
   ];
 }
@@ -128,6 +136,7 @@ function buildTabData(customerData) {
     feedback: feedbackData,
     notes,
     nutrition,
+    progress: customerData.measurements || { columns: [], rows: [] },
     'add-entry': {}, // Placeholder for form tab (form rendered via global renderFeedbackForm function)
   };
 }
@@ -218,7 +227,31 @@ export async function renderCustomer(container, slug) {
       feedbackEntries: customerData.feedback?.entries || [],
       onFeedbackAdded,
       onSessionLogged,
+      onContentSaved,
+      onMeasurementAdded,
     });
+  };
+
+  // A saved program week / notes / nutrition plan: reload, come back to the same tab.
+  const onContentSaved = async (tabId) => {
+    try {
+      mountTabs(await getCustomer(slug));
+      tabs.setActiveTab(tabId);
+      showToast('Saved');
+      refreshSidebar();
+    } catch (err) {
+      showToast(err.message || 'Saved, but the page could not refresh. Reload to see it.', 3000, 'error');
+    }
+  };
+
+  const onMeasurementAdded = async () => {
+    try {
+      mountTabs(await getCustomer(slug));
+      tabs.setActiveTab('progress');
+      showToast('Measurements saved');
+    } catch (err) {
+      showToast(err.message || 'Saved, but the page could not refresh. Reload to see it.', 3000, 'error');
+    }
   };
 
   // Callback when new feedback is added - refreshes the feedback data, confirms the

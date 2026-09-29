@@ -11,6 +11,8 @@ import { findDoneEntry, sessionLabel, todayIso } from '../lib/day-completion.js'
 import { renderFeedbackEntry } from './feedback-entry.js';
 import { renderFeedbackForm } from '../views/feedback-form-view.js';
 import { renderTrendChart } from './trend-chart.js';
+import { renderContentEditor } from './content-editor.js';
+import { renderProgressPanel } from './progress-panel.js';
 import { showToast } from './toast.js';
 import { setSafeHtml } from '../lib/safe-html.js';
 import { icon } from '../lib/icons.js';
@@ -50,6 +52,9 @@ export class TabContainer {
     // cards show as done; onSessionLogged refreshes stats without leaving the tab.
     this.feedbackEntries = options.feedbackEntries || [];
     this.onSessionLogged = options.onSessionLogged;
+    // Coach edits: onContentSaved(tabId) remounts with fresh data; onMeasurementAdded refreshes Progress.
+    this.onContentSaved = options.onContentSaved;
+    this.onMeasurementAdded = options.onMeasurementAdded;
     this.onAddDetails = (entry) => this.openLogSession({ date: entry.date, label: entry.label });
 
     this.render();
@@ -140,6 +145,12 @@ export class TabContainer {
 
     const data = this.data[tab.contentType];
 
+    if (tab.contentType === 'program' && !data) {
+      container.appendChild(this.renderActionEmptyState('No program yet.', 'Create week 1', () =>
+        this.openEditor('program', { weekNumber: 1, title: 'Week 1 program' })));
+      return container;
+    }
+
     if (!data || (Array.isArray(data) && data.length === 0)) {
       // Empty state
       const emptyMsg = this.getEmptyStateMessage(tab.contentType);
@@ -163,6 +174,9 @@ export class TabContainer {
         break;
       case 'notes':
         this.renderNotesContent(container, data);
+        break;
+      case 'progress':
+        renderProgressPanel(container, data, { slug: this.slug, onMeasurementAdded: this.onMeasurementAdded });
         break;
       case 'add-entry':
         this.renderAddEntryContent(container);
@@ -204,12 +218,14 @@ export class TabContainer {
       }
       // A slower fetch must not overwrite a week the user has since switched to.
       if (this.activeWeek === weekNumber) this.renderProgramWeek(weekBody, detail);
+      this.syncProgramActions?.();
     };
 
     // Week selector and PDF export share one toolbar above the schedule.
     const toolbar = document.createElement('div');
     toolbar.className = 'program-toolbar';
     toolbar.appendChild(renderWeekSubnav(weeks, this.activeWeek, showWeek));
+    this.syncProgramActions = null;
 
     // Acts on whichever week is showing at click time, not the one at render time.
     const pdfButton = createPdfButton();
@@ -223,11 +239,70 @@ export class TabContainer {
         showToast('Could not generate the PDF. Please try again.', 3000, 'error');
       }
     });
-    toolbar.appendChild(pdfButton);
+    // Only the current (highest) week is editable; "New week" adds the next one as a copy.
+    const currentWeek = weeks.reduce((max, w) => Math.max(max, w.weekNumber), 0);
+    const editButton = this.createActionButton('Edit week', () =>
+      this.openEditor('program', { weekNumber: this.activeWeek, title: `Edit week ${this.activeWeek}` }));
+    const newWeekButton = this.createActionButton('New week', () =>
+      this.openEditor('program', {
+        weekNumber: currentWeek + 1,
+        copyFromWeek: currentWeek,
+        title: `New week ${currentWeek + 1}`,
+      }));
+    const syncEditButton = () => {
+      editButton.hidden = this.activeWeek !== currentWeek;
+    };
+    syncEditButton();
+    this.syncProgramActions = syncEditButton;
+    const actionGroup = document.createElement('div');
+    actionGroup.className = 'program-toolbar-actions';
+    actionGroup.append(editButton, newWeekButton, pdfButton);
+    toolbar.appendChild(actionGroup);
 
     container.appendChild(toolbar);
     container.appendChild(weekBody);
     this.renderProgramWeek(weekBody, program);
+  }
+
+  createActionButton(label, onClick) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'pdf-download-button';
+    button.textContent = label;
+    button.addEventListener('click', onClick);
+    return button;
+  }
+
+  renderActionEmptyState(message, ctaLabel, onClick) {
+    const card = document.createElement('div');
+    card.className = 'empty-state-card empty-state-with-cta';
+    const text = document.createElement('p');
+    text.textContent = message;
+    const cta = document.createElement('button');
+    cta.type = 'button';
+    cta.className = 'empty-state-cta';
+    cta.textContent = ctaLabel;
+    cta.addEventListener('click', onClick);
+    card.append(text, cta);
+    return card;
+  }
+
+  /** Swaps a tab's content for the Markdown editor; cancel restores it, save remounts with fresh data. */
+  openEditor(tabId, { fileType, weekNumber, copyFromWeek, title }) {
+    const panel = this.panelElements[tabId];
+    if (!panel) return;
+    this.setActiveTab(tabId);
+    const editor = renderContentEditor({
+      slug: this.slug,
+      fileType: fileType || { program: 'program', notes: 'notes', nutrition: 'nutrition_plan' }[tabId],
+      weekNumber,
+      copyFromWeek,
+      title,
+      onCancel: () => this.rerenderPanel(tabId),
+      onSaved: async () => this.onContentSaved?.(tabId),
+    });
+    panel.replaceChildren(editor);
+    editor.scrollIntoView?.({ block: 'nearest' });
   }
 
   renderProgramWeek(weekBody, detail) {
@@ -412,12 +487,11 @@ export class TabContainer {
       const body = document.createElement('div');
       body.className = 'card notes-body prose';
       setSafeHtml(body, notes.html);
+      container.appendChild(this.createActionButton('Edit notes', () => this.openEditor('notes', { title: 'Edit notes' })));
       container.appendChild(body);
     } else {
-      const empty = document.createElement('div');
-      empty.className = 'empty-state-card';
-      empty.textContent = 'No coach notes yet.';
-      container.appendChild(empty);
+      container.appendChild(this.renderActionEmptyState('No coach notes yet.', 'Add notes', () =>
+        this.openEditor('notes', { title: 'Coach notes' })));
     }
   }
 
@@ -443,11 +517,10 @@ export class TabContainer {
         }
       });
       container.appendChild(pdfButton);
+      container.appendChild(this.createActionButton('Edit plan', () => this.openEditor('nutrition', { title: 'Edit nutrition plan' })));
     } else {
-      const empty = document.createElement('div');
-      empty.className = 'empty-state-card';
-      empty.textContent = 'No nutrition plan available yet. Once your nutrition plan is created, it will appear here.';
-      container.appendChild(empty);
+      container.appendChild(this.renderActionEmptyState('No nutrition plan yet.', 'Create plan', () =>
+        this.openEditor('nutrition', { title: 'Nutrition plan' })));
     }
   }
 

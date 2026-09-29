@@ -30,6 +30,15 @@ export class CustomerNotFoundError extends Error {
   }
 }
 
+export class CustomerExistsError extends Error {
+  constructor(slug) {
+    super(`Customer already exists: ${slug}`);
+    this.name = 'CustomerExistsError';
+    this.code = 'CUSTOMER_EXISTS';
+    this.slug = slug;
+  }
+}
+
 export class ValidationError extends Error {
   constructor(field, message) {
     super(`Validation error on ${field}: ${message}`);
@@ -333,6 +342,20 @@ export async function upsertCustomer(slug, name) {
     .select()
     .single();
   if (error) throw dbError(`upsertCustomer(${slug})`, error);
+  return data;
+}
+
+/** Inserts a new customer; throws CustomerExistsError when the slug is taken. */
+export async function createCustomer(slug, name) {
+  assertValidSlug(slug);
+  const trimmed = typeof name === 'string' ? name.trim() : '';
+  if (!trimmed || trimmed.length > 255) throw new ValidationError('name', 'must be 1-255 characters');
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase.from('customers').insert({ slug, name: trimmed }).select().single();
+  if (error) {
+    if (error.code === '23505') throw new CustomerExistsError(slug);
+    throw dbError(`createCustomer(${slug})`, error);
+  }
   return data;
 }
 

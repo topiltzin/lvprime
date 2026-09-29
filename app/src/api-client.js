@@ -86,6 +86,34 @@ export function askCoach(message, { signal } = {}) {
   return request('/api/chat', { method: 'POST', body: JSON.stringify({ message }), signal });
 }
 
+/** POST /api/customers → { slug, displayName }. 409 customer_exists when the name is taken. */
+export function createCustomer(name) {
+  return request('/api/customers', { method: 'POST', body: JSON.stringify({ name }) });
+}
+
+/** Raw Markdown + version of program (a week), notes or nutrition_plan → { content, version, exists }. */
+export function getContent(slug, { fileType, weekNumber } = {}) {
+  const params = new URLSearchParams({ file_type: fileType });
+  if (weekNumber) params.set('week_number', String(weekNumber));
+  return request(`/api/customers/${encodeURIComponent(slug)}/content?${params}`);
+}
+
+/** Saves Markdown for program (a week; the next week number creates it), notes or nutrition_plan. */
+export function saveContent(slug, { fileType, weekNumber, content, version }) {
+  return request(`/api/customers/${encodeURIComponent(slug)}/content`, {
+    method: 'PUT',
+    body: JSON.stringify({ file_type: fileType, week_number: weekNumber ?? null, content, version }),
+  });
+}
+
+/** Adds or replaces one dated row of the client's measurements → { measurements }. */
+export function addMeasurement(slug, { date, values }) {
+  return request(`/api/customers/${encodeURIComponent(slug)}/measurements`, {
+    method: 'POST',
+    body: JSON.stringify({ date, values }),
+  });
+}
+
 export function login(email, password) {
   return request('/api/login', { method: 'POST', body: JSON.stringify({ email, password }) }, true);
 }

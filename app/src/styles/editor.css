@@ -1,0 +1,172 @@
+/* Coach editing (Markdown editor, add-client) and the Progress tab. Tokens only. */
+
+.program-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.new-client {
+  margin: 0 0 1.25rem;
+}
+
+.new-client-form {
+  max-width: 520px;
+  padding: var(--card-padding);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  display: grid;
+  gap: 1rem;
+}
+
+.new-client-form[hidden],
+.content-editor form[hidden] {
+  display: none;
+}
+
+.editor-modes {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--muted-bg);
+}
+
+form.feedback-form .editor-mode {
+  min-height: 36px;
+  padding: 0.3rem 1rem;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+form.feedback-form .editor-mode.active {
+  background: var(--surface-raised);
+  color: var(--ink);
+  box-shadow: var(--shadow-rest);
+}
+
+/* Secondary buttons inside forms keep the outlined look, not the filled primary. */
+form.feedback-form button.pdf-download-button {
+  min-height: 44px;
+  padding: 0.55rem 1.2rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+form.feedback-form textarea.editor-textarea {
+  width: 100%;
+  min-height: 60vh;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  tab-size: 2;
+}
+
+.editor-preview {
+  min-height: 60vh;
+  overflow: auto;
+}
+
+.editor-preview[hidden] {
+  display: none;
+}
+
+/* ---------- Progress tab ---------- */
+
+.progress-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.progress-card {
+  display: grid;
+  gap: 0.6rem;
+  padding: var(--card-padding);
+}
+
+.progress-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.progress-card-head h4 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.progress-latest {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.progress-chart-svg {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.progress-line {
+  stroke: var(--chart-completed);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.progress-dot {
+  fill: var(--surface);
+  stroke: var(--chart-completed);
+  stroke-width: 2;
+}
+
+.progress-dot-last {
+  fill: var(--chart-completed);
+}
+
+.progress-axis {
+  fill: var(--chart-label);
+  font-size: 10px;
+}
+
+.progress-deltas {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--meta-size);
+  line-height: 1.4;
+}
+
+.progress-form-grid {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  padding: 1.25rem 0;
+}
+
+@media (max-width: 600px) {
+  .form-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

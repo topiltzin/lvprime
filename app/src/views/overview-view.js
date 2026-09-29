@@ -2,6 +2,7 @@ import { loadCustomers } from '../components/sidebar.js';
 import { renderCustomerCard } from '../components/customer-card.js';
 import { deriveStatus, STATUS_RANK } from '../lib/status.js';
 import { icon } from '../lib/icons.js';
+import { renderNewClientControl } from '../components/new-client-form.js';
 
 // User Story 1: a single screen listing every client sorted by urgency, so a coach
 // knows who needs attention within seconds (FR-001, FR-002, FR-003, FR-004).
@@ -98,7 +99,8 @@ export async function renderOverview(container) {
   container.innerHTML = '';
 
   if (!data.customers.length) {
-    renderPageHeader(container);
+    const emptyHeader = renderPageHeader(container);
+    emptyHeader.appendChild(renderNewClientControl());
 
     const empty = document.createElement('div');
     empty.className = 'empty-state-card';
@@ -118,6 +120,7 @@ export async function renderOverview(container) {
   `
   );
   header.querySelector('.client-search-wrap').prepend(icon('magnifying-glass', 'client-search-icon'));
+  container.insertBefore(renderNewClientControl(), header.nextSibling);
   container.appendChild(renderScoreboard(sorted));
 
   const list = document.createElement('div');
