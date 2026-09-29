@@ -156,6 +156,11 @@
   animation-delay: calc(var(--i, 0) * 60ms);
 }
 
+.program-day-card:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent-fill) 60%, transparent);
+  outline-offset: 4px;
+}
+
 .program-day-card--light {
   background: var(--muted-bg);
   box-shadow: none;

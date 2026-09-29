@@ -177,6 +177,8 @@ export function renderProgramDay(day, index = 0, options = {}) {
 
   const title = document.createElement('h3');
   title.className = 'program-day-focus';
+  title.id = `${card.id}-title`;
+  card.setAttribute('aria-labelledby', title.id);
   title.textContent = day.focus || day.day;
   titles.appendChild(title);
   header.appendChild(titles);
@@ -235,6 +237,12 @@ export function renderDaySubnav(weeklySchedule) {
         behavior: prefersReducedMotion() ? 'auto' : 'smooth',
         block: 'start',
       });
+      // Scrolling alone leaves keyboard focus on the chip; move it to the day so the next
+      // Tab starts inside that day's exercises and screen readers announce where they landed.
+      if (target) {
+        target.tabIndex = -1;
+        target.focus({ preventScroll: true });
+      }
     });
     nav.appendChild(chip);
   }
@@ -252,6 +260,8 @@ export function trackActiveDay(nav, cards) {
     for (const chip of chips) {
       const isActive = chip.dataset.target === id;
       chip.classList.toggle('active', isActive);
+      if (isActive) chip.setAttribute('aria-current', 'true');
+      else chip.removeAttribute('aria-current');
       // On narrow screens keep the highlighted chip inside the scrollable row.
       if (isActive && (chip.offsetLeft < nav.scrollLeft
         || chip.offsetLeft + chip.offsetWidth > nav.scrollLeft + nav.clientWidth)) {
