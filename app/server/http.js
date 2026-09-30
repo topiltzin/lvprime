@@ -24,31 +24,11 @@ export function isMappedError(err) {
   );
 }
 
-export function readJsonBody(req) {
-  return new Promise((resolve, reject) => {
-    let data = '';
-    let size = 0;
-    req.on('data', (chunk) => {
-      size += chunk.length;
-      if (size > MAX_BODY_BYTES) {
-        // Drain and discard the rest (not destroy) so the 413 still reaches the client.
-        req.removeAllListeners('data');
-        req.resume();
-        reject(new PayloadTooLargeError('request body too large'));
-        return;
-      }
-      data += chunk;
-    });
-    req.on('end', () => {
-      if (!data) return resolve({});
-      try {
-        resolve(JSON.parse(data));
-      } catch (err) {
-        reject(err);
-      }
-    });
-    req.on('error', reject);
-  });
+// Decoded once from the whole body: decoding chunk by chunk would split a multi-byte
+// character (á, ñ, ó) that lands on a chunk boundary into two U+FFFD characters.
+export async function readJsonBody(req) {
+  const text = (await readRawBody(req, MAX_BODY_BYTES)).toString('utf8');
+  return text ? JSON.parse(text) : {};
 }
 
 // Parsed body, or undefined after answering 422 for malformed JSON
