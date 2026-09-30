@@ -1,6 +1,14 @@
 import { getSession } from '../auth.js';
 import { askCoachChatbot, ChatbotError, validateChatQuestion } from '../lib/coach-chat.js';
-import { endConversation, HISTORY_MESSAGES, loadConversation, MEMORY_MESSAGES, saveTurn } from '../lib/chat-memory.js';
+import {
+  endConversation,
+  HISTORY_MESSAGES,
+  loadConversation,
+  loadMemory,
+  MEMORY_MESSAGES,
+  rememberEndedConversations,
+  saveTurn,
+} from '../lib/chat-memory.js';
 import { readJsonBodyOr422, sendJson } from '../http.js';
 
 // Fitness coach chatbot (specs/013-fitness-coach-chatbot contracts/chat-api.md).
@@ -26,17 +34,18 @@ export async function handlePostChat(req, res) {
   const userId = userIdOf(req);
   // Memory is best effort: if Supabase is down the coach still gets an answer.
   let history = [];
+  let memory = null;
   if (userId) {
-    try {
-      history = await loadConversation(userId, MEMORY_MESSAGES);
-    } catch (err) {
-      console.error('Chat memory load failed:', err.message);
-    }
+    const [turns, notes] = await Promise.allSettled([loadConversation(userId, MEMORY_MESSAGES), loadMemory(userId)]);
+    if (turns.status === 'fulfilled') history = turns.value;
+    else console.error('Chat memory load failed:', turns.reason.message);
+    if (notes.status === 'fulfilled') memory = notes.value;
+    else console.error('Chat memory notes load failed:', notes.reason.message);
   }
 
   let answer;
   try {
-    answer = await askCoachChatbot(result.question, history);
+    answer = await askCoachChatbot(result.question, history, memory);
   } catch (err) {
     if (!(err instanceof ChatbotError)) throw err;
     // Outcome only; never the question or answer text.
@@ -62,9 +71,20 @@ export async function handleGetChatHistory(req, res) {
   sendJson(res, 200, { messages });
 }
 
-/** DELETE /api/chat/history → { ok: true }. Ends the open conversation; the model forgets it. */
+/**
+ * DELETE /api/chat/history → { ok: true }. Ends the open conversation and merges it
+ * into the memory notes, so the next conversation starts fresh but keeps the facts.
+ * The panel doesn't wait for this; a failed summary is retried on the next clear.
+ */
 export async function handleDeleteChatHistory(req, res) {
   const userId = userIdOf(req);
-  if (userId) await endConversation(userId);
+  if (userId) {
+    await endConversation(userId);
+    try {
+      await rememberEndedConversations(userId);
+    } catch (err) {
+      console.error('Chat memory summary failed:', err.code || '', err.message);
+    }
+  }
   sendJson(res, 200, { ok: true });
 }

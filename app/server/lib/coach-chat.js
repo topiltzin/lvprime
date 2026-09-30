@@ -3,7 +3,7 @@
 // length cap are added here so they can't be changed from the client, and the
 // upstream URL (CHATBOT_URL) never reaches the browser. The question/answer text is
 // never logged; the conversation itself is kept in Supabase (lib/chat-memory.js) and
-// sent back upstream as `messages` so the model remembers it.
+// sent back upstream as `messages`, with notes from earlier conversations in `system`.
 
 export const COACH_SYSTEM_PROMPT =
   'You are a fitness coach in spanish ready to help. Answer in 2-4 short sentences in spanish or at most 4 short bullet points.';
@@ -42,14 +42,20 @@ export function buildCoachMessage(question) {
   return COACH_INSTRUCTION + question;
 }
 
+/** The coach prompt, plus what the assistant remembers from earlier conversations (lib/chat-memory.js). */
+export function buildSystemPrompt(memory) {
+  if (!memory) return COACH_SYSTEM_PROMPT;
+  return `${COACH_SYSTEM_PROMPT}\n\nWhat you know about this coach from earlier conversations:\n${memory}`;
+}
+
 /**
  * The upstream body. `system` + `messages` carry the conversation; `message` is the
  * single-turn form older chatbot deployments read, so either side can deploy first.
- * history: [{ role: 'user'|'assistant', content }], oldest first.
+ * history: [{ role: 'user'|'assistant', content }], oldest first. memory: notes text or null.
  */
-export function buildUpstreamBody(question, history = []) {
+export function buildUpstreamBody(question, history = [], memory = null) {
   return {
-    system: COACH_SYSTEM_PROMPT,
+    system: buildSystemPrompt(memory),
     messages: [
       ...history.map(({ role, content }) => ({ role, content })),
       { role: 'user', content: question },
@@ -59,8 +65,55 @@ export function buildUpstreamBody(question, history = []) {
   };
 }
 
-/** Sends one question (plus earlier turns) upstream and returns the trimmed answer, or throws ChatbotError. No retries. */
-export async function askCoachChatbot(question, history = []) {
+/** Sends one question (plus earlier turns and memory notes) upstream and returns the trimmed answer, or throws ChatbotError. No retries. */
+export function askCoachChatbot(question, history = [], memory = null) {
+  return callChatbot(buildUpstreamBody(question, history, memory));
+}
+
+// Memory notes: when a conversation ends, the same chatbot merges it into the notes.
+export const SUMMARY_PROMPT =
+  'You keep short memory notes about a fitness coach who talks with an assistant. ' +
+  'Merge the current notes with the new conversation. Keep only lasting facts: goals, fitness level, ' +
+  'injuries or limitations, preferences, and advice already given. Write at most 8 bullet points in spanish, ' +
+  'each starting with "- ". Output only the bullet points.';
+export const SUMMARY_MAX_TOKENS = 300;
+// The Lightning endpoint accepts `system` up to 2000 chars and each message up to
+// 8000: the notes go into the coach `system`, notes + transcript into one message.
+export const MAX_MEMORY_CHARS = 1500;
+const MAX_TRANSCRIPT_CHARS = 5500;
+const MAX_TRANSCRIPT_LINE_CHARS = 600;
+
+/** messages: [{ role, content }], oldest first. Keeps the most recent lines that fit. */
+export function buildTranscript(messages) {
+  const lines = [];
+  let length = 0;
+  for (const { role, content } of [...messages].reverse()) {
+    const line = `${role === 'user' ? 'Coach' : 'Assistant'}: ${content.slice(0, MAX_TRANSCRIPT_LINE_CHARS)}`;
+    if (length + line.length > MAX_TRANSCRIPT_CHARS) break;
+    lines.unshift(line);
+    length += line.length + 1;
+  }
+  return lines.join('\n');
+}
+
+export function buildSummaryBody(currentNotes, messages) {
+  const content = `Current notes:\n${currentNotes || '(none)'}\n\nNew conversation:\n${buildTranscript(messages)}`;
+  return {
+    system: SUMMARY_PROMPT,
+    messages: [{ role: 'user', content }],
+    message: `${SUMMARY_PROMPT}\n\n${content}`,
+    max_tokens: SUMMARY_MAX_TOKENS,
+    temperature: 0.3,
+  };
+}
+
+/** The updated memory notes (trimmed, capped), or throws ChatbotError. */
+export async function summarizeIntoNotes(currentNotes, messages) {
+  const notes = await callChatbot(buildSummaryBody(currentNotes, messages));
+  return notes.slice(0, MAX_MEMORY_CHARS);
+}
+
+async function callChatbot(body) {
   const url = process.env.CHATBOT_URL;
   if (!url) throw new ChatbotError('chatbot_not_configured');
 
@@ -72,7 +125,7 @@ export async function askCoachChatbot(question, history = []) {
     res = await fetch(url, {
       method: 'POST',
       headers,
-      body: JSON.stringify(buildUpstreamBody(question, history)),
+      body: JSON.stringify(body),
       signal: AbortSignal.timeout(timeoutOverrideMs ?? UPSTREAM_TIMEOUT_MS),
     });
   } catch (err) {

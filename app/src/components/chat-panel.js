@@ -6,8 +6,8 @@ import { t } from '../lib/i18n.js';
 // Floating "Coach assistant" chat (specs/013-fitness-coach-chatbot contracts/chat-panel-ui.md).
 // Mounted once on <body>, outside #app, so the conversation survives route changes.
 // The conversation is kept on the server per signed-in user (server/lib/chat-memory.js):
-// it's loaded the first time the panel opens, and Clear chat makes the assistant forget
-// it. Answers are untrusted model output and only ever reach the DOM through textContent.
+// it's loaded the first time the panel opens. Clear chat ends it; the server keeps short
+// notes from it that the assistant still sees in later conversations. Answers are untrusted model output and only ever reach the DOM through textContent.
 
 const MAX_CHARS = 1000; // mirrors MAX_QUESTION_CHARS in server/lib/coach-chat.js
 const COUNTER_FROM = 900;
