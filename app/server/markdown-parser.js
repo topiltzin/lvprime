@@ -27,7 +27,7 @@ const SYNONYMS = {
 };
 
 function fallbackTemplate() {
-  return { ...FALLBACK_TEMPLATE, fields: [...FALLBACK_TEMPLATE.fields] };
+  return { ...FALLBACK_TEMPLATE, fields: [...FALLBACK_TEMPLATE.fields], hints: {} };
 }
 
 const PLACEHOLDER = /^\[.*\]$/;
@@ -81,10 +81,16 @@ export function extractFeedbackTemplate(feedbackMdText, entries = null) {
   const headingMatch = blockLines[0] && blockLines[0].match(HEADING_LINE);
   const headingLevel = headingMatch ? headingMatch[1].length : FALLBACK_TEMPLATE.headingLevel;
 
+  // hints: each field's example value, e.g. "[1-10]" or "[Easy/Moderate/Hard]"; the log
+  // form picks its input from it (src/lib/feedback-fields.js).
   const fields = [];
+  const hints = {};
   for (const line of blockLines.slice(1)) {
     const m = line.match(FIELD_LINE);
-    if (m) fields.push(m[1].trim());
+    if (!m) continue;
+    const field = m[1].trim();
+    fields.push(field);
+    if (m[2].trim()) hints[field] = m[2].trim();
   }
 
   if (fields.length === 0) return fallbackTemplate();
@@ -98,7 +104,7 @@ export function extractFeedbackTemplate(feedbackMdText, entries = null) {
     ? realEntries[realEntries.length - 1].heading_level
     : headingLevel;
 
-  return { headingLevel: actualHeadingLevel, fields };
+  return { headingLevel: actualHeadingLevel, fields, hints };
 }
 
 /**

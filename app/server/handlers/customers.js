@@ -1,7 +1,7 @@
 import { parseProgramDetail, parseProgramGoal } from '../markdown-parser.js';
 import { renderMarkdown } from '../markdown-render.js';
 import { parseMeasurements } from '../measurements.js';
-import { validateFeedbackSubmission, validateQuickCompleteSubmission } from '../feedback-writer.js';
+import { validateFeedbackSubmission, validateQuickCompleteSubmission, withNotReported } from '../feedback-writer.js';
 import { readJsonBodyOr422, sendJson } from '../http.js';
 import {
   getCustomer,
@@ -192,7 +192,7 @@ export async function handlePostFeedback(req, res, slug) {
   const { entry, created } = await addFeedbackEntry(slug, customer.name, {
     date: body.date,
     label: body.label || null,
-    fields: body.fields,
+    fields: withNotReported(existingFeedback.template, body.fields),
   }, { customer, feedback: existingFeedback });
 
   sendJson(res, created ? 201 : 200, toFeedbackEntryJson(entry));

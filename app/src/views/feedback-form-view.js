@@ -1,12 +1,42 @@
 import { submitFeedback, ApiError } from '../api-client.js';
 // Local calendar date, so "today" matches the Program tab's "Mark done" (specs/012).
 import { todayIso } from '../lib/day-completion.js';
-import { t } from '../lib/i18n.js';
+import { hasString, t } from '../lib/i18n.js';
+import { fieldInputSpec, fieldLabelKey } from '../lib/feedback-fields.js';
 
 // User Story 3: a form built dynamically from the customer's own feedback.md
 // template (research.md §4/§5 — templates differ per customer). Calls
 // onSuccess(newEntry) after a successful submit so the caller can refresh the
 // feedback list/trend in place without a page reload.
+// Only "Completed" is required; each other field's input comes from its example value
+// in the template (feedback-fields.js), and a blank one is saved as "not reported".
+
+function selectInput(options) {
+  const select = document.createElement('select');
+  for (const [value, text] of options) {
+    const o = document.createElement('option');
+    o.value = value;
+    o.textContent = text;
+    select.appendChild(o);
+  }
+  return select;
+}
+
+function fieldInput(spec) {
+  if (spec.kind === 'scale') {
+    const steps = [];
+    for (let n = spec.min; n <= spec.max; n++) steps.push([String(n), String(n)]);
+    return selectInput([['', t('logForm.skip')], ...steps]);
+  }
+  if (spec.kind === 'choice') {
+    return selectInput([['', t('logForm.skip')], ...spec.options.map((o) => [o, o])]);
+  }
+  const textarea = document.createElement('textarea');
+  textarea.rows = 2;
+  textarea.placeholder = spec.placeholder;
+  return textarea;
+}
+
 export function renderFeedbackForm(slug, template, onSuccess) {
   const wrap = document.createElement('div');
   wrap.className = 'card log-session-form-wrap';
@@ -56,24 +86,19 @@ export function renderFeedbackForm(slug, template, onSuccess) {
   const fieldErrors = {};
   for (const fieldName of template.fields) {
     const label = document.createElement('label');
-    label.textContent = fieldName;
-    const isCompleted = /complet/i.test(fieldName);
+    const labelKey = fieldLabelKey(fieldName);
+    label.textContent = hasString(labelKey) ? t(labelKey) : fieldName;
+    // Same test as the server's isCompletedLikeField ("Completed", "Completó"; not "Exercises completed").
+    const isCompleted = /^complet/i.test(fieldName.trim());
     let input;
     if (isCompleted) {
-      input = document.createElement('select');
       // Values stay Yes/No (what the server and feedback.md expect); only the text is translated.
-      [['', t('logForm.select')], ['Yes', t('logForm.yes')], ['No', t('logForm.no')]].forEach(([value, text]) => {
-        const o = document.createElement('option');
-        o.value = value;
-        o.textContent = text;
-        input.appendChild(o);
-      });
+      input = selectInput([['', t('logForm.select')], ['Yes', t('logForm.yes')], ['No', t('logForm.no')]]);
+      input.required = true;
     } else {
-      input = document.createElement('textarea');
-      input.rows = 2;
+      input = fieldInput(fieldInputSpec(template.hints?.[fieldName]));
     }
     input.name = fieldName;
-    input.required = true;
     label.appendChild(input);
     const err = document.createElement('div');
     err.className = 'field-error';
@@ -113,7 +138,7 @@ export function renderFeedbackForm(slug, template, onSuccess) {
       hasClientError = true;
     }
     for (const [fieldName, input] of Object.entries(fieldInputs)) {
-      if (!input.value.trim()) {
+      if (input.required && !input.value.trim()) {
         fieldErrors[fieldName].textContent = t('common.required');
         hasClientError = true;
       }

@@ -37,12 +37,12 @@ test('POST with a missing required field returns 422 and leaves feedback.md unch
   const res = await fetch(`${server.baseUrl}/api/customers/test-customer/feedback`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ date: '2026-09-22', fields: { Completed: 'Yes' } }), // Notes missing
+    body: JSON.stringify({ date: '2026-09-22', fields: { Notes: 'x' } }), // Completed missing (the only required field)
   });
 
   assert.equal(res.status, 422);
   const body = await res.json();
-  assert.equal(body.fields.Notes, 'required');
+  assert.equal(body.fields.Completed, 'required');
 
   const after = fs.readFileSync(feedbackPath, 'utf8');
   assert.equal(after, before, 'feedback.md must be byte-for-byte unchanged after a rejected submission');

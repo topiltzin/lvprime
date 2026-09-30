@@ -171,10 +171,20 @@ export const STRINGS_EN = {
 
   // Log Session tab
   'logForm.title': 'Log a new session',
-  'logForm.intro': 'Saved entries appear under Feedback, newest first.',
+  'logForm.intro': 'Only Completed is required; leave the rest blank if unknown. Saved entries appear under Feedback, newest first.',
   'logForm.label': 'Session label (optional)',
   'logForm.labelPlaceholder': 'e.g. Lunes - Piernas A',
   'logForm.select': 'Select…',
+  'logForm.skip': '—',
+  // Labels for the English field names in older feedback.md templates (feedback-fields.js).
+  'logField.energy level': 'Energy level',
+  'logField.completed': 'Completed',
+  'logField.exercises completed': 'Exercises completed',
+  'logField.how felt': 'How it felt',
+  'logField.how customer felt': 'How it felt',
+  'logField.elbow status': 'Elbow status',
+  'logField.notes': 'Notes',
+  'logField.overall impression': 'Overall impression',
   'logForm.yes': 'Yes',
   'logForm.no': 'No',
   'logForm.submit': 'Save entry',
@@ -437,10 +447,20 @@ export const STRINGS_ES = {
 
   // Log Session tab
   'logForm.title': 'Registrar una sesión nueva',
-  'logForm.intro': 'Las sesiones guardadas aparecen en Seguimiento, de la más reciente a la más antigua.',
+  'logForm.intro': 'Solo Completado es obligatorio; deja en blanco lo que no sepas. Las sesiones guardadas aparecen en Seguimiento, de la más reciente a la más antigua.',
   'logForm.label': 'Nombre de la sesión (opcional)',
   'logForm.labelPlaceholder': 'p. ej. Lunes - Piernas A',
   'logForm.select': 'Elegir…',
+  'logForm.skip': '—',
+  // Labels for the English field names in older feedback.md templates (feedback-fields.js).
+  'logField.energy level': 'Nivel de energía',
+  'logField.completed': 'Completado',
+  'logField.exercises completed': 'Ejercicios completados',
+  'logField.how felt': 'Cómo se sintió',
+  'logField.how customer felt': 'Cómo se sintió',
+  'logField.elbow status': 'Estado del codo',
+  'logField.notes': 'Notas',
+  'logField.overall impression': 'Impresión general',
   'logForm.yes': 'Sí',
   'logForm.no': 'No',
   'logForm.submit': 'Guardar sesión',

@@ -4,6 +4,8 @@
 // getCustomerFeedback, which do the same thing against Supabase. This file
 // now only holds the pure validation function, which has no fs dependency.
 
+import { notReportedValue } from './markdown-parser.js';
+
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 function isValidIsoDate(value) {
@@ -30,13 +32,14 @@ export function validateFeedbackSubmission(template, body) {
     fields.date = 'required (YYYY-MM-DD)';
   }
 
+  // Only "Completed" is required; a blank field is saved as "not reported"
+  // (withNotReported), so the coach never has to type filler to submit.
   for (const fieldLabel of template.fields) {
+    if (!isCompletedLikeField(fieldLabel)) continue;
     const value = values[fieldLabel];
     if (value == null || String(value).trim() === '') {
       fields[fieldLabel] = 'required';
-      continue;
-    }
-    if (isCompletedLikeField(fieldLabel) && !/^(s[ií]|yes|no)/i.test(String(value).trim())) {
+    } else if (!/^(s[ií]|yes|no)/i.test(String(value).trim())) {
       fields[fieldLabel] = 'must be Yes/No (or Sí/No)';
     }
   }
@@ -45,6 +48,17 @@ export function validateFeedbackSubmission(template, body) {
     return { valid: false, fields };
   }
   return { valid: true };
+}
+
+/** Every template field's trimmed value, with blanks as "Not reported"/"No reportado". */
+export function withNotReported(template, values) {
+  const notReported = notReportedValue(template);
+  const filled = {};
+  for (const field of template.fields) {
+    const value = values?.[field] == null ? '' : String(values[field]).trim();
+    filled[field] = value || notReported;
+  }
+  return filled;
 }
 
 const MAX_LABEL_LENGTH = 200;
