@@ -172,3 +172,55 @@
   line-height: 1.4;
   color: var(--on-header-muted);
 }
+
+/* Back link on the left, Archive / Restore on the right. */
+.client-hero-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.hero-archive-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 40px;
+  padding: 0.35rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--meta-size);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--motion-fast) var(--motion-ease), color var(--motion-fast) var(--motion-ease);
+}
+
+.hero-archive-button:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.hero-archive-button:disabled {
+  opacity: 0.6;
+}
+
+.archived-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0.75rem;
+  padding: 0.7rem 1rem;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-card);
+  background: var(--muted-bg);
+  color: var(--ink);
+  font-size: var(--meta-size);
+}
+
+.archived-banner .icon {
+  color: var(--muted);
+}

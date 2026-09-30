@@ -3,6 +3,8 @@
 // and text stays selectable without embedding images or font files. No DOM imports:
 // `markSegments` is tested under plain `node --test`.
 
+import { t } from './i18n.js';
+
 export const BRAND_NAME = 'LvPrime';
 
 // Mirrors the --brand-* tokens in src/styles/tokens.css (checked by tests/unit/brand.test.js).
@@ -136,7 +138,7 @@ export function drawBrandFooter(doc, { unit }) {
     doc.setFont('helvetica', 'bolditalic');
     doc.text(BRAND_NAME, margin, textY);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Page ${i} of ${pageCount}`, width - margin, textY, { align: 'right' });
+    doc.text(t('pdf.page', { i, n: pageCount }), width - margin, textY, { align: 'right' });
   }
 
   restoreState(doc, state);

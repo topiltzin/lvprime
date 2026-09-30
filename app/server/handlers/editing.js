@@ -8,7 +8,9 @@ import {
   getCustomerNotes,
   getCustomerNutritionPlan,
   createCustomer,
+  setCustomerArchived,
   syncCoachWrite,
+  ArchiveUnavailableError,
   CustomerExistsError,
   WeekNotFoundError,
   WeekLockedError,
@@ -36,6 +38,23 @@ export async function handleCreateCustomer(req, res) {
   } catch (err) {
     if (err instanceof CustomerExistsError) {
       return sendJson(res, 409, { error: 'customer_exists', slug, message: 'A client with that name already exists.' });
+    }
+    throw err;
+  }
+}
+
+// POST /api/customers/<slug>/archive and /restore. Archived clients drop out of
+// the overview's working filters and the sidebar; nothing is deleted.
+export async function handleSetArchived(req, res, slug, archived) {
+  try {
+    const archivedAt = await setCustomerArchived(slug, archived);
+    sendJson(res, 200, { slug, archivedAt });
+  } catch (err) {
+    if (err instanceof ArchiveUnavailableError) {
+      return sendJson(res, 503, {
+        error: 'archive_unavailable',
+        message: 'Archiving needs a database update (server/migrations/014-customer-archive.sql).',
+      });
     }
     throw err;
   }

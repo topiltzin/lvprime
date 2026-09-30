@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf';
 import { BRAND_NAME, BRAND_RGB, drawBrandFooter, drawBrandHeader, footerReserve } from '../lib/pdf-brand.js';
+import { t } from '../lib/i18n.js';
 
 const MARGIN_X = 15;
 const MARGIN_Y = 12;
@@ -180,7 +181,7 @@ export function downloadNutritionPdf(customerName, nutritionMarkdown) {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(SUBTITLE_SIZE);
   doc.setTextColor(120, 120, 120);
-  doc.text('Personalized Nutrition Plan', MARGIN_X, titleY + 6);
+  doc.text(t('pdf.nutritionSubtitle'), MARGIN_X, titleY + 6);
 
   // Subtitle underline
   doc.setDrawColor(...COLORS.headerBg);

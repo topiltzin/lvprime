@@ -1,7 +1,9 @@
 // Client detail hero (FR-005): name, goal, and level/session/plan facts, with a quiet
 // back-to-overview link — rendered above the tab navigation on every client detail page.
 import { icon } from '../lib/icons.js';
-import { deriveStatus, STATUS_LABEL, formatRelativeCheckIn } from '../lib/status.js';
+import { deriveStatus, statusLabel, formatRelativeCheckIn } from '../lib/status.js';
+import { formatDate } from '../lib/format.js';
+import { t } from '../lib/i18n.js';
 
 // "4 semanas" / "6 weeks" → 4 / 6; anything else → null (no progress row).
 function planWeeks(planDuration) {
@@ -15,7 +17,7 @@ function renderWeekProgress(currentWeek, totalWeeks) {
   wrap.className = 'hero-progress';
   const label = document.createElement('span');
   label.className = 'hero-progress-label';
-  label.textContent = `Week ${currentWeek} of ${totalWeeks}`;
+  label.textContent = t('hero.weekOf', { current: currentWeek, total: totalWeeks });
   wrap.appendChild(label);
   const track = document.createElement('span');
   track.className = 'hero-progress-segments';
@@ -60,7 +62,30 @@ function renderFact(iconName, label, text) {
   return fact;
 }
 
-export function renderClientHero(customerData) {
+// Archive / restore (nothing is deleted). onToggle(archived) does the request and
+// re-renders the page; the button stays disabled while it runs.
+function renderArchiveControl(customerData, onToggleArchived) {
+  const archived = !!customerData.archivedAt;
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'hero-archive-button';
+  button.appendChild(icon(archived ? 'arrow-counter-clockwise' : 'archive'));
+  const label = document.createElement('span');
+  label.textContent = archived ? t('archive.restore') : t('archive.button');
+  button.appendChild(label);
+  button.addEventListener('click', async () => {
+    if (!archived && !window.confirm(t('archive.confirm', { name: customerData.displayName }))) return;
+    button.disabled = true;
+    try {
+      await onToggleArchived(!archived);
+    } finally {
+      button.disabled = false;
+    }
+  });
+  return button;
+}
+
+export function renderClientHero(customerData, { onToggleArchived } = {}) {
   const wrap = document.createElement('div');
   wrap.className = 'client-hero';
 
@@ -69,9 +94,24 @@ export function renderClientHero(customerData) {
   back.href = '#/';
   back.appendChild(icon('caret-left'));
   const backText = document.createElement('span');
-  backText.textContent = 'All clients';
+  backText.textContent = t('common.allClients');
   back.appendChild(backText);
-  wrap.appendChild(back);
+  const nav = document.createElement('div');
+  nav.className = 'client-hero-nav';
+  nav.appendChild(back);
+  if (onToggleArchived) nav.appendChild(renderArchiveControl(customerData, onToggleArchived));
+  wrap.appendChild(nav);
+
+  if (customerData.archivedAt) {
+    const banner = document.createElement('p');
+    banner.className = 'archived-banner';
+    banner.setAttribute('role', 'status');
+    banner.appendChild(icon('archive'));
+    const text = document.createElement('span');
+    text.textContent = t('archive.banner', { date: formatDate(customerData.archivedAt.slice(0, 10)) });
+    banner.appendChild(text);
+    wrap.appendChild(banner);
+  }
 
   const card = document.createElement('section');
   card.className = 'client-hero-card';
@@ -84,11 +124,11 @@ export function renderClientHero(customerData) {
   top.className = 'client-hero-top';
   const pill = document.createElement('span');
   pill.className = `status-pill status-${status}`;
-  pill.textContent = STATUS_LABEL[status];
+  pill.textContent = statusLabel(status);
   top.appendChild(pill);
   const checkIn = document.createElement('span');
   checkIn.className = 'client-hero-checkin';
-  checkIn.textContent = `Last check-in ${formatRelativeCheckIn(lastDate).toLowerCase()}`;
+  checkIn.textContent = t('hero.lastCheckIn', { when: formatRelativeCheckIn(lastDate).toLowerCase() });
   top.appendChild(checkIn);
   card.appendChild(top);
 
@@ -107,9 +147,9 @@ export function renderClientHero(customerData) {
     }
 
     const facts = [
-      ['barbell', 'Level', program.fitnessLevel],
-      ['clock', 'Session', program.sessionDuration],
-      ['calendar', 'Plan', program.planDuration],
+      ['barbell', t('hero.level'), program.fitnessLevel],
+      ['clock', t('hero.session'), program.sessionDuration],
+      ['calendar', t('hero.plan'), program.planDuration],
     ].filter(([, , value]) => value);
 
     const total = planWeeks(program.planDuration);

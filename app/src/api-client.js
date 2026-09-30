@@ -2,6 +2,8 @@
 // a coach session cookie (server/auth.js): on a 401, the handler registered via
 // setUnauthorizedHandler (the login screen) takes over the page.
 
+import { getLang, hasString, t } from './lib/i18n.js';
+
 class ApiError extends Error {
   constructor(message, status, fields) {
     super(message);
@@ -28,7 +30,7 @@ async function request(path, options = {}, skipAuthHandler = false) {
   } catch (err) {
     // A caller's own abort/timeout (askCoach's signal) is not "server unreachable".
     if (err.name === 'AbortError' || err.name === 'TimeoutError') throw err;
-    throw new ApiError('Cannot reach the server. Check your connection and try again.', 0);
+    throw new ApiError(t('api.unreachable'), 0);
   }
 
   let body = null;
@@ -45,13 +47,17 @@ async function request(path, options = {}, skipAuthHandler = false) {
   }
 
   if (!res.ok) {
-    throw new ApiError(
-      body?.message || body?.error || `Request failed (${res.status})`,
-      res.status,
-      body?.fields || null
-    );
+    throw new ApiError(errorMessage(body, res.status), res.status, body?.fields || null);
   }
   return body;
+}
+
+// The server's messages are English; outside English, a known error code gets the
+// translated message (filled from the response body, e.g. week numbers).
+function errorMessage(body, status) {
+  const key = body?.error ? `error.${body.error}` : null;
+  if (key && getLang() !== 'en' && hasString(key)) return t(key, body);
+  return body?.message || body?.error || t('api.failed', { status });
 }
 
 export function getCustomers() {
@@ -112,6 +118,37 @@ export function addMeasurement(slug, { date, values }) {
     method: 'POST',
     body: JSON.stringify({ date, values }),
   });
+}
+
+/** POST /api/customers/<slug>/archive or /restore → { slug, archivedAt }. */
+export function setCustomerArchived(slug, archived) {
+  return request(`/api/customers/${encodeURIComponent(slug)}/${archived ? 'archive' : 'restore'}`, { method: 'POST' });
+}
+
+/** Uploads one file (raw bytes) as a client attachment → { relativePath, sizeBytes, contentType, modifiedAt }. */
+export function uploadAttachment(slug, file) {
+  const params = new URLSearchParams({ name: file.name });
+  return request(`/api/customers/${encodeURIComponent(slug)}/attachments?${params}`, {
+    method: 'POST',
+    headers: { 'Content-Type': file.type || 'application/octet-stream' },
+    body: file,
+  });
+}
+
+export function deleteAttachment(slug, relativePath) {
+  return request(`/api/customers/${encodeURIComponent(slug)}/attachments/${attachmentPath(relativePath)}`, {
+    method: 'DELETE',
+  });
+}
+
+/** "plans/semana 1.pdf" → "plans/semana%201.pdf": each segment encoded, slashes kept. */
+export function attachmentPath(relativePath) {
+  return relativePath.split('/').map(encodeURIComponent).join('/');
+}
+
+/** The download link for an attachment (the server redirects to a short-lived Storage URL). */
+export function attachmentUrl(slug, relativePath) {
+  return `/customer-files/${encodeURIComponent(slug)}/${attachmentPath(relativePath)}`;
 }
 
 export function login(email, password) {

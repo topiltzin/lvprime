@@ -5,6 +5,7 @@
 import { jsPDF } from 'jspdf';
 import { setSafeHtml } from '../lib/safe-html.js';
 import { BRAND_NAME, drawBrandFooter, drawBrandHeader, footerReserve } from '../lib/pdf-brand.js';
+import { t } from '../lib/i18n.js';
 
 /**
  * Pure content-model builder — no DOM, no jsPDF — so it's testable with plain
@@ -14,7 +15,7 @@ import { BRAND_NAME, drawBrandFooter, drawBrandHeader, footerReserve } from '../
 export function buildProgramWeekPdfContent(weekDetail) {
   return {
     weekNumber: weekDetail.weekNumber,
-    weekLabel: `Week ${weekDetail.weekNumber}`,
+    weekLabel: t('pdf.week', { n: weekDetail.weekNumber }),
     days: weekDetail.weeklySchedule || [],
     progressionHtml: weekDetail.progressionHtml || null,
   };
@@ -69,7 +70,7 @@ function renderDay(doc, day, y, maxWidth) {
     }
   } else {
     doc.setFont('helvetica', 'normal');
-    const lines = doc.splitTextToSize(htmlToPlainText(day.html) || 'No details available.', maxWidth);
+    const lines = doc.splitTextToSize(htmlToPlainText(day.html) || t('pdf.noDetails'), maxWidth);
     doc.text(lines, MARGIN_X, y);
     y += lines.length * 14;
   }
@@ -99,7 +100,7 @@ export function downloadProgramWeekPdf(weekDetail, customerSlug) {
   if (content.days.length === 0) {
     y = addPageIfNeeded(doc, y);
     doc.setFont('helvetica', 'italic');
-    doc.text('No schedule available.', MARGIN_X, y);
+    doc.text(t('pdf.noSchedule'), MARGIN_X, y);
     y += 30;
   } else {
     for (const day of content.days) {
@@ -112,7 +113,7 @@ export function downloadProgramWeekPdf(weekDetail, customerSlug) {
     y = addPageIfNeeded(doc, y);
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text('Progression', MARGIN_X, y);
+    doc.text(t('pdf.progression'), MARGIN_X, y);
     y += 18;
     doc.setFont('helvetica', 'normal');
     for (const line of doc.splitTextToSize(progressionText, maxWidth)) {

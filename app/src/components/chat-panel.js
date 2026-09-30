@@ -1,6 +1,7 @@
 import { askCoach } from '../api-client.js';
 import { applyLang } from '../lib/lang.js';
 import { icon } from '../lib/icons.js';
+import { t } from '../lib/i18n.js';
 
 // Floating "Coach assistant" chat (specs/013-fitness-coach-chatbot contracts/chat-panel-ui.md).
 // Mounted once on <body>, outside #app, so the conversation survives route changes.
@@ -10,8 +11,6 @@ import { icon } from '../lib/icons.js';
 const MAX_CHARS = 1000; // mirrors MAX_QUESTION_CHARS in server/lib/coach-chat.js
 const COUNTER_FROM = 900;
 const CLIENT_TIMEOUT_MS = 130000; // the server gives up at 120 s; this only covers a lost response
-const GREETING = "Hi! I'm your fitness coach assistant. Ask me anything about training or nutrition.";
-const ERROR_TEXT = 'The coach assistant is unavailable right now. Try again.';
 
 /** ChatMessage: { id, role: 'coach'|'assistant', text, status?: 'pending'|'answered'|'failed', sentAt } */
 const messages = [];
@@ -39,21 +38,21 @@ export function mountChatPanel(root) {
   if (mounted) return;
   mounted = true;
 
-  const launcher = iconButton('chat-launcher', 'chat', 'Open coach assistant');
+  const launcher = iconButton('chat-launcher', 'chat', t('chat.open'));
   launcher.setAttribute('aria-controls', 'chat-panel');
   launcher.setAttribute('aria-expanded', 'false');
 
   const panel = el('section', 'chat-panel');
   panel.id = 'chat-panel';
   panel.setAttribute('role', 'dialog');
-  panel.setAttribute('aria-label', 'Coach assistant');
+  panel.setAttribute('aria-label', t('chat.title'));
   panel.hidden = true;
 
   const header = el('header', 'chat-header');
-  const title = el('h2', 'chat-title', 'Coach assistant');
-  const clearButton = el('button', 'chat-clear', 'Clear chat');
+  const title = el('h2', 'chat-title', t('chat.title'));
+  const clearButton = el('button', 'chat-clear', t('chat.clear'));
   clearButton.type = 'button';
-  const closeButton = iconButton('chat-close', 'close', 'Close');
+  const closeButton = iconButton('chat-close', 'close', t('chat.closeShort'));
   header.append(title, clearButton, closeButton);
 
   const log = el('div', 'chat-log');
@@ -64,9 +63,9 @@ export function mountChatPanel(root) {
   const textarea = el('textarea', 'chat-input');
   textarea.rows = 1;
   textarea.maxLength = MAX_CHARS;
-  textarea.placeholder = 'Ask about training or nutrition...';
-  textarea.setAttribute('aria-label', 'Ask the coach assistant');
-  const sendButton = iconButton('chat-send', 'send', 'Send');
+  textarea.placeholder = t('chat.placeholder');
+  textarea.setAttribute('aria-label', t('chat.inputLabel'));
+  const sendButton = iconButton('chat-send', 'send', t('chat.send'));
   sendButton.type = 'submit';
   const counter = el('p', 'chat-counter');
   counter.hidden = true;
@@ -91,7 +90,7 @@ export function mountChatPanel(root) {
   }
 
   function renderLog() {
-    log.replaceChildren(el('p', 'chat-greeting', GREETING));
+    log.replaceChildren(el('p', 'chat-greeting', t('chat.greeting')));
     for (const msg of messages) {
       const line = el('p', `chat-msg chat-msg--${msg.role}`, msg.text);
       applyLang(line, msg.text);
@@ -99,7 +98,7 @@ export function mountChatPanel(root) {
       if (msg.status === 'failed') log.appendChild(errorRow(msg));
     }
     if (pending) {
-      const thinking = el('p', 'chat-thinking', 'Thinking');
+      const thinking = el('p', 'chat-thinking', t('chat.thinking'));
       thinking.appendChild(el('span', 'chat-dots'));
       log.appendChild(thinking);
     }
@@ -111,10 +110,10 @@ export function mountChatPanel(root) {
   function errorRow(msg) {
     const row = el('div', 'chat-error');
     row.appendChild(icon('warning-circle'));
-    row.appendChild(el('span', 'chat-error-text', ERROR_TEXT));
+    row.appendChild(el('span', 'chat-error-text', t('chat.error')));
     const retry = el('button', 'chat-retry');
     retry.type = 'button';
-    retry.append(icon('retry'), el('span', '', 'Retry'));
+    retry.append(icon('retry'), el('span', '', t('chat.retry')));
     retry.disabled = !!pending;
     retry.addEventListener('click', () => {
       // The same message goes back to pending: no duplicate bubble.
@@ -148,7 +147,7 @@ export function mountChatPanel(root) {
   function setOpen(open) {
     panel.hidden = !open;
     launcher.setAttribute('aria-expanded', String(open));
-    launcher.setAttribute('aria-label', open ? 'Close coach assistant' : 'Open coach assistant');
+    launcher.setAttribute('aria-label', open ? t('chat.close') : t('chat.open'));
     if (open) {
       scrollToEnd();
       textarea.focus();

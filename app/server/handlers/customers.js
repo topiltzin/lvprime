@@ -1,6 +1,3 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { getCustomersDir, scanAttachments } from '../customers-repo.js';
 import { parseProgramDetail, parseProgramGoal } from '../markdown-parser.js';
 import { renderMarkdown } from '../markdown-render.js';
 import { parseMeasurements } from '../measurements.js';
@@ -20,8 +17,9 @@ import {
   computeFeedbackTrend,
   WeekNotFoundError,
 } from '../lib/customer-data.js';
+import { listAttachments } from '../lib/attachments.js';
 
-// Customer reads, feedback writes and attachment downloads.
+// Customer reads and feedback writes.
 
 function toFeedbackEntryJson(row) {
   return {
@@ -87,7 +85,11 @@ export async function handleGetCustomer(req, res, slug) {
   // (spec SC-004). getExerciseVideoLinkMap() isn't customer-scoped, so it
   // runs alongside rather than inside that per-customer Promise.all
   // (specs/007-exercise-library-migration plan.md Performance Goals).
-  const [profile, videoLinkMap] = await Promise.all([getCustomerFullProfile(slug), getExerciseVideoLinkMap()]);
+  const [profile, videoLinkMap, attachmentList] = await Promise.all([
+    getCustomerFullProfile(slug),
+    getExerciseVideoLinkMap(),
+    listAttachmentsOrNull(slug),
+  ]);
   const {
     customer,
     program: programRow,
@@ -119,26 +121,30 @@ export async function handleGetCustomer(req, res, slug) {
   const entries = feedback.entries.map(toFeedbackEntryJson);
   const trend = computeFeedbackTrend(feedback.entries);
 
-  // Attachments (PDFs etc.) stay filesystem-based — out of scope for this
-  // migration (spec covers program/feedback/notes/nutrition_plan only).
-  const attachmentDir = path.join(getCustomersDir(), slug);
-  const attachments = scanAttachments(slug, attachmentDir).map((a) => ({
-    relativePath: a.relative_path,
-    sizeBytes: a.size_bytes,
-    modifiedAt: a.modified_at ? new Date(a.modified_at).toISOString() : null,
-  }));
-
   sendJson(res, 200, {
     slug: customer.slug,
     displayName: customer.name,
+    archivedAt: customer.archived_at ?? null,
     program,
     programWeeks,
     notes,
     nutrition,
     measurements: parseMeasurements(notesRow?.content),
     feedback: { entries, trend, template: feedback.template },
-    attachments,
+    // null when Storage couldn't be read; the page still loads and says so.
+    attachments: attachmentList,
   });
+}
+
+// Attachments are secondary to the program: a Storage outage (or a bucket that
+// hasn't been created yet) shouldn't take the whole client page down.
+async function listAttachmentsOrNull(slug) {
+  try {
+    return await listAttachments(slug);
+  } catch (err) {
+    console.error('Attachments unavailable:', err.message);
+    return null;
+  }
 }
 
 export async function handleGetNutrition(req, res, slug) {
@@ -210,29 +216,4 @@ export async function handlePostQuickComplete(req, res, slug) {
     label: body.label.trim(),
   }, { customer });
   sendJson(res, created ? 201 : 200, { created, entry: toFeedbackEntryJson(entry) });
-}
-
-/**
- * Serves an attachment file (e.g. a plans/*.pdf) directly out of customers/ so
- * it's openable from the customer detail view (spec edge case: attachments are
- * listed/linkable, not rendered inline). Never serves the three standard .md
- * files through this route — those only ever go through the JSON endpoints.
- */
-export async function handleCustomerFile(req, res, encodedRelPath) {
-  const relPath = decodeURIComponent(encodedRelPath);
-  const customersDir = getCustomersDir();
-  const resolved = path.resolve(customersDir, relPath);
-  if (!resolved.startsWith(customersDir + path.sep) || /\.md$/i.test(resolved)) {
-    sendJson(res, 404, { error: 'not_found' });
-    return;
-  }
-  fs.readFile(resolved, (err, data) => {
-    if (err) {
-      sendJson(res, 404, { error: 'not_found' });
-      return;
-    }
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'application/octet-stream');
-    res.end(data);
-  });
 }

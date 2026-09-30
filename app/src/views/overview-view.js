@@ -2,8 +2,9 @@ import { loadCustomers } from '../components/sidebar.js';
 import { renderCustomerCard } from '../components/customer-card.js';
 import { deriveStatus, STATUS_RANK } from '../lib/status.js';
 import { icon } from '../lib/icons.js';
-import { FILTERS, countByFilter, filterClients } from '../lib/client-filter.js';
+import { FILTERS, countByFilter, filterClients, isArchived } from '../lib/client-filter.js';
 import { renderNewClientControl } from '../components/new-client-form.js';
+import { t, tn } from '../lib/i18n.js';
 
 // User Story 1: a single screen listing every client sorted by urgency, so a coach
 // knows who needs attention within seconds (FR-001, FR-002, FR-003, FR-004).
@@ -39,11 +40,11 @@ function renderScoreboard(customers) {
   for (const c of customers) counts[deriveStatus(c.lastFeedbackDate)] += 1;
 
   const items = [
-    ['Clients', customers.length, ''],
-    ['Need a check-in', counts['needs-checkin'], counts['needs-checkin'] ? 'is-warning' : ''],
-    ['On track', counts['on-track'], 'is-good'],
+    [t('score.clients'), customers.length, ''],
+    [t('score.needCheckin'), counts['needs-checkin'], counts['needs-checkin'] ? 'is-warning' : ''],
+    [t('score.onTrack'), counts['on-track'], 'is-good'],
   ];
-  if (counts['no-feedback']) items.push(['No feedback yet', counts['no-feedback'], '']);
+  if (counts['no-feedback']) items.push([t('score.noFeedback'), counts['no-feedback'], '']);
 
   const board = document.createElement('dl');
   board.className = 'scoreboard';
@@ -76,12 +77,27 @@ function renderOverviewSkeleton(container) {
   `;
 }
 
-function renderPageHeader(container, extraHtml = '') {
+function renderPageHeader(container) {
   const header = document.createElement('div');
   header.className = 'page-header';
-  header.innerHTML = `<h1>Clients</h1>${extraHtml}`;
+  const h1 = document.createElement('h1');
+  h1.textContent = t('overview.title');
+  header.appendChild(h1);
   container.appendChild(header);
   return header;
+}
+
+function renderSearch(header) {
+  const wrap = document.createElement('label');
+  wrap.className = 'client-search-wrap';
+  const input = document.createElement('input');
+  input.type = 'search';
+  input.className = 'client-search';
+  input.placeholder = t('overview.searchPlaceholder');
+  input.setAttribute('aria-label', t('overview.searchLabel'));
+  wrap.append(icon('magnifying-glass', 'client-search-icon'), input);
+  header.appendChild(wrap);
+  return input;
 }
 
 export async function renderOverview(container) {
@@ -96,7 +112,7 @@ export async function renderOverview(container) {
     renderPageHeader(container);
     const banner = document.createElement('div');
     banner.className = 'error-banner';
-    banner.textContent = err.message || 'Failed to load clients.';
+    banner.textContent = err.message || t('overview.loadFailed');
     container.appendChild(banner);
     return;
   }
@@ -110,24 +126,20 @@ export async function renderOverview(container) {
 
     const empty = document.createElement('div');
     empty.className = 'empty-state-card';
-    empty.innerHTML = '<p>Add your first client to start building their program.</p>';
+    const text = document.createElement('p');
+    text.textContent = t('overview.empty');
+    empty.appendChild(text);
     container.appendChild(empty);
     return;
   }
 
   const sorted = sortByUrgency(data.customers);
+  const active = sorted.filter((c) => !isArchived(c));
 
-  const header = renderPageHeader(
-    container,
-    `
-    <label class="client-search-wrap">
-      <input type="search" class="client-search" placeholder="Search by name" aria-label="Search clients">
-    </label>
-  `
-  );
-  header.querySelector('.client-search-wrap').prepend(icon('magnifying-glass', 'client-search-icon'));
+  const header = renderPageHeader(container);
+  const searchInput = renderSearch(header);
   container.insertBefore(renderNewClientControl(), header.nextSibling);
-  container.appendChild(renderScoreboard(sorted));
+  container.appendChild(renderScoreboard(active));
 
   const list = document.createElement('div');
   list.className = 'customer-list';
@@ -145,18 +157,18 @@ export async function renderOverview(container) {
   const chipGroup = document.createElement('div');
   chipGroup.className = 'filter-chips';
   chipGroup.setAttribute('role', 'group');
-  chipGroup.setAttribute('aria-label', 'Filter clients');
+  chipGroup.setAttribute('aria-label', t('filter.groupLabel'));
   const chips = new Map();
   const totals = countByFilter(sorted);
-  for (const { id, label } of FILTERS) {
-    // "No feedback yet" only appears when someone is in that state, like the scoreboard.
-    if (id === 'no-feedback' && !totals[id]) continue;
+  for (const { id } of FILTERS) {
+    // "No feedback yet" and "Archived" only appear when someone is in that state, like the scoreboard.
+    if ((id === 'no-feedback' || id === 'archived') && !totals[id]) continue;
     const chip = document.createElement('button');
     chip.type = 'button';
     chip.className = 'filter-chip';
     chip.dataset.filter = id;
     const text = document.createElement('span');
-    text.textContent = label;
+    text.textContent = t(`filter.${id}`);
     const count = document.createElement('span');
     count.className = 'filter-chip-count';
     chip.append(text, count);
@@ -183,11 +195,10 @@ export async function renderOverview(container) {
   const clear = document.createElement('button');
   clear.type = 'button';
   clear.className = 'empty-state-cta';
-  clear.textContent = 'Show all clients';
+  clear.textContent = t('overview.showAll');
   noResults.append(noResultsText, clear);
   container.appendChild(noResults);
 
-  const searchInput = header.querySelector('.client-search');
   searchInput.value = state.query;
 
   function update() {
@@ -200,19 +211,24 @@ export async function renderOverview(container) {
       chip.setAttribute('aria-pressed', String(id === state.filter));
     }
 
-    const filterLabel = FILTERS.find((f) => f.id === state.filter).label;
+    const filterLabel = t(`filter.${state.filter}`);
     const searching = state.query.trim().length > 0;
-    status.textContent = visible.size === sorted.length
-      ? `${sorted.length} ${sorted.length === 1 ? 'client' : 'clients'}`
-      : `Showing ${visible.size} of ${sorted.length} clients`;
+    // Counted against the clients this filter draws from: archived ones, or active ones.
+    const pool = state.filter === 'archived' ? totals.archived : active.length;
+    status.textContent = visible.size === pool
+      ? tn('overview.count', pool)
+      : t('overview.showing', { visible: visible.size, total: pool });
 
     noResults.hidden = visible.size > 0;
     if (visible.size === 0) {
+      const query = state.query.trim();
       noResultsText.textContent = state.filter === 'flagged' && !searching
-        ? 'No client has a pain or "brutal" flag in their last sessions.'
+        ? t('overview.noFlagged')
         : searching
-          ? `No clients match "${state.query.trim()}"${state.filter === 'all' ? '' : ` under ${filterLabel}`}.`
-          : `No clients under ${filterLabel} right now.`;
+          ? state.filter === 'all'
+            ? t('overview.noMatch', { query })
+            : t('overview.noMatchIn', { query, filter: filterLabel })
+          : t('overview.noneIn', { filter: filterLabel });
     }
     saveFilterState(state);
   }

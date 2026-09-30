@@ -278,3 +278,13 @@
 .no-search-results[aria-hidden='false'] {
   display: block;
 }
+
+.status-pill.status-archived {
+  background: var(--muted-bg);
+  color: var(--muted);
+}
+
+/* Archived clients only show under the Archived filter; quieter than active cards. */
+.customer-card--archived {
+  opacity: 0.75;
+}

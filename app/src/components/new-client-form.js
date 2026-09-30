@@ -1,5 +1,6 @@
 import { createCustomer, ApiError } from '../api-client.js';
 import { invalidateSidebar } from './sidebar.js';
+import { t } from '../lib/i18n.js';
 
 /** "Add client" button that opens an inline name form; on success opens the new client. */
 export function renderNewClientControl() {
@@ -9,20 +10,20 @@ export function renderNewClientControl() {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'pdf-download-button';
-  button.textContent = '+ Add client';
+  button.textContent = t('newClient.button');
   wrap.appendChild(button);
 
   const form = document.createElement('form');
   form.className = 'feedback-form card new-client-form';
   form.hidden = true;
   const label = document.createElement('label');
-  label.textContent = 'Client name';
+  label.textContent = t('newClient.label');
   const input = document.createElement('input');
   input.type = 'text';
   input.required = true;
   input.maxLength = 255;
   input.autocomplete = 'off';
-  input.placeholder = 'e.g. Ana García';
+  input.placeholder = t('newClient.placeholder');
   label.appendChild(input);
   const error = document.createElement('div');
   error.className = 'field-error';
@@ -32,10 +33,10 @@ export function renderNewClientControl() {
   const cancel = document.createElement('button');
   cancel.type = 'button';
   cancel.className = 'pdf-download-button';
-  cancel.textContent = 'Cancel';
+  cancel.textContent = t('common.cancel');
   const submit = document.createElement('button');
   submit.type = 'submit';
-  submit.textContent = 'Create client';
+  submit.textContent = t('newClient.submit');
   actions.append(error, cancel, submit);
   form.append(label, actions);
   wrap.appendChild(form);
@@ -63,11 +64,11 @@ export function renderNewClientControl() {
       window.location.hash = `#/customers/${encodeURIComponent(created.slug)}`;
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
-        error.textContent = 'A client with that name already exists.';
+        error.textContent = t('newClient.exists');
       } else if (err instanceof ApiError && err.fields?.name) {
         error.textContent = err.fields.name;
       } else {
-        error.textContent = err.message || 'Could not create the client.';
+        error.textContent = err.message || t('newClient.failed');
       }
     } finally {
       submit.disabled = false;

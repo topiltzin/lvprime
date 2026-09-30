@@ -5,9 +5,14 @@ import { setUnauthorizedHandler } from './api-client.js';
 import { renderSidebar } from './components/sidebar.js';
 import { renderHeaderAccount } from './components/header-account.js';
 import { mountChatPanel } from './components/chat-panel.js';
+import { renderLangSwitch, translateShell } from './components/lang-switch.js';
 
 const app = document.getElementById('app');
 const sidebar = document.getElementById('sidebar');
+
+// Before the first view, so nothing renders in the wrong language (src/lib/i18n.js).
+translateShell();
+renderLangSwitch(document.getElementById('header-lang'));
 
 function currentRoute() {
   const hash = window.location.hash.replace(/^#/, '') || '/';

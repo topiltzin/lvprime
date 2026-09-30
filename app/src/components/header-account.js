@@ -1,5 +1,6 @@
 import { getSession, logout } from '../api-client.js';
 import { icon } from '../lib/icons.js';
+import { t } from '../lib/i18n.js';
 
 // Header account area: the signed-in coach's email and a Sign out button. When the
 // gate is disabled (local dev) it keeps the static "Coach workspace" label.
@@ -24,7 +25,7 @@ export async function renderHeaderAccount(el) {
   button.className = 'sign-out-button';
   button.appendChild(icon('sign-out'));
   const label = document.createElement('span');
-  label.textContent = 'Sign out';
+  label.textContent = t('account.signOut');
   button.appendChild(label);
   button.addEventListener('click', async () => {
     button.disabled = true;

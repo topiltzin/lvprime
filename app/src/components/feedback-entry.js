@@ -1,5 +1,6 @@
 import { icon } from '../lib/icons.js';
 import { formatDayDate } from '../lib/format.js';
+import { t } from '../lib/i18n.js';
 
 // Renders one feedback entry as a card: date + session label and a completed/missed chip
 // up top, Felt / Difficulty side by side, and the notes as a full-width paragraph —
@@ -27,7 +28,7 @@ export function renderFeedbackEntry(entry) {
   const titles = document.createElement('div');
   const date = document.createElement('h4');
   date.className = 'feedback-entry-date';
-  date.textContent = present(entry.date) ? formatDayDate(entry.date) : 'Undated session';
+  date.textContent = present(entry.date) ? formatDayDate(entry.date) : t('entry.undated');
   if (present(entry.date)) date.title = entry.date;
   titles.appendChild(date);
   if (entry.exercise) titles.appendChild(span('feedback-entry-label', entry.exercise));
@@ -36,13 +37,13 @@ export function renderFeedbackEntry(entry) {
   const chip = document.createElement('span');
   chip.className = entry.completed ? 'completion-chip is-done' : 'completion-chip is-missed';
   chip.appendChild(icon(entry.completed ? 'check-circle' : 'x-circle'));
-  chip.append(entry.completed ? 'Completed' : 'Not completed');
+  chip.append(entry.completed ? t('entry.completed') : t('entry.notCompleted'));
   header.appendChild(chip);
   el.appendChild(header);
 
   const facts = [
-    ['Felt', present(entry.howCustomerFelt)],
-    ['Difficulty', present(entry.overallImpression)],
+    [t('entry.felt'), present(entry.howCustomerFelt)],
+    [t('entry.difficulty'), present(entry.overallImpression)],
   ].filter(([, value]) => value);
 
   if (facts.length) {

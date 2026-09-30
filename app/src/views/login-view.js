@@ -1,5 +1,6 @@
 import { login, ApiError } from '../api-client.js';
 import { icon } from '../lib/icons.js';
+import { t } from '../lib/i18n.js';
 
 // LvPrime lock-up for the sign-in brand panel. The mark is cloned from the header
 // SVG in index.html, so its geometry lives in one place.
@@ -24,7 +25,7 @@ function renderBrand() {
 
   const tagline = document.createElement('p');
   tagline.className = 'login-tagline';
-  tagline.textContent = 'Strength for the decades ahead.';
+  tagline.textContent = t('login.tagline');
   brand.appendChild(tagline);
 
   return brand;
@@ -70,7 +71,7 @@ function passwordToggle(input) {
   const render = () => {
     const shown = input.type === 'text';
     button.replaceChildren(icon(shown ? 'eye-slash' : 'eye'));
-    button.setAttribute('aria-label', shown ? 'Hide password' : 'Show password');
+    button.setAttribute('aria-label', shown ? t('login.hidePassword') : t('login.showPassword'));
     button.setAttribute('aria-pressed', String(shown));
   };
   button.addEventListener('click', () => {
@@ -103,20 +104,20 @@ export function renderLogin(container) {
     wrap.appendChild(formSide);
 
     const heading = document.createElement('h1');
-    heading.textContent = 'Sign in';
+    heading.textContent = t('login.title');
     formSide.appendChild(heading);
     const intro = document.createElement('p');
     intro.className = 'login-intro';
-    intro.textContent = 'Use your LvPrime coach account.';
+    intro.textContent = t('login.intro');
     formSide.appendChild(intro);
 
     const form = document.createElement('form');
     form.className = 'feedback-form login-form';
     form.noValidate = true;
 
-    const email = field({ label: 'Email', type: 'email', name: 'email', autocomplete: 'username' });
+    const email = field({ label: t('login.email'), type: 'email', name: 'email', autocomplete: 'username' });
     email.input.inputMode = 'email';
-    const password = field({ label: 'Password', type: 'password', name: 'password', autocomplete: 'current-password' });
+    const password = field({ label: t('login.password'), type: 'password', name: 'password', autocomplete: 'current-password' });
     password.control.appendChild(passwordToggle(password.input));
     form.append(email.wrap, password.wrap);
 
@@ -127,7 +128,7 @@ export function renderLogin(container) {
 
     const submit = document.createElement('button');
     submit.type = 'submit';
-    submit.textContent = 'Sign in';
+    submit.textContent = t('login.title');
     form.appendChild(submit);
 
     form.addEventListener('submit', async (e) => {
@@ -139,11 +140,11 @@ export function renderLogin(container) {
       // Same checks the server makes, so most mistakes never leave the page.
       let invalid = null;
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.input.value.trim())) {
-        email.setError('Enter a valid email address.');
+        email.setError(t('login.invalidEmail'));
         invalid ??= email.input;
       }
       if (!password.input.value) {
-        password.setError('Enter your password.');
+        password.setError(t('login.noPassword'));
         invalid ??= password.input;
       }
       if (invalid) {
@@ -152,7 +153,7 @@ export function renderLogin(container) {
       }
 
       submit.disabled = true;
-      submit.textContent = 'Signing in…';
+      submit.textContent = t('login.signingIn');
       try {
         await login(email.input.value.trim(), password.input.value);
         resolve();
@@ -161,11 +162,11 @@ export function renderLogin(container) {
           if (err.fields.email) email.setError(err.fields.email);
           if (err.fields.password) password.setError(err.fields.password);
         } else {
-          formError.textContent = err.message || 'Sign-in failed. Try again.';
+          formError.textContent = err.message || t('login.failed');
           password.input.select();
         }
         submit.disabled = false;
-        submit.textContent = 'Sign in';
+        submit.textContent = t('login.title');
       }
     });
 

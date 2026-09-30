@@ -27,6 +27,13 @@ Coach-only fitness/nutrition dashboard. Customer data (program, feedback, notes,
    ```
    Idempotent — safe to re-run; already-migrated customers are skipped.
 
+   Attachments (PDF plans etc.) go to a private Supabase Storage bucket instead; this creates the `customer-attachments` bucket if needed and copies the files, skipping ones already there:
+   ```bash
+   node --env-file=.env.local server/migrations/migrate-attachments.js [--dry-run]
+   ```
+
+   Client archiving needs one column: run `server/migrations/014-customer-archive.sql` in the Supabase **SQL Editor**, then check it with `node --env-file=.env.local server/migrations/014-customer-archive.js`. Until then everything else works and the Archive button reports that the update is missing.
+
 6. **Run the dev server**:
    ```bash
    npm run dev
@@ -40,10 +47,14 @@ Coach-only fitness/nutrition dashboard. Customer data (program, feedback, notes,
 
 ## Architecture notes
 
-- **Source of truth**: Supabase PostgreSQL. The `customers/` filesystem directory is kept only as a 30-day migration backup (see note in that directory) — the app does not read from it for program/notes/feedback/nutrition_plan data. Attachments (PDFs etc. under a customer's folder) are the one exception and remain filesystem-based; they were out of scope for this migration.
+- **Source of truth**: Supabase PostgreSQL. The `customers/` filesystem directory is kept only as a 30-day migration backup (see note in that directory) — the app does not read from it.
+- **Attachments**: a private Supabase Storage bucket, `customer-attachments`, one folder per client slug (`app/server/lib/attachments.js`). `GET /customer-files/<slug>/<path>` answers with a redirect to a 5-minute signed URL, so files never pass through the API function (Vercel caps function responses at 4.5 MB); PDFs and images open in the browser, other types download. Coaches upload and remove files from the client page (`POST`/`DELETE /api/customers/<slug>/attachments…`, 4 MB per file because uploads go through the function).
+- **Archive**: `POST /api/customers/<slug>/archive` and `/restore` set or clear `customers.archived_at`. Archived clients leave the sidebar and the overview's filters and appear only under the Archived filter; nothing is deleted.
+- **Security headers**: `server/security-headers.js` (CSP, `X-Frame-Options`, `nosniff`, …) is applied to every API and `npm start` response; `vercel.json` repeats the same list for Vercel's static files, and `tests/unit/security-headers.test.js` fails if the two drift apart. The Vite dev server doesn't send them.
+- **Interface language**: Spanish by default, English from the ES/EN switch in the header (saved per browser). Strings live in `src/lib/strings.js` (both languages; `tests/unit/i18n.test.js` checks they match) and are read with `t()` from `src/lib/i18n.js`. Coach content is never translated. The server's error messages stay English; `src/api-client.js` shows the Spanish text for known error codes.
 - **API layout**: `server/index.js` holds only the route tables and dispatch (`handleApiRequest`). Handlers live in `server/handlers/` (`customers`, `editing`, `sync`, `chat`, `auth`), and the shared JSON/body helpers in `server/http.js`.
 - **Access control**: `app/server/auth.js` gates every `/api/*` and `/customer-files/*` route behind a signed-in coach. `POST /api/login` checks email + password against Supabase Auth (`signInWithPassword`) and sets an HttpOnly, SameSite=Strict session cookie (30 days) signed with `SESSION_SECRET`, or a key derived from `SUPABASE_SECRET_KEY`. Supabase is only called at sign-in, so removing a user takes effect when their cookie expires or the secret rotates. `GET /api/session` returns the signed-in email for the header; the frontend shows the sign-in page on any 401. Set `COACH_AUTH_DISABLED=true` in `.env.local` for open local development.
-- **Data access layer**: `app/server/lib/customer-data.js` is the only module that should touch Supabase directly. It's server-only (imports the secret key) — never import it from `app/src/`, which is Vite's browser-bundled root.
+- **Data access layer**: `app/server/lib/customer-data.js` is the only module that should touch Supabase tables directly (`server/lib/attachments.js` does the same for Storage). It's server-only (imports the secret key) — never import it from `app/src/`, which is Vite's browser-bundled root.
 - **Sync**: `app/server/sync-engine.js` still holds the pure conflict-resolution logic (no filesystem/DB dependency); `customer-data.js`'s `syncCoachWrite` uses it against the `programs`/`notes` tables' `version`/`content_hash`/`sync_status` columns instead of the old JSON-file-backed `sync-state.js` (removed).
 - **Coach chatbot**: `POST /api/chat` (`app/server/lib/coach-chat.js`) sits behind the coach gate and proxies to `CHATBOT_URL`, adding the fitness-coach instruction and a 200-token cap on the server. The URL never reaches the browser, and nothing is stored or logged beyond the outcome. See `specs/013-fitness-coach-chatbot/`.
 - **Tests**: `npm test` runs everything under `tests/`. Tests that need Supabase (integration tests, and `tests/unit/database.test.js`'s validation-only tests which don't but live alongside them) read `SUPABASE_URL`/`SUPABASE_SECRET_KEY` from the environment — run with `node --env-file=.env.local --test 'tests/**/*.test.js'` to include them.

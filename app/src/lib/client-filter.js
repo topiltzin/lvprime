@@ -1,12 +1,15 @@
 import { deriveStatus } from './status.js';
 
 // Overview filters. Pure, so the counts on the chips and the visible cards can never disagree.
+// Archived clients only ever match the 'archived' filter; every other filter covers
+// active clients. Labels come from i18n ('filter.<id>').
 export const FILTERS = [
-  { id: 'all', label: 'All' },
-  { id: 'needs-checkin', label: 'Needs check-in' },
-  { id: 'flagged', label: 'Flagged' },
-  { id: 'week-due', label: 'New week due' },
-  { id: 'no-feedback', label: 'No feedback yet' },
+  { id: 'all' },
+  { id: 'needs-checkin' },
+  { id: 'flagged' },
+  { id: 'week-due' },
+  { id: 'no-feedback' },
+  { id: 'archived' },
 ];
 
 const matchers = {
@@ -17,7 +20,13 @@ const matchers = {
   'no-feedback': (c, now) => deriveStatus(c.lastFeedbackDate, now) === 'no-feedback',
 };
 
+export function isArchived(customer) {
+  return !!customer.archivedAt;
+}
+
 export function matchesFilter(customer, filterId, now = new Date()) {
+  if (filterId === 'archived') return isArchived(customer);
+  if (isArchived(customer)) return false;
   return (matchers[filterId] || matchers.all)(customer, now);
 }
 

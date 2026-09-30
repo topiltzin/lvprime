@@ -1,4 +1,6 @@
 // Hand-drawn inline SVG trend chart — no charting library (research.md §8).
+import { t } from '../lib/i18n.js';
+
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 function readChartColors() {
@@ -20,7 +22,10 @@ export function renderTrendChart(trend) {
   wrap.className = 'trend-chart';
 
   if (!trend.points.length) {
-    wrap.innerHTML = '<p class="empty-state">Not enough feedback yet to show a trend.</p>';
+    const empty = document.createElement('p');
+    empty.className = 'empty-state';
+    empty.textContent = t('trend.notEnough');
+    wrap.appendChild(empty);
     return wrap;
   }
 
@@ -44,7 +49,7 @@ export function renderTrendChart(trend) {
   svg.setAttribute('width', width);
   svg.setAttribute('height', height);
   svg.setAttribute('role', 'img');
-  svg.setAttribute('aria-label', 'Difficulty and completion trend over sessions');
+  svg.setAttribute('aria-label', t('trend.aria'));
   svg.setAttribute('aria-describedby', 'trend-chart-details');
 
   // Colorblind users and screen readers can't rely on the violet/red bar fill
@@ -104,9 +109,12 @@ export function renderTrendChart(trend) {
     label.textContent = point.date ? point.date.slice(5) : '?';
     svg.appendChild(label);
 
-    const dateText = point.date || 'Unknown date';
-    const difficultyText = point.difficultyScore ? `difficulty ${point.difficultyScore}/${maxScore}` : 'no difficulty recorded';
-    summaryItems.push(`${dateText}: ${missed ? 'missed' : 'completed'}, ${difficultyText}`);
+    const dateText = point.date || t('trend.unknownDate');
+    const difficultyText = point.difficultyScore
+      ? t('trend.pointDifficulty', { score: point.difficultyScore, max: maxScore })
+      : t('trend.noDifficulty');
+    const state = (missed ? t('trend.missed') : t('trend.completed')).toLowerCase();
+    summaryItems.push(t('trend.point', { date: dateText, state, difficulty: difficultyText }));
   });
 
   wrap.appendChild(svg);
@@ -123,10 +131,18 @@ export function renderTrendChart(trend) {
 
   const legend = document.createElement('div');
   legend.className = 'trend-legend';
-  legend.innerHTML = `
-    <span class="trend-legend-item"><span class="trend-swatch" style="background:${colors.completed}"></span>Completed</span>
-    <span class="trend-legend-item"><span class="trend-swatch trend-swatch-missed" style="background:${colors.missed}"></span>Missed</span>
-  `;
+  for (const [label, color, extraClass] of [
+    [t('trend.completed'), colors.completed, ''],
+    [t('trend.missed'), colors.missed, ' trend-swatch-missed'],
+  ]) {
+    const item = document.createElement('span');
+    item.className = 'trend-legend-item';
+    const swatch = document.createElement('span');
+    swatch.className = `trend-swatch${extraClass}`;
+    swatch.style.background = color;
+    item.append(swatch, label);
+    legend.appendChild(item);
+  }
   wrap.appendChild(legend);
 
   // Bar height is difficulty, which only scores when the entry uses one of the known
@@ -135,7 +151,7 @@ export function renderTrendChart(trend) {
   if (!hasScores) {
     const note = document.createElement('p');
     note.className = 'trend-note';
-    note.textContent = 'Bar height shows difficulty. Bars grow once difficulty is logged as Easy, Moderate, Hard or Brutal (or Fácil, Moderada, Difícil).';
+    note.textContent = t('trend.note');
     wrap.appendChild(note);
   }
 

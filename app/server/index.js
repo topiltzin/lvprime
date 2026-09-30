@@ -1,7 +1,7 @@
 import { isAuthorized } from './auth.js';
 import { PayloadTooLargeError, sendJson } from './http.js';
+import { applySecurityHeaders } from './security-headers.js';
 import {
-  handleCustomerFile,
   handleGetCustomer,
   handleGetCustomers,
   handleGetNutrition,
@@ -10,9 +10,16 @@ import {
   handlePostFeedback,
   handlePostQuickComplete,
 } from './handlers/customers.js';
-import { handleCreateCustomer, handleGetContent, handlePostMeasurement, handlePutContent } from './handlers/editing.js';
+import {
+  handleCreateCustomer,
+  handleGetContent,
+  handlePostMeasurement,
+  handlePutContent,
+  handleSetArchived,
+} from './handlers/editing.js';
 import { handleSyncDownload, handleSyncStatus, handleSyncUpload } from './handlers/sync.js';
 import { handlePostChat } from './handlers/chat.js';
+import { handleCustomerFile, handleDeleteAttachment, handleUploadAttachment } from './handlers/attachments.js';
 import { handleLogin, handleLogout, handleSession } from './handlers/auth.js';
 import { CustomerNotFoundError, ValidationError } from './lib/customer-data.js';
 
@@ -35,8 +42,18 @@ const PUBLIC_ROUTES = [
 const ROUTES = [
   {
     method: 'GET',
-    pattern: /^\/customer-files\/(.+)$/,
-    handler: (req, res, m) => handleCustomerFile(req, res, m[1]),
+    pattern: /^\/customer-files\/([^/]+)\/(.+)$/,
+    handler: (req, res, m) => handleCustomerFile(req, res, decodeURIComponent(m[1]), decodeURIComponent(m[2])),
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/customers\/([^/]+)\/attachments\/?$/,
+    handler: (req, res, m) => handleUploadAttachment(req, res, decodeURIComponent(m[1])),
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/api\/customers\/([^/]+)\/attachments\/(.+)$/,
+    handler: (req, res, m) => handleDeleteAttachment(req, res, decodeURIComponent(m[1]), decodeURIComponent(m[2])),
   },
   { method: 'GET', pattern: /^\/api\/customers\/?$/, handler: (req, res) => handleGetCustomers(req, res) },
   { method: 'POST', pattern: /^\/api\/customers\/?$/, handler: (req, res) => handleCreateCustomer(req, res) },
@@ -49,6 +66,11 @@ const ROUTES = [
     method: 'PUT',
     pattern: /^\/api\/customers\/([^/]+)\/content\/?$/,
     handler: (req, res, m) => handlePutContent(req, res, decodeURIComponent(m[1])),
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/customers\/([^/]+)\/(archive|restore)\/?$/,
+    handler: (req, res, m) => handleSetArchived(req, res, decodeURIComponent(m[1]), m[2] === 'archive'),
   },
   {
     method: 'POST',
@@ -108,6 +130,7 @@ const ROUTES = [
 export async function handleApiRequest(req, res) {
   const url = new URL(req.url, 'http://localhost');
   const pathname = url.pathname;
+  applySecurityHeaders(res);
 
   try {
     for (const route of PUBLIC_ROUTES) {

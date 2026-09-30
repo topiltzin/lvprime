@@ -62,3 +62,23 @@ export async function readJsonBodyOr422(req, res) {
     return undefined;
   }
 }
+
+/** The raw request body as a Buffer; PayloadTooLargeError past maxBytes (attachment uploads). */
+export function readRawBody(req, maxBytes) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let size = 0;
+    req.on('data', (chunk) => {
+      size += chunk.length;
+      if (size > maxBytes) {
+        req.removeAllListeners('data');
+        req.resume();
+        reject(new PayloadTooLargeError('request body too large'));
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('error', reject);
+  });
+}

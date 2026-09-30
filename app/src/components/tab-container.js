@@ -18,6 +18,7 @@ import { setSafeHtml } from '../lib/safe-html.js';
 import { icon } from '../lib/icons.js';
 import { formatDate } from '../lib/format.js';
 import { formatRelativeCheckIn } from '../lib/status.js';
+import { t } from '../lib/i18n.js';
 
 // The PDF modules pull in jsPDF (most of the bundle), so they load on first click.
 function createPdfButton() {
@@ -26,7 +27,7 @@ function createPdfButton() {
   button.className = 'pdf-download-button';
   button.appendChild(icon('download'));
   const label = document.createElement('span');
-  label.textContent = 'Download PDF';
+  label.textContent = t('common.downloadPdf');
   button.appendChild(label);
   return button;
 }
@@ -153,8 +154,8 @@ export class TabContainer {
     const data = this.data[tab.contentType];
 
     if (tab.contentType === 'program' && !data) {
-      container.appendChild(this.renderActionEmptyState('No program yet.', 'Create week 1', () =>
-        this.openEditor('program', { weekNumber: 1, title: 'Week 1 program' })));
+      container.appendChild(this.renderActionEmptyState(t('program.empty'), t('program.createWeek1'), () =>
+        this.openEditor('program', { weekNumber: 1, title: t('program.week1Title') })));
       return container;
     }
 
@@ -216,7 +217,7 @@ export class TabContainer {
           detail = await getProgramWeek(this.slug, weekNumber);
           weekCache.set(weekNumber, detail);
         } catch (err) {
-          showToast(`Could not load week ${weekNumber}. Please try again.`, 3000, 'error');
+          showToast(t('program.loadWeekFailed', { n: weekNumber }), 3000, 'error');
           return;
         } finally {
           weekBody.classList.remove('loading');
@@ -243,18 +244,18 @@ export class TabContainer {
         const { downloadProgramWeekPdf } = await import('./program-pdf.js');
         downloadProgramWeekPdf(detail, this.slug);
       } catch (err) {
-        showToast('Could not generate the PDF. Please try again.', 3000, 'error');
+        showToast(t('common.pdfFailed'), 3000, 'error');
       }
     });
     // Only the current (highest) week is editable; "New week" adds the next one as a copy.
     const currentWeek = weeks.reduce((max, w) => Math.max(max, w.weekNumber), 0);
-    const editButton = this.createActionButton('Edit week', () =>
-      this.openEditor('program', { weekNumber: this.activeWeek, title: `Edit week ${this.activeWeek}` }));
-    const newWeekButton = this.createActionButton('New week', () =>
+    const editButton = this.createActionButton(t('program.editWeek'), () =>
+      this.openEditor('program', { weekNumber: this.activeWeek, title: t('program.editWeekTitle', { n: this.activeWeek }) }));
+    const newWeekButton = this.createActionButton(t('program.newWeek'), () =>
       this.openEditor('program', {
         weekNumber: currentWeek + 1,
         copyFromWeek: currentWeek,
-        title: `New week ${currentWeek + 1}`,
+        title: t('program.newWeekTitle', { n: currentWeek + 1 }),
       }));
     const syncEditButton = () => {
       editButton.hidden = this.activeWeek !== currentWeek;
@@ -319,7 +320,7 @@ export class TabContainer {
     if (detail.isLocked) {
       const status = document.createElement('div');
       status.className = 'program-week-status';
-      status.textContent = `Week ${detail.weekNumber} · past week, read-only`;
+      status.textContent = t('program.pastWeek', { n: detail.weekNumber });
       weekBody.appendChild(status);
     }
 
@@ -341,7 +342,7 @@ export class TabContainer {
     } else {
       const empty = document.createElement('p');
       empty.className = 'empty-state';
-      empty.textContent = 'No schedule for this week.';
+      empty.textContent = t('program.noSchedule');
       weekBody.appendChild(empty);
     }
 
@@ -393,7 +394,7 @@ export class TabContainer {
       const chartCard = document.createElement('section');
       chartCard.className = 'card trend-card';
       const chartTitle = document.createElement('h3');
-      chartTitle.textContent = 'Session trend';
+      chartTitle.textContent = t('feedback.trend');
       chartCard.appendChild(chartTitle);
       chartCard.appendChild(renderTrendChart(feedbackData.trend));
       container.appendChild(chartCard);
@@ -401,7 +402,7 @@ export class TabContainer {
 
     const listTitle = document.createElement('h3');
     listTitle.className = 'section-title';
-    listTitle.textContent = 'Session history';
+    listTitle.textContent = t('feedback.history');
     container.appendChild(listTitle);
 
     if (feedbackData.entries && feedbackData.entries.length) {
@@ -416,14 +417,14 @@ export class TabContainer {
       emptyWrap.appendChild(icon('note-pencil', 'empty-state-icon'));
 
       const emptyMsg = document.createElement('p');
-      emptyMsg.textContent = 'No sessions logged yet. Log a session to start tracking feedback.';
+      emptyMsg.textContent = t('feedback.empty');
       emptyWrap.appendChild(emptyMsg);
 
       if (this.tabElements['add-entry']) {
         const cta = document.createElement('button');
         cta.type = 'button';
         cta.className = 'empty-state-cta';
-        cta.textContent = 'Log Session';
+        cta.textContent = t('tabs.add-entry');
         cta.addEventListener('click', () => this.setActiveTab('add-entry'));
         emptyWrap.appendChild(cta);
       }
@@ -443,10 +444,10 @@ export class TabContainer {
 
     const lastSession = stats.lastSessionDate;
     const tiles = [
-      ['check-circle', 'Completion', stats.completionPercent != null ? `${stats.completionPercent}%` : null, null],
-      ['calendar-check', 'Last session', lastSession ? formatDate(lastSession) : null,
+      ['check-circle', t('stats.completion'), stats.completionPercent != null ? `${stats.completionPercent}%` : null, null],
+      ['calendar-check', t('stats.lastSession'), lastSession ? formatDate(lastSession) : null,
         lastSession ? formatRelativeCheckIn(lastSession) : null],
-      ['chart-bar', 'Avg. difficulty', stats.avgDifficultyLabel || null, null],
+      ['chart-bar', t('stats.avgDifficulty'), stats.avgDifficultyLabel || null, null],
     ];
 
     for (const [iconName, label, value, detail] of tiles) {
@@ -458,7 +459,7 @@ export class TabContainer {
       labelEl.textContent = label;
       const valueEl = document.createElement('div');
       valueEl.className = value ? 'stat-tile-value' : 'stat-tile-value stat-tile-empty';
-      valueEl.textContent = value || 'Not enough data yet';
+      valueEl.textContent = value || t('stats.notEnough');
       tile.append(labelEl, valueEl);
       if (detail) {
         const detailEl = document.createElement('div');
@@ -479,7 +480,7 @@ export class TabContainer {
     } else {
       const msg = document.createElement('p');
       msg.className = 'empty-state';
-      msg.textContent = 'Feedback form configuration is missing.';
+      msg.textContent = t('logForm.missing');
       container.appendChild(msg);
     }
   }
@@ -494,11 +495,11 @@ export class TabContainer {
       const body = document.createElement('div');
       body.className = 'card notes-body prose';
       setSafeHtml(body, notes.html);
-      container.appendChild(this.createActionButton('Edit notes', () => this.openEditor('notes', { title: 'Edit notes' })));
+      container.appendChild(this.createActionButton(t('notes.edit'), () => this.openEditor('notes', { title: t('notes.edit') })));
       container.appendChild(body);
     } else {
-      container.appendChild(this.renderActionEmptyState('No coach notes yet.', 'Add notes', () =>
-        this.openEditor('notes', { title: 'Coach notes' })));
+      container.appendChild(this.renderActionEmptyState(t('notes.empty'), t('notes.add'), () =>
+        this.openEditor('notes', { title: t('notes.title') })));
     }
   }
 
@@ -517,17 +518,17 @@ export class TabContainer {
         try {
           const { downloadNutritionPdf } = await import('./nutrition-pdf.js');
           // Extract customer name from slug or use default
-          const customerName = this.slug ? this.slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Nutrition Plan';
+          const customerName = this.slug ? this.slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : t('nutrition.title');
           downloadNutritionPdf(customerName, nutrition.content);
         } catch (err) {
-          showToast('Could not generate the PDF. Please try again.', 3000, 'error');
+          showToast(t('common.pdfFailed'), 3000, 'error');
         }
       });
       container.appendChild(pdfButton);
-      container.appendChild(this.createActionButton('Edit plan', () => this.openEditor('nutrition', { title: 'Edit nutrition plan' })));
+      container.appendChild(this.createActionButton(t('nutrition.edit'), () => this.openEditor('nutrition', { title: t('nutrition.editTitle') })));
     } else {
-      container.appendChild(this.renderActionEmptyState('No nutrition plan yet.', 'Create plan', () =>
-        this.openEditor('nutrition', { title: 'Nutrition plan' })));
+      container.appendChild(this.renderActionEmptyState(t('nutrition.empty'), t('nutrition.create'), () =>
+        this.openEditor('nutrition', { title: t('nutrition.title') })));
     }
   }
 
@@ -563,11 +564,7 @@ export class TabContainer {
   }
 
   getEmptyStateMessage(contentType) {
-    const messages = {
-      program: 'Program not yet created.',
-      nutrition: 'No nutrition plan available yet.',
-      'add-entry': 'Feedback form is not available.',
-    };
-    return messages[contentType] || 'No data available.';
+    const known = ['program', 'nutrition', 'add-entry'];
+    return t(known.includes(contentType) ? `empty.${contentType}` : 'empty.default');
   }
 }

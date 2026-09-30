@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { handleApiRequest } from './server/index.js';
+import { applySecurityHeaders } from './server/security-headers.js';
 
 // Used locally for `npm start` (production preview of the built app).
 // NOT used on Vercel: this project already has a detected frontend
@@ -20,9 +21,13 @@ const MIME = {
   '.css': 'text/css; charset=utf-8',
   '.json': 'application/json',
   '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.woff2': 'font/woff2',
+  '.webmanifest': 'application/manifest+json',
 };
 
 function serveStatic(req, res) {
+  applySecurityHeaders(res);
   let reqPath = new URL(req.url, 'http://localhost').pathname;
   if (reqPath === '/') reqPath = '/index.html';
   let filePath = path.join(DIST_DIR, reqPath);

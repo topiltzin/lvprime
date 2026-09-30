@@ -2,6 +2,8 @@
 // week the customer actually has. Past weeks are marked locked but stay selectable —
 // locking blocks edits, never viewing.
 
+import { t } from '../lib/i18n.js';
+
 /**
  * Renders one chip per entry in `weeks` ({ weekNumber, isLocked }[], ascending), marks
  * `activeWeek` as selected, and calls `onSelect(weekNumber)` on click or arrow-key
@@ -14,7 +16,7 @@ export function renderWeekSubnav(weeks, activeWeek, onSelect) {
   const nav = document.createElement('nav');
   nav.className = 'week-subnav';
   nav.setAttribute('role', 'tablist');
-  nav.setAttribute('aria-label', 'Program week');
+  nav.setAttribute('aria-label', t('week.navLabel'));
 
   const weekNumbers = weeks.map((w) => w.weekNumber);
   let currentWeek = activeWeek;
@@ -39,10 +41,10 @@ export function renderWeekSubnav(weeks, activeWeek, onSelect) {
     chip.setAttribute('role', 'tab');
     chip.setAttribute('aria-selected', String(weekNumber === activeWeek));
     chip.tabIndex = weekNumber === activeWeek ? 0 : -1;
-    chip.textContent = `Week ${weekNumber}`;
+    chip.textContent = t('week.chip', { n: weekNumber });
     if (isLocked) {
-      chip.title = 'Past week (read-only)';
-      chip.setAttribute('aria-label', `Week ${weekNumber}, past week, read-only`);
+      chip.title = t('week.lockedTitle');
+      chip.setAttribute('aria-label', t('week.lockedLabel', { n: weekNumber }));
     }
     chip.addEventListener('click', () => {
       setActiveChip(weekNumber);

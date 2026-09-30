@@ -2,6 +2,7 @@ import { marked } from 'marked';
 import { getContent, saveContent, ApiError } from '../api-client.js';
 import { setSafeHtml } from '../lib/safe-html.js';
 import { showToast } from './toast.js';
+import { t } from '../lib/i18n.js';
 
 /**
  * Markdown editor card for one file (a program week, notes, or the nutrition plan).
@@ -23,7 +24,7 @@ export function renderContentEditor({ slug, fileType, weekNumber, title, copyFro
 
   const status = document.createElement('p');
   status.className = 'form-intro';
-  status.textContent = 'Loading…';
+  status.textContent = t('editor.loading');
   wrap.appendChild(status);
 
   const form = document.createElement('form');
@@ -35,7 +36,7 @@ export function renderContentEditor({ slug, fileType, weekNumber, title, copyFro
   tabs.className = 'editor-modes';
   const writeBtn = document.createElement('button');
   const previewBtn = document.createElement('button');
-  for (const [btn, label] of [[writeBtn, 'Write'], [previewBtn, 'Preview']]) {
+  for (const [btn, label] of [[writeBtn, t('editor.write')], [previewBtn, t('editor.preview')]]) {
     btn.type = 'button';
     btn.textContent = label;
     btn.className = 'editor-mode';
@@ -45,7 +46,7 @@ export function renderContentEditor({ slug, fileType, weekNumber, title, copyFro
 
   const textarea = document.createElement('textarea');
   textarea.className = 'editor-textarea';
-  textarea.setAttribute('aria-label', `${title} (Markdown)`);
+  textarea.setAttribute('aria-label', t('editor.markdownLabel', { title }));
   textarea.spellcheck = true;
   form.appendChild(textarea);
 
@@ -62,10 +63,10 @@ export function renderContentEditor({ slug, fileType, weekNumber, title, copyFro
   const cancelBtn = document.createElement('button');
   cancelBtn.type = 'button';
   cancelBtn.className = 'pdf-download-button';
-  cancelBtn.textContent = 'Cancel';
+  cancelBtn.textContent = t('common.cancel');
   const saveBtn = document.createElement('button');
   saveBtn.type = 'submit';
-  saveBtn.textContent = 'Save';
+  saveBtn.textContent = t('common.save');
   actions.append(message, cancelBtn, saveBtn);
   form.appendChild(actions);
 
@@ -88,14 +89,14 @@ export function renderContentEditor({ slug, fileType, weekNumber, title, copyFro
   const isDirty = () => textarea.value !== original;
 
   cancelBtn.addEventListener('click', () => {
-    if (isDirty() && !window.confirm('Discard your unsaved changes?')) return;
+    if (isDirty() && !window.confirm(t('editor.discard'))) return;
     onCancel?.();
   });
 
   const save = async () => {
     message.textContent = '';
     if (!textarea.value.trim()) {
-      message.textContent = 'Content cannot be empty.';
+      message.textContent = t('editor.empty');
       return;
     }
     saveBtn.disabled = true;
@@ -104,7 +105,7 @@ export function renderContentEditor({ slug, fileType, weekNumber, title, copyFro
       original = textarea.value;
       await onSaved?.(result);
     } catch (err) {
-      message.textContent = err instanceof ApiError ? err.message : 'Could not save. Please try again.';
+      message.textContent = err instanceof ApiError ? err.message : t('common.couldNotSave');
     } finally {
       saveBtn.disabled = false;
     }
@@ -131,15 +132,15 @@ export function renderContentEditor({ slug, fileType, weekNumber, title, copyFro
       // A new week is unsaved until the coach saves it, even before any typing.
       original = copyFromWeek ? '' : source.content;
       status.textContent = copyFromWeek
-        ? `Week ${weekNumber} starts as a copy of week ${copyFromWeek}. Change what should differ, then save.`
-        : 'Markdown. Saving replaces the current version.';
+        ? t('editor.copyIntro', { n: weekNumber, from: copyFromWeek })
+        : t('editor.intro');
       form.hidden = false;
       setMode('write');
       textarea.focus();
     } catch (err) {
       status.textContent = '';
       message.textContent = '';
-      showToast(err.message || 'Could not load the editor.', 3000, 'error');
+      showToast(err.message || t('editor.loadFailed'), 3000, 'error');
       onCancel?.();
     }
   })();

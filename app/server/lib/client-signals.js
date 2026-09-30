@@ -47,7 +47,7 @@ function mentionsPain(entry) {
  * @returns {{
  *   weekNumber: number|null, weekAgeDays: number|null, weekDue: boolean,
  *   adherence: {days: number, logged: number, completed: number, missed: number, percent: number|null},
- *   flags: Array<{kind: 'pain'|'hard', text: string, date: string}>
+ *   flags: Array<{kind: 'pain'|'hard', level?: number, text: string, date: string}> (level: pain 0-10 when reported; text is English, the UI builds its own from kind/level)
  * }}
  */
 export function computeClientSignals(entries, { weekNumber = null, weekUpdatedAt = null, now = new Date() } = {}) {
@@ -72,7 +72,7 @@ export function computeClientSignals(entries, { weekNumber = null, weekUpdatedAt
     const date = entry.entry_date_iso;
     const level = painLevel(entry);
     if (level != null && level >= PAIN_ALERT_LEVEL) {
-      flags.push({ kind: 'pain', text: `Pain ${level}/10`, date });
+      flags.push({ kind: 'pain', level, text: `Pain ${level}/10`, date });
     } else if (level == null && mentionsPain(entry)) {
       flags.push({ kind: 'pain', text: 'Mentions pain', date });
     }

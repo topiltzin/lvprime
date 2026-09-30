@@ -2,6 +2,7 @@ import { setSafeHtml } from '../lib/safe-html.js';
 import { icon } from '../lib/icons.js';
 import { formatDayDate } from '../lib/format.js';
 import { todayIso } from '../lib/day-completion.js';
+import { t, tn } from '../lib/i18n.js';
 
 // Program tab "workout poster" (User Story 2): one card per training day, with structured
 // exercise rows when available, falling back to the day's raw rendered html otherwise
@@ -29,7 +30,7 @@ function renderExerciseRow(exercise, index) {
     name.target = '_blank';
     name.rel = 'noopener noreferrer';
     name.classList.add('has-video');
-    name.setAttribute('aria-label', `${exercise.name}, watch demo video`);
+    name.setAttribute('aria-label', t('day.watchVideo', { name: exercise.name }));
   }
   const nameText = document.createElement('span');
   nameText.textContent = exercise.name;
@@ -59,7 +60,7 @@ function renderExerciseRow(exercise, index) {
     rest.className = 'exercise-rest';
     rest.appendChild(icon('timer'));
     const restText = document.createElement('span');
-    restText.textContent = `Rest ${exercise.rest}`;
+    restText.textContent = t('day.rest', { rest: exercise.rest });
     rest.appendChild(restText);
     dose.appendChild(rest);
   }
@@ -84,7 +85,7 @@ function doneChip(entry, animate) {
   const chip = document.createElement('span');
   chip.className = animate ? 'completion-chip is-done is-new' : 'completion-chip is-done';
   chip.appendChild(icon('check-circle'));
-  chip.append(entry.date === todayIso() ? 'Done today' : `Done ${formatDayDate(entry.date)}`);
+  chip.append(entry.date === todayIso() ? t('day.doneToday') : t('day.doneOn', { date: formatDayDate(entry.date) }));
   return chip;
 }
 
@@ -108,7 +109,7 @@ function renderDayFooter(card, day, options) {
       details.type = 'button';
       details.className = 'day-add-details';
       details.appendChild(icon('note-pencil'));
-      details.append('Add details');
+      details.append(t('day.addDetails'));
       details.addEventListener('click', () => onAddDetails(entry));
       footer.appendChild(details);
       return details;
@@ -121,7 +122,7 @@ function renderDayFooter(card, day, options) {
     button.type = 'button';
     button.className = 'day-done-button';
     const label = document.createElement('span');
-    label.textContent = 'Mark done';
+    label.textContent = t('day.markDone');
     button.append(icon('check-circle'), label);
     const error = document.createElement('p');
     error.className = 'field-error day-done-error';
@@ -134,7 +135,7 @@ function renderDayFooter(card, day, options) {
       error.textContent = '';
       button.disabled = true;
       button.setAttribute('aria-busy', 'true');
-      label.textContent = 'Saving...';
+      label.textContent = t('common.saving');
       try {
         const entry = await onMarkDone(day);
         const details = showDone(entry, true);
@@ -143,8 +144,8 @@ function renderDayFooter(card, day, options) {
         saving = false;
         button.disabled = false;
         button.removeAttribute('aria-busy');
-        label.textContent = 'Mark done';
-        error.textContent = 'Could not save. Try again.';
+        label.textContent = t('day.markDone');
+        error.textContent = t('common.couldNotSave');
       }
     });
   };
@@ -189,7 +190,7 @@ export function renderProgramDay(day, index = 0, options = {}) {
     badge.className = 'program-day-count';
     badge.appendChild(icon('barbell'));
     const n = day.exercises.length;
-    badge.append(`${n} ${n === 1 ? 'exercise' : 'exercises'}`);
+    badge.append(tn('day.exercises', n));
     header.appendChild(badge);
   }
   card.appendChild(header);
@@ -223,7 +224,7 @@ export function renderDaySubnav(weeklySchedule) {
 
   const nav = document.createElement('nav');
   nav.className = 'day-subnav';
-  nav.setAttribute('aria-label', 'Program days');
+  nav.setAttribute('aria-label', t('day.navLabel'));
   for (const day of weeklySchedule) {
     // Buttons (not #day- hash links) so chips don't collide with the hash router.
     const chip = document.createElement('button');

@@ -1,6 +1,13 @@
-import { deriveStatus, STATUS_LABEL, formatRelativeCheckIn } from '../lib/status.js';
+import { deriveStatus, statusLabel, formatRelativeCheckIn } from '../lib/status.js';
 import { icon } from '../lib/icons.js';
 import { initials, formatDate } from '../lib/format.js';
+import { t } from '../lib/i18n.js';
+
+// Flag text is built here from its kind/level so it follows the interface language.
+function flagText(flag) {
+  if (flag.kind === 'hard') return t('card.brutal');
+  return flag.level != null ? t('card.pain', { level: flag.level }) : t('card.mentionsPain');
+}
 
 function signalBadge(iconName, text, tone = '') {
   const span = document.createElement('span');
@@ -22,21 +29,26 @@ function renderSignals(signals) {
   row.className = 'signal-row';
 
   for (const flag of signals.flags || []) {
-    row.appendChild(signalBadge('warning-circle', `${flag.text} · ${formatDate(flag.date)}`, 'is-alert'));
+    row.appendChild(signalBadge('warning-circle', `${flagText(flag)} · ${formatDate(flag.date)}`, 'is-alert'));
   }
 
-  const week = signals.weekNumber != null ? `Week ${signals.weekNumber}` : null;
+  const week = signals.weekNumber != null ? t('card.week', { n: signals.weekNumber }) : null;
   if (signals.weekDue) {
-    row.appendChild(signalBadge('calendar', `${week} is ${signals.weekAgeDays}d old · new week due`, 'is-warn'));
+    row.appendChild(signalBadge('calendar', t('card.weekDue', { week, days: signals.weekAgeDays }), 'is-warn'));
   }
 
   const { adherence } = signals;
   if (adherence) {
     const text = adherence.percent != null
-      ? `${adherence.percent}% done · ${adherence.completed}/${adherence.completed + adherence.missed} in ${adherence.days}d`
+      ? t('card.adherencePercent', {
+        percent: adherence.percent,
+        done: adherence.completed,
+        total: adherence.completed + adherence.missed,
+        days: adherence.days,
+      })
       : adherence.logged
-        ? `${adherence.logged} logged · ${adherence.days}d`
-        : `No sessions in ${adherence.days}d`;
+        ? t('card.adherenceLogged', { n: adherence.logged, days: adherence.days })
+        : t('card.adherenceNone', { days: adherence.days });
     row.appendChild(signalBadge('check-circle', text, adherence.logged ? '' : 'is-muted'));
   }
 
@@ -50,7 +62,8 @@ export function renderCustomerCard(customer) {
 
   const a = document.createElement('a');
   const flagged = (customer.signals?.flags?.length || 0) > 0;
-  a.className = `customer-card customer-card--${status}${flagged ? ' customer-card--flagged' : ''}`;
+  const archived = !!customer.archivedAt;
+  a.className = `customer-card customer-card--${status}${flagged ? ' customer-card--flagged' : ''}${archived ? ' customer-card--archived' : ''}`;
   a.href = `#/customers/${encodeURIComponent(customer.slug)}`;
 
   const top = document.createElement('div');
@@ -74,9 +87,12 @@ export function renderCustomerCard(customer) {
   if (customer.hasProgram && customer.programGoal) {
     goalLine.textContent = customer.programGoal;
   } else if (customer.hasProgram) {
-    goalLine.textContent = 'Program in progress';
+    goalLine.textContent = t('card.programInProgress');
   } else {
-    goalLine.innerHTML = '<span class="badge missing">No program yet</span>';
+    const badge = document.createElement('span');
+    badge.className = 'badge missing';
+    badge.textContent = t('card.noProgram');
+    goalLine.appendChild(badge);
   }
   a.appendChild(goalLine);
 
@@ -92,14 +108,14 @@ export function renderCustomerCard(customer) {
   const checkInText = document.createElement('span');
   // Short enough to share a row with the status pill on a narrow card.
   checkInText.textContent = customer.lastFeedbackDate
-    ? `Check-in ${formatRelativeCheckIn(customer.lastFeedbackDate).toLowerCase()}`
-    : 'No check-in yet';
+    ? t('card.checkIn', { when: formatRelativeCheckIn(customer.lastFeedbackDate).toLowerCase() })
+    : t('card.noCheckIn');
   checkIn.appendChild(checkInText);
   footer.appendChild(checkIn);
 
   const pill = document.createElement('span');
-  pill.className = `status-pill status-${status}`;
-  pill.textContent = STATUS_LABEL[status];
+  pill.className = archived ? 'status-pill status-archived' : `status-pill status-${status}`;
+  pill.textContent = archived ? t('card.archived') : statusLabel(status);
   footer.appendChild(pill);
 
   a.appendChild(footer);

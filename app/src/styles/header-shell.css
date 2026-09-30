@@ -243,3 +243,45 @@
   color: var(--warning-deep);
   font-weight: 600;
 }
+
+/* ES / EN switch (lang-switch.js): sits before the account area, pushed right. */
+.header-lang {
+  margin-left: auto;
+}
+
+.lang-switch {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid rgba(244, 245, 242, 0.2);
+  border-radius: var(--radius-pill);
+}
+
+.lang-option {
+  min-width: 40px;
+  min-height: 32px;
+  padding: 0 0.6rem;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--on-header-muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: var(--label-tracking);
+  cursor: pointer;
+  transition: color var(--motion-fast) var(--motion-ease), background var(--motion-fast) var(--motion-ease);
+}
+
+.lang-option:hover {
+  color: var(--brand-chalk);
+}
+
+.lang-option[aria-pressed='true'] {
+  background: var(--brand-volt);
+  color: var(--brand-graphite);
+}
+
+.lang-option:focus-visible {
+  outline: 2px solid var(--brand-volt);
+  outline-offset: 2px;
+}

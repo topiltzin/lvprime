@@ -30,7 +30,7 @@ test('no recent sessions → percent null, no flags', () => {
 
 test('numeric pain at or above 4/10 is flagged; below is not', () => {
   const high = parse(entry('2026-09-28', { Energía: 'Alta', 'Dolor cadera (0-10)': '6 durante, 3 mañana', Completado: 'Sí' }));
-  assert.deepEqual(computeClientSignals(high, { now: NOW }).flags, [{ kind: 'pain', text: 'Pain 6/10', date: '2026-09-28' }]);
+  assert.deepEqual(computeClientSignals(high, { now: NOW }).flags, [{ kind: 'pain', level: 6, text: 'Pain 6/10', date: '2026-09-28' }]);
   const low = parse(entry('2026-09-28', { Energía: 'Alta', 'Dolor cadera (0-10)': '2', Completado: 'Sí' }));
   assert.deepEqual(computeClientSignals(low, { now: NOW }).flags, []);
 });
@@ -71,5 +71,18 @@ test('filters combine with the name search and chip counts match the results', (
   assert.deepEqual(filterClients(clients, { filter: 'no-feedback' }, NOW).map((c) => c.displayName), ['Carla Paz']);
   assert.deepEqual(filterClients(clients, { filter: 'all', query: 'ruiz' }, NOW).length, 2);
   const counts = countByFilter(clients, 'ruiz', NOW);
-  assert.deepEqual(counts, { all: 2, 'needs-checkin': 1, flagged: 1, 'week-due': 1, 'no-feedback': 0 });
+  assert.deepEqual(counts, { all: 2, 'needs-checkin': 1, flagged: 1, 'week-due': 1, 'no-feedback': 0, archived: 0 });
+});
+
+test('archived clients only match the Archived filter', () => {
+  const clients = [
+    client('Ana Ruiz', '2026-09-28', { flags: [{ kind: 'pain' }] }),
+    { ...client('Beto Ruiz', '2026-09-10', { flags: [{ kind: 'pain' }] }), archivedAt: '2026-09-29T10:00:00Z' },
+  ];
+  assert.deepEqual(filterClients(clients, { filter: 'all' }, NOW).map((c) => c.displayName), ['Ana Ruiz']);
+  assert.deepEqual(filterClients(clients, { filter: 'flagged' }, NOW).map((c) => c.displayName), ['Ana Ruiz']);
+  assert.deepEqual(filterClients(clients, { filter: 'archived' }, NOW).map((c) => c.displayName), ['Beto Ruiz']);
+  assert.deepEqual(filterClients(clients, { filter: 'archived', query: 'ana' }, NOW), []);
+  assert.equal(countByFilter(clients, '', NOW).archived, 1);
+  assert.equal(countByFilter(clients, '', NOW).all, 1);
 });

@@ -1,6 +1,7 @@
 import { submitFeedback, ApiError } from '../api-client.js';
 // Local calendar date, so "today" matches the Program tab's "Mark done" (specs/012).
 import { todayIso } from '../lib/day-completion.js';
+import { t } from '../lib/i18n.js';
 
 // User Story 3: a form built dynamically from the customer's own feedback.md
 // template (research.md §4/§5 — templates differ per customer). Calls
@@ -11,12 +12,12 @@ export function renderFeedbackForm(slug, template, onSuccess) {
   wrap.className = 'card log-session-form-wrap';
 
   const heading = document.createElement('h3');
-  heading.textContent = 'Log a new session';
+  heading.textContent = t('logForm.title');
   wrap.appendChild(heading);
 
   const intro = document.createElement('p');
   intro.className = 'form-intro';
-  intro.textContent = 'Saved entries appear under Feedback, newest first.';
+  intro.textContent = t('logForm.intro');
   wrap.appendChild(intro);
 
   const form = document.createElement('form');
@@ -30,7 +31,7 @@ export function renderFeedbackForm(slug, template, onSuccess) {
   fieldGrid.className = 'form-grid';
 
   const dateLabel = document.createElement('label');
-  dateLabel.textContent = 'Date';
+  dateLabel.textContent = t('common.date');
   const dateInput = document.createElement('input');
   dateInput.type = 'date';
   dateInput.name = 'date';
@@ -43,11 +44,11 @@ export function renderFeedbackForm(slug, template, onSuccess) {
   dateLabel.appendChild(dateError);
 
   const labelLabel = document.createElement('label');
-  labelLabel.textContent = 'Session label (optional)';
+  labelLabel.textContent = t('logForm.label');
   const labelInput = document.createElement('input');
   labelInput.type = 'text';
   labelInput.name = 'label';
-  labelInput.placeholder = 'e.g. Lunes - Piernas A';
+  labelInput.placeholder = t('logForm.labelPlaceholder');
   labelLabel.appendChild(labelInput);
   metaRow.appendChild(labelLabel);
 
@@ -60,10 +61,11 @@ export function renderFeedbackForm(slug, template, onSuccess) {
     let input;
     if (isCompleted) {
       input = document.createElement('select');
-      ['', 'Yes', 'No'].forEach((opt) => {
+      // Values stay Yes/No (what the server and feedback.md expect); only the text is translated.
+      [['', t('logForm.select')], ['Yes', t('logForm.yes')], ['No', t('logForm.no')]].forEach(([value, text]) => {
         const o = document.createElement('option');
-        o.value = opt;
-        o.textContent = opt || 'Select…';
+        o.value = value;
+        o.textContent = text;
         input.appendChild(o);
       });
     } else {
@@ -90,7 +92,7 @@ export function renderFeedbackForm(slug, template, onSuccess) {
   actions.appendChild(formError);
   const submitBtn = document.createElement('button');
   submitBtn.type = 'submit';
-  submitBtn.textContent = 'Save entry';
+  submitBtn.textContent = t('logForm.submit');
   actions.appendChild(submitBtn);
   form.appendChild(actions);
 
@@ -107,12 +109,12 @@ export function renderFeedbackForm(slug, template, onSuccess) {
     // Client-side required-field check before hitting the server (spec FR-007).
     let hasClientError = false;
     if (!dateInput.value) {
-      dateError.textContent = 'required';
+      dateError.textContent = t('common.required');
       hasClientError = true;
     }
     for (const [fieldName, input] of Object.entries(fieldInputs)) {
       if (!input.value.trim()) {
-        fieldErrors[fieldName].textContent = 'required';
+        fieldErrors[fieldName].textContent = t('common.required');
         hasClientError = true;
       }
     }
@@ -138,7 +140,7 @@ export function renderFeedbackForm(slug, template, onSuccess) {
           else formError.textContent = `${key}: ${message}`;
         }
       } else {
-        formError.textContent = err.message || 'Failed to save entry.';
+        formError.textContent = err.message || t('logForm.failed');
       }
     } finally {
       submitBtn.disabled = false;

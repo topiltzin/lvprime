@@ -145,7 +145,12 @@ async function listProgramWeeksById(customerId) {
     .select('week_number, updated_at')
     .eq('customer_id', customerId);
   if (error) throw dbError(`listProgramWeeksById(${customerId})`, error);
-  const updatedAtByWeek = new Map((data || []).map((r) => [r.week_number, r.updated_at]));
+  return programWeeksFromRows(data);
+}
+
+// programs rows ({ week_number, updated_at }) -> week list with current/locked state.
+function programWeeksFromRows(rows) {
+  const updatedAtByWeek = new Map((rows || []).map((r) => [r.week_number, r.updated_at]));
   return deriveWeekState([...updatedAtByWeek.keys()]).map((w) => ({
     ...w,
     updatedAt: updatedAtByWeek.get(w.weekNumber),
@@ -165,14 +170,18 @@ async function getCustomerFeedbackById(customerId) {
     .eq('customer_id', customerId)
     .maybeSingle();
   if (error) throw dbError(`getCustomerFeedbackById(${customerId})`, error);
+  return feedbackFromRow(data);
+}
 
-  const content = data ? data.content : '';
+// A feedbacks row ({ content, updated_at } or null) -> parsed entries + template.
+function feedbackFromRow(row) {
+  const content = row ? row.content : '';
   const entries = parseFeedbackEntries(content);
   return {
     content,
     entries,
     template: extractFeedbackTemplate(content, entries),
-    updatedAt: data ? data.updated_at : null,
+    updatedAt: row ? row.updated_at : null,
   };
 }
 
@@ -246,16 +255,35 @@ export async function getCustomerNutritionPlan(slug, { customer } = {}) {
  * getCustomerNotes/getCustomerNutritionPlan/getCustomerFeedback separately
  * (each of which would otherwise redundantly re-resolve the customer).
  */
+// One round trip: the customer row with every related table embedded. The
+// programs table is embedded twice — the current (highest) week in full, and
+// just week_number/updated_at for the week list — so older weeks' content
+// isn't transferred.
 export async function getCustomerFullProfile(slug) {
-  const customer = await getCustomer(slug);
-  const [program, programWeeks, notes, nutritionPlan, feedback] = await Promise.all([
-    getCustomerProgramById(customer.id),
-    listProgramWeeksById(customer.id),
-    getCustomerNotesById(customer.id),
-    getCustomerNutritionPlanById(customer.id),
-    getCustomerFeedbackById(customer.id),
-  ]);
-  return { customer, program, programWeeks, notes, nutritionPlan, feedback };
+  assertValidSlug(slug);
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from('customers')
+    .select(
+      '*, current_program:programs(*), program_weeks:programs(week_number, updated_at), ' +
+        'notes(*), nutrition_plans(*), feedbacks(content, updated_at)'
+    )
+    .eq('slug', slug)
+    .order('week_number', { referencedTable: 'current_program', ascending: false })
+    .limit(1, { referencedTable: 'current_program' })
+    .maybeSingle();
+  if (error) throw dbError(`getCustomerFullProfile(${slug})`, error);
+  if (!data) throw new CustomerNotFoundError(slug);
+
+  const { current_program, program_weeks, notes, nutrition_plans, feedbacks, ...customer } = data;
+  return {
+    customer,
+    program: firstEmbedded(current_program),
+    programWeeks: programWeeksFromRows(program_weeks),
+    notes: firstEmbedded(notes),
+    nutritionPlan: firstEmbedded(nutrition_plans),
+    feedback: feedbackFromRow(firstEmbedded(feedbacks)),
+  };
 }
 
 // ---- List all customers (replaces customers-repo.js's listCustomers + SQLite index) ----
@@ -309,7 +337,9 @@ export async function listAllCustomers() {
   const supabase = getSupabaseClient();
   const { data: customers, error } = await supabase
     .from('customers')
-    .select('slug, name, programs(content, week_number, updated_at), notes(id), feedbacks(content)')
+    // customers.* rather than named columns: archived_at only exists once
+    // migrations/014-customer-archive.sql has run, and this must work either way.
+    .select('*, programs(content, week_number, updated_at), notes(id), feedbacks(content)')
     .order('name')
     .order('week_number', { referencedTable: 'programs', ascending: false })
     .limit(1, { referencedTable: 'programs' });
@@ -324,6 +354,7 @@ export async function listAllCustomers() {
     return {
       slug: customer.slug,
       displayName: customer.name,
+      archivedAt: customer.archived_at ?? null,
       hasProgram: !!program,
       hasNotes: !!firstEmbedded(customer.notes),
       programGoal: program?.content ? parseProgramGoal(program.content) : null,
@@ -334,6 +365,29 @@ export async function listAllCustomers() {
       }),
     };
   });
+}
+
+// ---- Archive / restore (migrations/014-customer-archive.sql) ----
+
+export class ArchiveUnavailableError extends Error {}
+
+/** Sets or clears customers.archived_at; returns the new value (ISO string or null). */
+export async function setCustomerArchived(slug, archived) {
+  assertValidSlug(slug);
+  const archivedAt = archived ? new Date().toISOString() : null;
+  const { data, error } = await getSupabaseClient()
+    .from('customers')
+    .update({ archived_at: archivedAt, updated_at: new Date().toISOString() })
+    .eq('slug', slug)
+    .select('slug, archived_at')
+    .maybeSingle();
+  if (error) {
+    // Undefined column: the 014 migration hasn't been run yet.
+    if (error.code === '42703' || error.code === 'PGRST204') throw new ArchiveUnavailableError(error.message);
+    throw dbError(`setCustomerArchived(${slug})`, error);
+  }
+  if (!data) throw new CustomerNotFoundError(slug);
+  return data.archived_at;
 }
 
 // ---- Customer upsert (used by the migration script) ----
@@ -763,7 +817,28 @@ export async function listExercises() {
  * is what parseProgramDetail() uses to resolve each workout exercise's
  * videoUrl without one DB round trip per exercise line.
  */
+// The exercise library changes rarely and isn't customer-scoped, so the map is
+// kept per server instance for a minute (and dropped on upsertExercise) instead
+// of being re-read on every customer page load.
+const VIDEO_MAP_TTL_MS = 60 * 1000;
+let videoMapCache = null;
+
 export async function getExerciseVideoLinkMap() {
+  if (videoMapCache && Date.now() - videoMapCache.at < VIDEO_MAP_TTL_MS) return videoMapCache.promise;
+  const promise = loadExerciseVideoLinkMap();
+  videoMapCache = { at: Date.now(), promise };
+  promise.catch(() => {
+    if (videoMapCache?.promise === promise) videoMapCache = null;
+  });
+  return promise;
+}
+
+/** Test-only: forget the cached exercise video map. */
+export function resetExerciseVideoLinkMapCache() {
+  videoMapCache = null;
+}
+
+async function loadExerciseVideoLinkMap() {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase.from('exercises').select('name, video_url');
   if (error) throw dbError('getExerciseVideoLinkMap', error);
@@ -795,6 +870,7 @@ export async function upsertExercise(name, { category = null, videoUrl = null } 
     ? await supabase.from('exercises').update(payload).eq('id', existing.id).select().single()
     : await supabase.from('exercises').insert(payload).select().single();
   if (error) throw dbError(`upsertExercise(${name})`, error);
+  videoMapCache = null;
   return data;
 }
 

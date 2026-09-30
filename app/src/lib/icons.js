@@ -26,6 +26,10 @@ import chatCircleDots from '@phosphor-icons/core/assets/regular/chat-circle-dots
 import paperPlaneRight from '@phosphor-icons/core/assets/regular/paper-plane-right.svg?raw';
 import x from '@phosphor-icons/core/assets/regular/x.svg?raw';
 import arrowClockwise from '@phosphor-icons/core/assets/regular/arrow-clockwise.svg?raw';
+import archive from '@phosphor-icons/core/assets/regular/archive.svg?raw';
+import arrowCounterClockwise from '@phosphor-icons/core/assets/regular/arrow-counter-clockwise.svg?raw';
+import uploadSimple from '@phosphor-icons/core/assets/regular/upload-simple.svg?raw';
+import trashSimple from '@phosphor-icons/core/assets/regular/trash-simple.svg?raw';
 
 const ICONS = {
   'caret-left': caretLeft,
@@ -54,6 +58,10 @@ const ICONS = {
   send: paperPlaneRight,
   close: x,
   retry: arrowClockwise,
+  archive,
+  'arrow-counter-clockwise': arrowCounterClockwise,
+  upload: uploadSimple,
+  trash: trashSimple,
 };
 
 /** Returns a decorative <span class="icon"> wrapping the named icon's SVG. */

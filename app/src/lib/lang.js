@@ -1,5 +1,5 @@
-// The app chrome is English but coach content (programs, notes, nutrition) and chatbot answers
-// are usually Spanish. Tagging that text with lang="es" lets screen readers use the right
+// The app chrome is Spanish or English (src/lib/i18n.js) and coach content (programs, notes,
+// nutrition) and chatbot answers are usually Spanish. Tagging that text with lang="es" lets screen readers use the right
 // voice and browsers hyphenate and spell-check correctly. A cheap stop-word count is enough
 // to tell the two apart.
 
@@ -20,9 +20,10 @@ export function detectLang(text) {
   return es > en ? 'es' : 'en';
 }
 
-/** Sets el.lang when the text's language is clear; otherwise leaves the page default. */
+/** Sets el.lang when the text's language is clear and differs from the page's; otherwise inherits. */
 export function applyLang(el, text) {
   const lang = detectLang(text);
-  if (lang && lang !== 'en') el.lang = lang;
+  const pageLang = globalThis.document?.documentElement.lang || 'en';
+  if (lang && lang !== pageLang) el.lang = lang;
   else el.removeAttribute('lang');
 }

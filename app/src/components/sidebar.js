@@ -1,5 +1,7 @@
 import { getCustomers } from '../api-client.js';
-import { deriveStatus, STATUS_LABEL } from '../lib/status.js';
+import { deriveStatus, statusLabel } from '../lib/status.js';
+import { isArchived } from '../lib/client-filter.js';
+import { t } from '../lib/i18n.js';
 import { initials } from '../lib/format.js';
 import { icon } from '../lib/icons.js';
 
@@ -43,18 +45,20 @@ export async function renderSidebar(el, activeSlug) {
   all.className = 'sidebar-home';
   all.appendChild(icon('users'));
   const allText = document.createElement('span');
-  allText.textContent = 'All clients';
+  allText.textContent = t('common.allClients');
   all.appendChild(allText);
   const count = document.createElement('span');
   count.className = 'sidebar-count';
-  count.textContent = String(data.customers.length);
+  // Archived clients stay reachable from the overview's Archived filter, not here.
+  const active = data.customers.filter((c) => !isArchived(c));
+  count.textContent = String(active.length);
   all.appendChild(count);
   if (!activeSlug) all.setAttribute('aria-current', 'page');
   el.appendChild(all);
 
   const list = document.createElement('ul');
   list.className = 'sidebar-list';
-  const sorted = [...data.customers].sort((a, b) => a.displayName.localeCompare(b.displayName));
+  const sorted = [...active].sort((a, b) => a.displayName.localeCompare(b.displayName));
   for (const customer of sorted) {
     const status = deriveStatus(customer.lastFeedbackDate);
     const li = document.createElement('li');
@@ -76,7 +80,7 @@ export async function renderSidebar(el, activeSlug) {
     name.textContent = customer.displayName;
     const meta = document.createElement('span');
     meta.className = 'sidebar-client-status';
-    meta.textContent = STATUS_LABEL[status];
+    meta.textContent = statusLabel(status);
     text.append(name, meta);
     link.appendChild(text);
 

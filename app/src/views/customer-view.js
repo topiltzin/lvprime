@@ -1,18 +1,11 @@
-import { getCustomer } from '../api-client.js';
+import { getCustomer, setCustomerArchived } from '../api-client.js';
 import { TabContainer } from '../components/tab-container.js';
 import { renderClientHero } from '../components/client-hero.js';
+import { renderAttachmentsCard } from '../components/attachments-card.js';
 import { showToast } from '../components/toast.js';
 import { icon } from '../lib/icons.js';
+import { t } from '../lib/i18n.js';
 import { renderSidebar, invalidateSidebar } from '../components/sidebar.js';
-
-function formatBytes(bytes) {
-  if (bytes == null) return '';
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-const DIFFICULTY_LABELS = { 1: 'Easy', 2: 'Moderate', 3: 'Hard', 4: 'Brutal' };
 
 /**
  * Feedback-tab stat strip (FR-013): completion %, last session date, and average
@@ -31,7 +24,7 @@ function buildFeedbackStats(feedback) {
 
   const scores = (trend.points || []).map((p) => p.difficultyScore).filter((s) => s != null);
   const avgDifficultyLabel = scores.length
-    ? DIFFICULTY_LABELS[Math.min(4, Math.max(1, Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)))]
+    ? t(`difficulty.${Math.min(4, Math.max(1, Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)))}`)
     : null;
 
   return { completionPercent, lastSessionDate, avgDifficultyLabel };
@@ -44,7 +37,7 @@ function buildTabConfig(data) {
   return [
     {
       id: 'program',
-      label: 'Program',
+      label: t('tabs.program'),
       // Always enabled: a client with no program yet gets a "Create week 1" prompt.
       isEnabled: true,
       contentType: 'program',
@@ -52,7 +45,7 @@ function buildTabConfig(data) {
     },
     {
       id: 'nutrition',
-      label: 'Nutrition Plan',
+      label: t('tabs.nutrition'),
       isEnabled: true, // Always enabled; shows empty state if no nutrition plan
       contentType: 'nutrition',
       order: 1,
@@ -61,21 +54,21 @@ function buildTabConfig(data) {
       id: 'feedback',
       // Always enabled — a client with zero entries still sees the Feedback tab,
       // showing an honest empty state rather than being hidden (US3 edge cases).
-      label: 'Feedback',
+      label: t('tabs.feedback'),
       isEnabled: true,
       contentType: 'feedback',
       order: 2,
     },
     {
       id: 'progress',
-      label: 'Progress',
+      label: t('tabs.progress'),
       isEnabled: true, // Always enabled; shows the measurements form when there is no data yet
       contentType: 'progress',
       order: 3,
     },
     {
       id: 'add-entry',
-      label: 'Log Session',
+      label: t('tabs.add-entry'),
       isEnabled: true, // Always enabled for adding feedback
       contentType: 'add-entry',
       order: 4,
@@ -84,7 +77,7 @@ function buildTabConfig(data) {
       id: 'notes',
       // Always enabled — a client with no notes.md still sees the Notes tab,
       // showing a dashed empty state rather than being hidden (FR-018).
-      label: 'Notes',
+      label: t('tabs.notes'),
       isEnabled: true,
       contentType: 'notes',
       order: 5,
@@ -141,37 +134,6 @@ function buildTabData(customerData) {
   };
 }
 
-function renderAttachments(container, attachments) {
-  if (!attachments.length) return;
-  const section = document.createElement('section');
-  section.className = 'card attachments';
-  const h2 = document.createElement('h2');
-  h2.textContent = 'Attachments';
-  section.appendChild(h2);
-  const ul = document.createElement('ul');
-  ul.className = 'attachment-list';
-  for (const a of attachments) {
-    const li = document.createElement('li');
-    const link = document.createElement('a');
-    link.className = 'attachment-link';
-    link.href = `/customer-files/${a.relativePath}`;
-    link.appendChild(icon(/\.pdf$/i.test(a.relativePath) ? 'file-pdf' : 'paperclip', 'attachment-icon'));
-    const name = document.createElement('span');
-    name.className = 'attachment-name';
-    name.textContent = a.relativePath.split('/').pop();
-    name.title = a.relativePath;
-    link.appendChild(name);
-    const size = document.createElement('span');
-    size.className = 'attachment-size';
-    size.textContent = formatBytes(a.sizeBytes);
-    link.appendChild(size);
-    li.appendChild(link);
-    ul.appendChild(li);
-  }
-  section.appendChild(ul);
-  container.appendChild(section);
-}
-
 function renderCustomerSkeleton(container) {
   container.setAttribute('aria-busy', 'true');
   container.innerHTML = `
@@ -194,18 +156,34 @@ export async function renderCustomer(container, slug) {
     container.innerHTML = '';
     const header = document.createElement('div');
     header.className = 'page-header';
-    header.innerHTML = '<a class="back-link" href="#/">&larr; All clients</a>';
+    const back = document.createElement('a');
+    back.className = 'back-link';
+    back.href = '#/';
+    back.append(icon('caret-left'), t('common.allClients'));
+    header.appendChild(back);
     container.appendChild(header);
     const banner = document.createElement('div');
     banner.className = 'error-banner';
-    banner.textContent = err.message || 'Failed to load this customer.';
+    banner.textContent = err.message || t('customer.loadFailed');
     container.appendChild(banner);
     return;
   }
 
   container.removeAttribute('aria-busy');
   container.innerHTML = '';
-  container.appendChild(renderClientHero(data));
+  // The page re-renders after an archive/restore so the hero, banner and sidebar agree.
+  const onToggleArchived = async (archived) => {
+    try {
+      await setCustomerArchived(slug, archived);
+      invalidateSidebar();
+      showToast(archived ? t('archive.done') : t('archive.restored'));
+      await renderCustomer(container, slug);
+      await renderSidebar(document.getElementById('sidebar'), slug);
+    } catch (err) {
+      showToast(err.message || t('archive.failed'), 4000, 'error');
+    }
+  };
+  container.appendChild(renderClientHero(data, { onToggleArchived }));
 
   // Nutrition, Feedback, Log Session and Notes are always enabled, so there is
   // always at least one tab to show.
@@ -237,10 +215,10 @@ export async function renderCustomer(container, slug) {
     try {
       mountTabs(await getCustomer(slug));
       tabs.setActiveTab(tabId);
-      showToast('Saved');
+      showToast(t('common.saved'));
       refreshSidebar();
     } catch (err) {
-      showToast(err.message || 'Saved, but the page could not refresh. Reload to see it.', 3000, 'error');
+      showToast(err.message || t('common.refreshFailed'), 3000, 'error');
     }
   };
 
@@ -248,9 +226,9 @@ export async function renderCustomer(container, slug) {
     try {
       mountTabs(await getCustomer(slug));
       tabs.setActiveTab('progress');
-      showToast('Measurements saved');
+      showToast(t('toast.measurementsSaved'));
     } catch (err) {
-      showToast(err.message || 'Saved, but the page could not refresh. Reload to see it.', 3000, 'error');
+      showToast(err.message || t('common.refreshFailed'), 3000, 'error');
     }
   };
 
@@ -260,7 +238,7 @@ export async function renderCustomer(container, slug) {
     try {
       mountTabs(await getCustomer(slug));
       tabs.setActiveTab('feedback');
-      showToast('Saved · view in Feedback');
+      showToast(t('toast.feedbackSaved'));
       refreshSidebar();
     } catch (err) {
       console.error('Failed to refresh feedback:', err);
@@ -270,7 +248,7 @@ export async function renderCustomer(container, slug) {
   // "Mark done" on a Program day (specs/012 FR-007): confirm, then refresh the
   // Feedback panel and the sidebar in place. The coach stays on the Program tab.
   const onSessionLogged = async () => {
-    showToast('Session logged');
+    showToast(t('toast.sessionLogged'));
     try {
       const updatedData = await getCustomer(slug);
       tabs.data.feedback = buildTabData(updatedData).feedback;
@@ -284,5 +262,5 @@ export async function renderCustomer(container, slug) {
 
   mountTabs(data);
 
-  renderAttachments(container, data.attachments);
+  container.appendChild(renderAttachmentsCard(slug, data.attachments ?? null));
 }

@@ -69,6 +69,11 @@
 
   .header-content {
     padding: 0 1rem;
+    gap: 0.5rem;
+  }
+
+  .header-email {
+    display: none;
   }
 
   .logo-subtitle,

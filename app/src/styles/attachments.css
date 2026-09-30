@@ -1,7 +1,16 @@
 /* ---------- Attachments ---------- */
 
-.attachments h2 {
+.attachments-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
   margin-bottom: 1rem;
+}
+
+.attachments h2 {
+  margin: 0;
   font-weight: 700;
   text-transform: uppercase;
   font-size: 1.375rem;
@@ -51,4 +60,52 @@
   font-size: var(--meta-size);
   color: var(--muted);
   white-space: nowrap;
+}
+
+/* Link fills the row; the remove button sits beside it. */
+.attachment-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.attachment-item .attachment-link {
+  flex: 1;
+  min-width: 0;
+}
+
+.attachment-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color var(--motion-fast) var(--motion-ease), color var(--motion-fast) var(--motion-ease);
+}
+
+.attachment-remove:hover:not(:disabled) {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.attachment-remove:disabled {
+  opacity: 0.5;
+}
+
+.attachments .field-error:empty {
+  display: none;
+}
+
+.attachments .field-error {
+  margin: 0 0 0.75rem;
+}
+
+.attachments-empty {
+  margin: 0;
 }

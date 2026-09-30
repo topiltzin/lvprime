@@ -1,6 +1,7 @@
 import { addMeasurement, ApiError } from '../api-client.js';
 import { todayIso } from '../lib/day-completion.js';
 import { formatDate } from '../lib/format.js';
+import { t } from '../lib/i18n.js';
 
 // Progress tab: one line chart per measurement from the notes.md measurements table, plus a
 // form that adds a dated row. Hand-drawn SVG like trend-chart.js (no charting library).
@@ -91,13 +92,18 @@ function renderMetricCard(name, points) {
   const deltas = document.createElement('p');
   deltas.className = 'progress-deltas';
   if (points.length < 2) {
-    deltas.textContent = 'One measurement so far. Add another to see a change.';
+    deltas.textContent = t('progress.oneSoFar');
   } else {
     const change = (from) => {
       const d = Math.round((points.at(-1).value - from.value) * 10) / 10;
       return `${d > 0 ? '+' : d < 0 ? '−' : ''}${fmt(Math.abs(d))} ${unit}`;
     };
-    deltas.textContent = `${change(points.at(-2))} since ${formatDate(points.at(-2).date)} · ${change(points[0])} since ${formatDate(points[0].date)}`;
+    deltas.textContent = t('progress.deltas', {
+      recent: change(points.at(-2)),
+      recentDate: formatDate(points.at(-2).date),
+      first: change(points[0]),
+      firstDate: formatDate(points[0].date),
+    });
   }
   card.appendChild(deltas);
   return card;
@@ -107,16 +113,16 @@ function renderMeasurementForm(columns, slug, onAdded) {
   const wrap = document.createElement('section');
   wrap.className = 'card log-session-form-wrap';
   const h = document.createElement('h3');
-  h.textContent = 'Log measurements';
+  h.textContent = t('progress.logTitle');
   const intro = document.createElement('p');
   intro.className = 'form-intro';
-  intro.textContent = 'Fill in only what was measured. Weight in kg, the rest in cm. The same date replaces that day.';
+  intro.textContent = t('progress.intro');
   wrap.append(h, intro);
 
   const form = document.createElement('form');
   form.className = 'feedback-form';
   const dateLabel = document.createElement('label');
-  dateLabel.textContent = 'Date';
+  dateLabel.textContent = t('common.date');
   const date = document.createElement('input');
   date.type = 'date';
   date.value = todayIso();
@@ -149,14 +155,14 @@ function renderMeasurementForm(columns, slug, onAdded) {
   const extra = document.createElement('div');
   extra.className = 'form-row';
   const nameLabel = document.createElement('label');
-  nameLabel.textContent = 'Another measurement (optional)';
+  nameLabel.textContent = t('progress.another');
   const extraName = document.createElement('input');
   extraName.type = 'text';
-  extraName.placeholder = 'e.g. Cadera';
+  extraName.placeholder = t('progress.anotherPlaceholder');
   extraName.maxLength = 40;
   nameLabel.appendChild(extraName);
   const valLabel = document.createElement('label');
-  valLabel.textContent = 'Value (cm)';
+  valLabel.textContent = t('progress.value');
   const extraValue = document.createElement('input');
   extraValue.type = 'number';
   extraValue.inputMode = 'decimal';
@@ -173,7 +179,7 @@ function renderMeasurementForm(columns, slug, onAdded) {
   error.setAttribute('role', 'alert');
   const submit = document.createElement('button');
   submit.type = 'submit';
-  submit.textContent = 'Save measurements';
+  submit.textContent = t('progress.submit');
   actions.append(error, submit);
   form.appendChild(actions);
 
@@ -184,7 +190,7 @@ function renderMeasurementForm(columns, slug, onAdded) {
     for (const [name, input] of Object.entries(inputs)) if (input.value) values[name] = input.value;
     if (extraName.value.trim() && extraValue.value) values[extraName.value.trim()] = extraValue.value;
     if (!Object.keys(values).length) {
-      error.textContent = 'Enter at least one measurement.';
+      error.textContent = t('progress.none');
       return;
     }
     submit.disabled = true;
@@ -193,7 +199,7 @@ function renderMeasurementForm(columns, slug, onAdded) {
       await onAdded();
     } catch (err) {
       const first = err instanceof ApiError && err.fields ? Object.entries(err.fields)[0] : null;
-      error.textContent = first ? `${first[0] === 'values' ? '' : `${first[0]}: `}${first[1]}` : err.message || 'Could not save.';
+      error.textContent = first ? `${first[0] === 'values' ? '' : `${first[0]}: `}${first[1]}` : err.message || t('common.couldNotSave');
     } finally {
       submit.disabled = false;
     }
@@ -217,7 +223,7 @@ export function renderProgressPanel(container, measurements, { slug, onMeasureme
   } else {
     const empty = document.createElement('div');
     empty.className = 'empty-state-card';
-    empty.textContent = 'No measurements yet. Log the first set below to start the charts.';
+    empty.textContent = t('progress.empty');
     container.appendChild(empty);
   }
 
