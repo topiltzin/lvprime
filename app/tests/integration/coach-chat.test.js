@@ -5,23 +5,26 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import { startTestServer } from './helpers.js';
-import { COACH_INSTRUCTION, setChatTimeoutForTests } from '../../server/lib/coach-chat.js';
+import { buildUpstreamBody, setChatTimeoutForTests } from '../../server/lib/coach-chat.js';
 
 const UNAVAILABLE = 'The coach assistant is unavailable right now. Try again.';
 
 async function startStubChatbot(handler) {
   const received = [];
+  const receivedHeaders = [];
   const server = http.createServer((req, res) => {
     let data = '';
     req.on('data', (chunk) => (data += chunk));
     req.on('end', () => {
       received.push(JSON.parse(data));
+      receivedHeaders.push(req.headers);
       handler(req, res);
     });
   });
   await new Promise((resolve) => server.listen(0, resolve));
   return {
     received,
+    receivedHeaders,
     url: `http://localhost:${server.address().port}/chat`,
     close: () => new Promise((resolve) => {
       server.closeAllConnections();
@@ -63,10 +66,9 @@ test('answers with the trimmed upstream response and sends the coaching instruct
   const res = await ask({ message: 'Beginner diet tips?' });
   assert.equal(res.status, 200);
   assert.deepEqual(await res.json(), { answer: 'Eat protein at every meal.' });
-  assert.deepEqual(stub.received[0], {
-    message: COACH_INSTRUCTION + 'Beginner diet tips?',
-    max_tokens: 200,
-  });
+  // No signed-in user (COACH_AUTH_DISABLED), so no memory: just the question.
+  assert.deepEqual(stub.received[0], buildUpstreamBody('Beginner diet tips?'));
+  assert.equal(stub.receivedHeaders[0].authorization, undefined);
 
   await ask({ message: 'Warm-up for squats?', max_tokens: 5000 });
   assert.equal(stub.received[1].max_tokens, 200);
@@ -152,4 +154,27 @@ test('signed-out requests get 401 and never reach the chatbot', async (t) => {
   const res = await ask({ message: 'hi' });
   assert.equal(res.status, 401);
   assert.equal(stub.received.length, 0);
+});
+
+test('CHATBOT_API_KEY is sent upstream as a bearer token', async (t) => {
+  const { stub, ask } = await setup(t, reply(200, { response: 'ok' }));
+  process.env.CHATBOT_API_KEY = 'test-chatbot-key';
+  t.after(() => delete process.env.CHATBOT_API_KEY);
+
+  const res = await ask({ message: 'hi' });
+  assert.equal(res.status, 200);
+  assert.equal(stub.receivedHeaders[0].authorization, 'Bearer test-chatbot-key');
+});
+
+test('without a signed-in user, history is empty and clearing is a no-op', async (t) => {
+  const app = await startTestServer(() => {});
+  t.after(() => app.close());
+
+  const history = await fetch(`${app.baseUrl}/api/chat/history`);
+  assert.equal(history.status, 200);
+  assert.deepEqual(await history.json(), { messages: [] });
+
+  const cleared = await fetch(`${app.baseUrl}/api/chat/history`, { method: 'DELETE' });
+  assert.equal(cleared.status, 200);
+  assert.deepEqual(await cleared.json(), { ok: true });
 });

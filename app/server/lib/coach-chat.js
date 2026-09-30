@@ -1,11 +1,13 @@
 // Fitness coach chatbot proxy (specs/013-fitness-coach-chatbot contracts/chat-api.md).
 // The browser sends only the coach's question; the coaching instruction and the
 // length cap are added here so they can't be changed from the client, and the
-// upstream URL (CHATBOT_URL) never reaches the browser. Nothing is stored, and the
-// question/answer text is never logged.
+// upstream URL (CHATBOT_URL) never reaches the browser. The question/answer text is
+// never logged; the conversation itself is kept in Supabase (lib/chat-memory.js) and
+// sent back upstream as `messages` so the model remembers it.
 
-export const COACH_INSTRUCTION =
-  'You are a fitness coach in spanish ready to help. Answer in 2-4 short sentences in spanish or at most 4 short bullet points. Question: ';
+export const COACH_SYSTEM_PROMPT =
+  'You are a fitness coach in spanish ready to help. Answer in 2-4 short sentences in spanish or at most 4 short bullet points.';
+export const COACH_INSTRUCTION = `${COACH_SYSTEM_PROMPT} Question: `;
 export const MAX_TOKENS = 200;
 export const UPSTREAM_TIMEOUT_MS = 120000;
 export const MAX_QUESTION_CHARS = 1000;
@@ -40,17 +42,37 @@ export function buildCoachMessage(question) {
   return COACH_INSTRUCTION + question;
 }
 
-/** Sends one question upstream and returns the trimmed answer, or throws ChatbotError. No retries. */
-export async function askCoachChatbot(question) {
+/**
+ * The upstream body. `system` + `messages` carry the conversation; `message` is the
+ * single-turn form older chatbot deployments read, so either side can deploy first.
+ * history: [{ role: 'user'|'assistant', content }], oldest first.
+ */
+export function buildUpstreamBody(question, history = []) {
+  return {
+    system: COACH_SYSTEM_PROMPT,
+    messages: [
+      ...history.map(({ role, content }) => ({ role, content })),
+      { role: 'user', content: question },
+    ],
+    message: buildCoachMessage(question),
+    max_tokens: MAX_TOKENS,
+  };
+}
+
+/** Sends one question (plus earlier turns) upstream and returns the trimmed answer, or throws ChatbotError. No retries. */
+export async function askCoachChatbot(question, history = []) {
   const url = process.env.CHATBOT_URL;
   if (!url) throw new ChatbotError('chatbot_not_configured');
+
+  const headers = { 'Content-Type': 'application/json' };
+  if (process.env.CHATBOT_API_KEY) headers.Authorization = `Bearer ${process.env.CHATBOT_API_KEY}`;
 
   let res;
   try {
     res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: buildCoachMessage(question), max_tokens: MAX_TOKENS }),
+      headers,
+      body: JSON.stringify(buildUpstreamBody(question, history)),
       signal: AbortSignal.timeout(timeoutOverrideMs ?? UPSTREAM_TIMEOUT_MS),
     });
   } catch (err) {

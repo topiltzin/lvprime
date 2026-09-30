@@ -1,12 +1,13 @@
-import { askCoach } from '../api-client.js';
+import { askCoach, clearChatHistory, getChatHistory } from '../api-client.js';
 import { applyLang } from '../lib/lang.js';
 import { icon } from '../lib/icons.js';
 import { t } from '../lib/i18n.js';
 
 // Floating "Coach assistant" chat (specs/013-fitness-coach-chatbot contracts/chat-panel-ui.md).
 // Mounted once on <body>, outside #app, so the conversation survives route changes.
-// It lives in memory for the page load only: nothing is stored. Answers are untrusted
-// model output and only ever reach the DOM through textContent.
+// The conversation is kept on the server per signed-in user (server/lib/chat-memory.js):
+// it's loaded the first time the panel opens, and Clear chat makes the assistant forget
+// it. Answers are untrusted model output and only ever reach the DOM through textContent.
 
 const MAX_CHARS = 1000; // mirrors MAX_QUESTION_CHARS in server/lib/coach-chat.js
 const COUNTER_FROM = 900;
@@ -18,6 +19,7 @@ let nextId = 1;
 /** { msg, controller } while a question is waiting for its answer. */
 let pending = null;
 let mounted = false;
+let historyLoaded = false;
 
 function el(tag, className, text) {
   const node = document.createElement(tag);
@@ -144,8 +146,27 @@ export function mountChatPanel(root) {
     renderLog();
   }
 
+  async function loadHistory() {
+    historyLoaded = true;
+    let saved;
+    try {
+      ({ messages: saved } = await getChatHistory());
+    } catch {
+      return; // the chat still works; it just starts empty
+    }
+    // A question sent while this was loading already started the visible conversation.
+    if (messages.length || !saved?.length) return;
+    for (const m of saved) {
+      const role = m.role === 'user' ? 'coach' : 'assistant';
+      const status = role === 'coach' ? 'answered' : undefined;
+      messages.push({ id: nextId++, role, text: m.content, status, sentAt: new Date(m.createdAt) });
+    }
+    renderLog();
+  }
+
   function setOpen(open) {
     panel.hidden = !open;
+    if (open && !historyLoaded) loadHistory();
     launcher.setAttribute('aria-expanded', String(open));
     launcher.setAttribute('aria-label', open ? t('chat.close') : t('chat.open'));
     if (open) {
@@ -171,6 +192,7 @@ export function mountChatPanel(root) {
     messages.length = 0;
     renderLog();
     textarea.focus();
+    clearChatHistory().catch(() => {});
   });
 
   textarea.addEventListener('input', updateForm);

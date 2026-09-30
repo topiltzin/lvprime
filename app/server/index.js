@@ -18,7 +18,7 @@ import {
   handleSetArchived,
 } from './handlers/editing.js';
 import { handleSyncDownload, handleSyncStatus, handleSyncUpload } from './handlers/sync.js';
-import { handlePostChat } from './handlers/chat.js';
+import { handleDeleteChatHistory, handleGetChatHistory, handlePostChat } from './handlers/chat.js';
 import { handleCustomerFile, handleDeleteAttachment, handleUploadAttachment } from './handlers/attachments.js';
 import { handleLogin, handleLogout, handleSession } from './handlers/auth.js';
 import { CustomerNotFoundError, ValidationError } from './lib/customer-data.js';
@@ -108,6 +108,8 @@ const ROUTES = [
     handler: (req, res, m) => handlePostFeedback(req, res, decodeURIComponent(m[1])),
   },
   { method: 'POST', pattern: /^\/api\/chat\/?$/, handler: (req, res) => handlePostChat(req, res) },
+  { method: 'GET', pattern: /^\/api\/chat\/history\/?$/, handler: (req, res) => handleGetChatHistory(req, res) },
+  { method: 'DELETE', pattern: /^\/api\/chat\/history\/?$/, handler: (req, res) => handleDeleteChatHistory(req, res) },
   {
     method: 'POST',
     pattern: /^\/api\/sync\/upload\/?$/,

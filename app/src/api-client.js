@@ -92,6 +92,16 @@ export function askCoach(message, { signal } = {}) {
   return request('/api/chat', { method: 'POST', body: JSON.stringify({ message }), signal });
 }
 
+/** GET /api/chat/history → { messages: [{ role: 'user'|'assistant', content, createdAt }] }. */
+export function getChatHistory() {
+  return request('/api/chat/history');
+}
+
+/** DELETE /api/chat/history: the assistant forgets the conversation. */
+export function clearChatHistory() {
+  return request('/api/chat/history', { method: 'DELETE' });
+}
+
 /** POST /api/customers → { slug, displayName }. 409 customer_exists when the name is taken. */
 export function createCustomer(name) {
   return request('/api/customers', { method: 'POST', body: JSON.stringify({ name }) });
