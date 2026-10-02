@@ -1,7 +1,7 @@
 // Fitness coach chatbot proxy (specs/013-fitness-coach-chatbot contracts/chat-api.md).
 // The browser sends only the coach's question; the coaching instruction and the
 // length cap are added here so they can't be changed from the client, and the
-// upstream URL (CHATBOT_URL) never reaches the browser. The question/answer text is
+// upstream URL (CHATBOT_URL / GEMINI_API_URL) and keys never reaches the browser. The question/answer text is
 // never logged; the conversation itself is kept in Supabase (lib/chat-memory.js) and
 // sent back upstream as `messages`, with notes from earlier conversations in `system`.
 
@@ -113,19 +113,68 @@ export async function summarizeIntoNotes(currentNotes, messages) {
   return notes.slice(0, MAX_MEMORY_CHARS);
 }
 
-async function callChatbot(body) {
+const GEMINI_DEFAULT_URL = 'https://generativelanguage.googleapis.com/v1beta/interactions';
+const GEMINI_DEFAULT_MODEL = 'gemini-3.8-flash';
+const GEMINI_API_REVISION = '2026-05-20';
+
+/** CHATBOT_PROVIDER: 'lightning' (default, CHATBOT_URL) or 'gemini' (Interactions API). */
+function chatbotProvider() {
+  const provider = (process.env.CHATBOT_PROVIDER || 'lightning').trim().toLowerCase();
+  if (provider !== 'lightning' && provider !== 'gemini') throw new ChatbotError('chatbot_not_configured');
+  return provider;
+}
+
+/** The request for the selected provider, built from the shared upstream body. */
+function buildRequest(provider, body) {
+  if (provider === 'gemini') {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new ChatbotError('chatbot_not_configured');
+    // The Interactions API takes one `input`: fold the system prompt and turns into it.
+    const turns = body.messages.map(({ role, content }) => `${role === 'user' ? 'User' : 'Assistant'}: ${content}`);
+    const input = `${body.system}\n\n${turns.join('\n')}\nAssistant:`;
+    return {
+      url: process.env.GEMINI_API_URL || GEMINI_DEFAULT_URL,
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey,
+        'Api-Revision': GEMINI_API_REVISION,
+      },
+      body: { model: process.env.GEMINI_MODEL || GEMINI_DEFAULT_MODEL, input },
+    };
+  }
+
   const url = process.env.CHATBOT_URL;
   if (!url) throw new ChatbotError('chatbot_not_configured');
-
   const headers = { 'Content-Type': 'application/json' };
   if (process.env.CHATBOT_API_KEY) headers.Authorization = `Bearer ${process.env.CHATBOT_API_KEY}`;
+  return { url, headers, body };
+}
+
+/** The answer text from a provider's JSON reply ('' when there is none). */
+function extractAnswer(provider, data) {
+  if (provider === 'gemini') {
+    const texts = [];
+    for (const step of Array.isArray(data?.steps) ? data.steps : []) {
+      if (step?.type !== 'model_output') continue;
+      for (const part of Array.isArray(step.content) ? step.content : []) {
+        if (part?.type === 'text' && typeof part.text === 'string') texts.push(part.text);
+      }
+    }
+    return texts.join('').trim();
+  }
+  return typeof data?.response === 'string' ? data.response.trim() : '';
+}
+
+async function callChatbot(body) {
+  const provider = chatbotProvider();
+  const request = buildRequest(provider, body);
 
   let res;
   try {
-    res = await fetch(url, {
+    res = await fetch(request.url, {
       method: 'POST',
-      headers,
-      body: JSON.stringify(body),
+      headers: request.headers,
+      body: JSON.stringify(request.body),
       signal: AbortSignal.timeout(timeoutOverrideMs ?? UPSTREAM_TIMEOUT_MS),
     });
   } catch (err) {
@@ -148,7 +197,7 @@ async function callChatbot(body) {
     throw new ChatbotError('chatbot_unavailable', { cause: new Error('invalid JSON body') });
   }
 
-  const answer = typeof data?.response === 'string' ? data.response.trim() : '';
+  const answer = extractAnswer(provider, data);
   if (!answer) throw new ChatbotError('chatbot_unavailable', { cause: new Error('empty response') });
   return answer;
 }

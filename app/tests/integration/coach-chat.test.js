@@ -178,3 +178,68 @@ test('without a signed-in user, history is empty and clearing is a no-op', async
   assert.equal(cleared.status, 200);
   assert.deepEqual(await cleared.json(), { ok: true });
 });
+
+// Gemini provider (specs/014-gemini-chatbot-option).
+const GEMINI_ENV = ['CHATBOT_PROVIDER', 'GEMINI_API_KEY', 'GEMINI_API_URL'];
+
+function useGemini(t, stub, { key = 'gemini-test-key' } = {}) {
+  process.env.CHATBOT_PROVIDER = 'gemini';
+  if (key) process.env.GEMINI_API_KEY = key;
+  process.env.GEMINI_API_URL = stub.url;
+  t.after(() => GEMINI_ENV.forEach((name) => delete process.env[name]));
+}
+
+const geminiReply = (text) =>
+  reply(200, { steps: [{ type: 'thought', signature: 's' }, { type: 'model_output', content: [{ type: 'text', text }] }] });
+
+test('gemini: answers from model_output and sends key, revision and input', async (t) => {
+  const { stub, ask } = await setup(t, geminiReply('  Hola, coach.  '));
+  useGemini(t, stub);
+
+  const res = await ask({ message: 'Ideas de cardio?' });
+  assert.equal(res.status, 200);
+  assert.equal((await res.json()).answer, 'Hola, coach.');
+  assert.equal(stub.receivedHeaders[0]['x-goog-api-key'], 'gemini-test-key');
+  assert.equal(stub.receivedHeaders[0]['api-revision'], '2026-05-20');
+  assert.match(stub.received[0].input, /Ideas de cardio\?/);
+});
+
+test('lightning: a padded, mixed-case CHATBOT_PROVIDER still uses CHATBOT_URL', async (t) => {
+  const { stub, ask } = await setup(t, reply(200, { response: 'ok' }));
+  process.env.CHATBOT_PROVIDER = ' Lightning ';
+  t.after(() => delete process.env.CHATBOT_PROVIDER);
+
+  const res = await ask({ message: 'hi' });
+  assert.equal(res.status, 200);
+  assert.ok(Array.isArray(stub.received[0].messages));
+});
+
+test('gemini without GEMINI_API_KEY is 503 chatbot_not_configured with no fallback', async (t) => {
+  const { stub, ask } = await setup(t, geminiReply('x'));
+  useGemini(t, stub, { key: null });
+
+  const res = await ask({ message: 'hi' });
+  assert.equal(res.status, 503);
+  assert.equal((await res.json()).error, 'chatbot_not_configured');
+  assert.equal(stub.received.length, 0);
+});
+
+test('an unknown CHATBOT_PROVIDER is 503 chatbot_not_configured', async (t) => {
+  const { stub, ask } = await setup(t, reply(200, { response: 'ok' }));
+  process.env.CHATBOT_PROVIDER = 'foo';
+  t.after(() => delete process.env.CHATBOT_PROVIDER);
+
+  const res = await ask({ message: 'hi' });
+  assert.equal(res.status, 503);
+  assert.equal((await res.json()).error, 'chatbot_not_configured');
+  assert.equal(stub.received.length, 0);
+});
+
+test('gemini reply with no answer text is 502 chatbot_unavailable', async (t) => {
+  const { stub, ask } = await setup(t, reply(200, { steps: [{ type: 'thought' }] }));
+  useGemini(t, stub);
+
+  const res = await ask({ message: 'hi' });
+  assert.equal(res.status, 502);
+  assert.equal((await res.json()).error, 'chatbot_unavailable');
+});

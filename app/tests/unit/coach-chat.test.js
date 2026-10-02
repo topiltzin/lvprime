@@ -5,6 +5,7 @@ import {
   COACH_SYSTEM_PROMPT,
   MAX_MEMORY_CHARS,
   SUMMARY_PROMPT,
+  askCoachChatbot,
   buildCoachMessage,
   buildSummaryBody,
   buildSystemPrompt,
@@ -97,4 +98,46 @@ test('buildSummaryBody merges current notes with the conversation in one message
   assert.equal(body.max_tokens, 300);
   assert.ok(body.messages[0].content.length <= 8000);
   assert.match(buildSummaryBody(null, []).messages[0].content, /Current notes:\n\(none\)/);
+});
+
+// Gemini provider (specs/014-gemini-chatbot-option contracts/provider-config.md).
+async function withGemini(reply, run) {
+  const realFetch = globalThis.fetch;
+  const saved = { ...process.env };
+  process.env.CHATBOT_PROVIDER = 'gemini';
+  process.env.GEMINI_API_KEY = 'k';
+  const calls = [];
+  globalThis.fetch = async (url, init) => {
+    calls.push({ url, init });
+    return { ok: true, json: async () => reply };
+  };
+  try {
+    return await run(calls);
+  } finally {
+    globalThis.fetch = realFetch;
+    for (const key of ['CHATBOT_PROVIDER', 'GEMINI_API_KEY']) {
+      if (saved[key] === undefined) delete process.env[key];
+      else process.env[key] = saved[key];
+    }
+  }
+}
+
+test('gemini answers join model_output text and ignore thought steps', async () => {
+  const reply = {
+    steps: [
+      { type: 'thought', signature: 'abc' },
+      { type: 'model_output', content: [{ type: 'text', text: ' Hola ' }, { type: 'text', text: 'coach ' }] },
+    ],
+  };
+  await withGemini(reply, async (calls) => {
+    assert.equal(await askCoachChatbot('hi'), 'Hola coach');
+    assert.equal(calls[0].init.headers['x-goog-api-key'], 'k');
+    assert.equal(JSON.parse(calls[0].init.body).model, 'gemini-3.8-flash');
+  });
+});
+
+test('gemini replies without model_output text are chatbot_unavailable', async () => {
+  await withGemini({ steps: [{ type: 'thought' }] }, async () => {
+    await assert.rejects(askCoachChatbot('hi'), { code: 'chatbot_unavailable' });
+  });
 });
