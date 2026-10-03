@@ -85,7 +85,7 @@ function renderArchiveControl(customerData, onToggleArchived) {
   return button;
 }
 
-export function renderClientHero(customerData, { onToggleArchived } = {}) {
+export function renderClientHero(customerData, { onToggleArchived, isCustomer = false } = {}) {
   const wrap = document.createElement('div');
   wrap.className = 'client-hero';
 
@@ -98,9 +98,9 @@ export function renderClientHero(customerData, { onToggleArchived } = {}) {
   back.appendChild(backText);
   const nav = document.createElement('div');
   nav.className = 'client-hero-nav';
-  nav.appendChild(back);
+  if (!isCustomer) nav.appendChild(back);
   if (onToggleArchived) nav.appendChild(renderArchiveControl(customerData, onToggleArchived));
-  wrap.appendChild(nav);
+  if (nav.childNodes.length) wrap.appendChild(nav);
 
   if (customerData.archivedAt) {
     const banner = document.createElement('p');
@@ -116,7 +116,7 @@ export function renderClientHero(customerData, { onToggleArchived } = {}) {
   const card = document.createElement('section');
   card.className = 'client-hero-card';
 
-  const entries = customerData.feedback?.entries || [];
+  const entries = customerData.feedback?.entries || customerData.feedback?.completedDays || [];
   const lastDate = entries.length ? entries[entries.length - 1].date : null;
   const status = deriveStatus(lastDate);
 

@@ -4,7 +4,7 @@ import { t } from '../lib/i18n.js';
 
 // LvPrime lock-up for the sign-in brand panel. The mark is cloned from the header
 // SVG in index.html, so its geometry lives in one place.
-function renderBrand() {
+export function renderBrand() {
   const brand = document.createElement('div');
   brand.className = 'login-brand';
 
@@ -32,7 +32,7 @@ function renderBrand() {
 }
 
 // One labelled field: label above, input, error below (announced on change).
-function field({ label, type, name, autocomplete }) {
+export function field({ label, type, name, autocomplete }) {
   const wrap = document.createElement('div');
   wrap.className = 'login-field';
 
@@ -64,7 +64,7 @@ function field({ label, type, name, autocomplete }) {
 }
 
 // Show/hide toggle, so a 40+ audience can check what they typed on a phone.
-function passwordToggle(input) {
+export function passwordToggle(input) {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'password-toggle';
@@ -83,10 +83,10 @@ function passwordToggle(input) {
   return button;
 }
 
-// Coach sign-in page, shown when the API answers 401 (server/auth.js). Email and
+// Sign-in page (coach and customers), shown when the API answers 401 (server/auth.js). Email and
 // password are checked against the project's Supabase Auth users. Resolves once the
 // session cookie is set so the caller can reload into the app.
-export function renderLogin(container) {
+export function renderLogin(container, { notice = '' } = {}) {
   return new Promise((resolve) => {
     document.body.classList.add('is-login');
     container.removeAttribute('aria-busy');
@@ -124,6 +124,7 @@ export function renderLogin(container) {
     const formError = document.createElement('p');
     formError.className = 'field-error login-form-error';
     formError.setAttribute('role', 'alert');
+    formError.textContent = notice;
     form.appendChild(formError);
 
     const submit = document.createElement('button');
@@ -155,8 +156,8 @@ export function renderLogin(container) {
       submit.disabled = true;
       submit.textContent = t('login.signingIn');
       try {
-        await login(email.input.value.trim(), password.input.value);
-        resolve();
+        const session = await login(email.input.value.trim(), password.input.value);
+        resolve(session);
       } catch (err) {
         if (err instanceof ApiError && err.status === 422 && err.fields) {
           if (err.fields.email) email.setError(err.fields.email);

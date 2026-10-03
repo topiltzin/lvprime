@@ -392,6 +392,99 @@ export async function setCustomerArchived(slug, archived) {
   return data.archived_at;
 }
 
+// ---- Customer sign-in accounts (specs/015-login-coach-customer-roles) ----
+
+export class AccessExistsError extends Error {
+  constructor(slug) {
+    super(`Customer already has sign-in access: ${slug}`);
+    this.name = 'AccessExistsError';
+    this.code = 'ACCESS_EXISTS';
+  }
+}
+
+export class AccountsUnavailableError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'AccountsUnavailableError';
+    this.code = 'ACCOUNTS_UNAVAILABLE';
+  }
+}
+
+function accountsError(where, error) {
+  // Undefined column: the 017 migration hasn't been run yet.
+  if (error.code === '42703' || error.code === 'PGRST204') return new AccountsUnavailableError(error.message);
+  return dbError(where, error);
+}
+
+// Test-only: replaces the account lookups below with an in-memory store
+// ({ getByAuthUserId, getAccess, link, setMustChange }); pass null to restore.
+let accountsOverride = null;
+export function setAccountsForTests(impl) {
+  accountsOverride = impl || null;
+}
+
+/** The customer row linked to a Supabase Auth user, or null when the user is not a customer. */
+export async function getCustomerByAuthUserId(userId) {
+  if (accountsOverride) return accountsOverride.getByAuthUserId(userId);
+  const { data, error } = await getSupabaseClient()
+    .from('customers')
+    .select('slug, name, archived_at, must_change_password')
+    .eq('auth_user_id', userId)
+    .maybeSingle();
+  if (error) throw accountsError('getCustomerByAuthUserId', error);
+  return data;
+}
+
+/** { hasAccess, authUserId, mustChangePassword } for a customer slug. */
+export async function getCustomerAccess(slug) {
+  assertValidSlug(slug);
+  if (accountsOverride) return accountsOverride.getAccess(slug);
+  const { data, error } = await getSupabaseClient()
+    .from('customers')
+    .select('auth_user_id, must_change_password')
+    .eq('slug', slug)
+    .maybeSingle();
+  if (error) throw accountsError(`getCustomerAccess(${slug})`, error);
+  if (!data) throw new CustomerNotFoundError(slug);
+  return {
+    hasAccess: !!data.auth_user_id,
+    authUserId: data.auth_user_id,
+    mustChangePassword: !!data.must_change_password,
+  };
+}
+
+/** Links a customer to an Auth user; they must set their own password at first sign-in. */
+export async function linkCustomerAccount(slug, authUserId) {
+  assertValidSlug(slug);
+  if (accountsOverride) return accountsOverride.link(slug, authUserId);
+  const { data, error } = await getSupabaseClient()
+    .from('customers')
+    .update({ auth_user_id: authUserId, must_change_password: true, updated_at: new Date().toISOString() })
+    .eq('slug', slug)
+    .is('auth_user_id', null)
+    .select('slug')
+    .maybeSingle();
+  if (error) throw accountsError(`linkCustomerAccount(${slug})`, error);
+  if (!data) {
+    // No row updated: either the slug is unknown or it already has an account.
+    await getCustomerAccess(slug);
+    throw new AccessExistsError(slug);
+  }
+}
+
+export async function setMustChangePassword(slug, value) {
+  assertValidSlug(slug);
+  if (accountsOverride) return accountsOverride.setMustChange(slug, !!value);
+  const { data, error } = await getSupabaseClient()
+    .from('customers')
+    .update({ must_change_password: !!value, updated_at: new Date().toISOString() })
+    .eq('slug', slug)
+    .select('slug')
+    .maybeSingle();
+  if (error) throw accountsError(`setMustChangePassword(${slug})`, error);
+  if (!data) throw new CustomerNotFoundError(slug);
+}
+
 // ---- Customer upsert (used by the migration script) ----
 
 export async function upsertCustomer(slug, name) {

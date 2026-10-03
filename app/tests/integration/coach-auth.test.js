@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { startTestServer } from './helpers.js';
 import { setSignInForTests } from '../../server/auth.js';
+import { setAccountsForTests } from '../../server/lib/customer-data.js';
 
 // server/auth.js. No Supabase needed: signIn is stubbed, and every request that
 // gets past the gate here fails before touching the DB (malformed %-escape → 400).
@@ -9,6 +10,8 @@ const PAST_AUTH = '/api/customers/%E0%A4%A';
 const COACH = { id: 'user-1', email: 'coach@example.com' };
 
 function stubSupabase() {
+  // No customer accounts exist: everyone who signs in is the coach.
+  setAccountsForTests({ getByAuthUserId: async () => null });
   setSignInForTests(async (email, password) =>
     email === COACH.email && password === 'right-password'
       ? { user: COACH }
@@ -22,6 +25,7 @@ test('the API requires a session from /api/login (Supabase email + password)', a
   const server = await startTestServer(() => {});
   t.after(() => {
     setSignInForTests(null);
+    setAccountsForTests(null);
     delete process.env.COACH_AUTH_DISABLED;
     delete process.env.SESSION_SECRET;
     return server.close();
@@ -47,7 +51,7 @@ test('the API requires a session from /api/login (Supabase email + password)', a
 
   const right = await login({ email: ' Coach@Example.com ', password: 'right-password' });
   assert.equal(right.status, 200);
-  assert.deepEqual(await right.json(), { email: COACH.email });
+  assert.deepEqual(await right.json(), { email: COACH.email, role: 'coach', mustChangePassword: false });
   const setCookie = right.headers.get('set-cookie');
   assert.match(setCookie, /HttpOnly/);
   assert.match(setCookie, /SameSite=Strict/);

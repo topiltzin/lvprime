@@ -14,9 +14,17 @@ class ApiError extends Error {
 
 let onUnauthorized = null;
 let pendingLogin = null;
+let onPasswordRequired = null;
+let pendingPassword = null;
 
 export function setUnauthorizedHandler(handler) {
   onUnauthorized = handler;
+}
+
+// A customer still on the coach's default password gets 403 password_change_required
+// from every route; the handler (the set-password screen) takes over the page.
+export function setPasswordRequiredHandler(handler) {
+  onPasswordRequired = handler;
 }
 
 // skipAuthHandler: login() itself answers 401 for a wrong password.
@@ -44,6 +52,11 @@ async function request(path, options = {}, skipAuthHandler = false) {
     // Several requests can 401 at once; they share one login screen.
     pendingLogin ??= onUnauthorized();
     await pendingLogin;
+  }
+
+  if (res.status === 403 && body?.error === 'password_change_required' && onPasswordRequired && !skipAuthHandler) {
+    pendingPassword ??= onPasswordRequired();
+    await pendingPassword;
   }
 
   if (!res.ok) {
@@ -173,11 +186,33 @@ export function login(email, password) {
   return request('/api/login', { method: 'POST', body: JSON.stringify({ email, password }) }, true);
 }
 
+export function changePassword({ currentPassword, newPassword, confirmPassword }) {
+  return request(
+    '/api/password',
+    { method: 'POST', body: JSON.stringify({ currentPassword, newPassword, confirmPassword }) },
+    true
+  );
+}
+
+export function createCustomerAccess(slug, { email, defaultPassword }) {
+  return request(`/api/customers/${encodeURIComponent(slug)}/access`, {
+    method: 'POST',
+    body: JSON.stringify({ email, defaultPassword }),
+  });
+}
+
+export function resetCustomerPassword(slug, { defaultPassword }) {
+  return request(`/api/customers/${encodeURIComponent(slug)}/access/reset`, {
+    method: 'POST',
+    body: JSON.stringify({ defaultPassword }),
+  });
+}
+
 export function logout() {
   return request('/api/logout', { method: 'POST' }, true);
 }
 
-/** { authenticated, authDisabled, email } for the header's account area. */
+/** { authenticated, authDisabled, email, role, slug, mustChangePassword } for routing and the header. */
 export function getSession() {
   return request('/api/session', {}, true);
 }

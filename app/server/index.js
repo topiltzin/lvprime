@@ -1,4 +1,4 @@
-import { isAuthorized } from './auth.js';
+import { authorize } from './access.js';
 import { PayloadTooLargeError, sendJson } from './http.js';
 import { applySecurityHeaders } from './security-headers.js';
 import {
@@ -21,7 +21,8 @@ import {
 import { handleSyncDownload, handleSyncStatus, handleSyncUpload } from './handlers/sync.js';
 import { handleDeleteChatHistory, handleGetChatHistory, handlePostChat } from './handlers/chat.js';
 import { handleCustomerFile, handleDeleteAttachment, handleUploadAttachment } from './handlers/attachments.js';
-import { handleLogin, handleLogout, handleSession } from './handlers/auth.js';
+import { handleChangePassword, handleLogin, handleLogout, handleSession } from './handlers/auth.js';
+import { handleCreateAccess, handleResetAccess } from './handlers/customer-access.js';
 import { CustomerNotFoundError, ValidationError } from './lib/customer-data.js';
 
 // Route tables and dispatch only; each handler lives under handlers/ (shared HTTP helpers in http.js).
@@ -42,6 +43,7 @@ const PUBLIC_ROUTES = [
 
 const ROUTES = [
   {
+    access: 'customer-own',
     method: 'GET',
     pattern: /^\/customer-files\/([^/]+)\/(.+)$/,
     handler: (req, res, m) => handleCustomerFile(req, res, decodeURIComponent(m[1]), decodeURIComponent(m[2])),
@@ -79,26 +81,31 @@ const ROUTES = [
     handler: (req, res, m) => handlePostMeasurement(req, res, decodeURIComponent(m[1])),
   },
   {
+    access: 'customer-own',
     method: 'GET',
     pattern: /^\/api\/customers\/([^/]+)\/?$/,
     handler: (req, res, m) => handleGetCustomer(req, res, decodeURIComponent(m[1])),
   },
   {
+    access: 'customer-own',
     method: 'GET',
     pattern: /^\/api\/customers\/([^/]+)\/program\/weeks\/?$/,
     handler: (req, res, m) => handleGetProgramWeeks(req, res, decodeURIComponent(m[1])),
   },
   {
+    access: 'customer-own',
     method: 'GET',
     pattern: /^\/api\/customers\/([^/]+)\/program\/weeks\/([^/]+)\/?$/,
     handler: (req, res, m) => handleGetProgramWeek(req, res, decodeURIComponent(m[1]), decodeURIComponent(m[2])),
   },
   {
+    access: 'customer-own',
     method: 'GET',
     pattern: /^\/api\/customers\/([^/]+)\/nutrition\/?$/,
     handler: (req, res, m) => handleGetNutrition(req, res, decodeURIComponent(m[1])),
   },
   {
+    access: 'customer-own',
     method: 'POST',
     pattern: /^\/api\/customers\/([^/]+)\/feedback\/quick-complete\/?$/,
     handler: (req, res, m) => handlePostQuickComplete(req, res, decodeURIComponent(m[1])),
@@ -109,9 +116,26 @@ const ROUTES = [
     handler: (req, res, m) => handlePutDayNotes(req, res, decodeURIComponent(m[1])),
   },
   {
+    access: 'customer-own',
     method: 'POST',
     pattern: /^\/api\/customers\/([^/]+)\/feedback\/?$/,
     handler: (req, res, m) => handlePostFeedback(req, res, decodeURIComponent(m[1])),
+  },
+  {
+    method: 'POST',
+    access: 'signed-in',
+    pattern: /^\/api\/password\/?$/,
+    handler: (req, res) => handleChangePassword(req, res),
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/customers\/([^/]+)\/access\/?$/,
+    handler: (req, res, m) => handleCreateAccess(req, res, decodeURIComponent(m[1])),
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/customers\/([^/]+)\/access\/reset\/?$/,
+    handler: (req, res, m) => handleResetAccess(req, res, decodeURIComponent(m[1])),
   },
   { method: 'POST', pattern: /^\/api\/chat\/?$/, handler: (req, res) => handlePostChat(req, res) },
   { method: 'GET', pattern: /^\/api\/chat\/history\/?$/, handler: (req, res) => handleGetChatHistory(req, res) },
@@ -133,6 +157,16 @@ const ROUTES = [
   },
 ];
 
+// A malformed %-escape is answered 400 by the handler once the caller is authorized;
+// until then it can only name no customer.
+function safeDecode(value) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return '';
+  }
+}
+
 /** Routes a single HTTP request under /api/*. Used both by the Vite dev middleware
  * (vite.config.js) and the standalone server (server.js). */
 export async function handleApiRequest(req, res) {
@@ -149,18 +183,27 @@ export async function handleApiRequest(req, res) {
       }
     }
 
-    if (!isAuthorized(req)) {
-      sendJson(res, 401, { error: 'unauthorized', message: 'Sign in to continue.' });
-      return;
-    }
-
+    // First matching route wins; its access tag decides who may run it.
     for (const route of ROUTES) {
       if (route.method !== req.method) continue;
       const match = pathname.match(route.pattern);
-      if (match) {
-        await route.handler(req, res, match);
+      if (!match) continue;
+      const slug = route.access === 'customer-own' ? safeDecode(match[1]) : null;
+      const decision = await authorize(req, route, slug);
+      if (!decision.ok) {
+        sendJson(res, decision.status, decision.body);
         return;
       }
+      req.actor = decision.actor;
+      await route.handler(req, res, match);
+      return;
+    }
+
+    // Unknown path: signed-out callers learn nothing about which routes exist.
+    const decision = await authorize(req, {});
+    if (!decision.ok && decision.status === 401) {
+      sendJson(res, 401, decision.body);
+      return;
     }
 
     sendJson(res, 404, { error: 'not_found' });
