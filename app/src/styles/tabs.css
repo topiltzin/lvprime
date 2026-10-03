@@ -57,20 +57,16 @@
   color: var(--ink);
 }
 
-/* Visible but unavailable (a customer's Notas / Seguimiento). */
-.tab-button.is-disabled,
-.tab-button.is-disabled:hover {
-  color: var(--muted);
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
 .tab-button.active {
   color: var(--ink);
 }
 
 .tab-button.active::after {
   transform: scaleX(1);
+}
+
+.tab-header-fill .tab-button {
+  flex: 1 1 0;
 }
 
 .tab-button:focus-visible {

@@ -34,9 +34,7 @@ function buildFeedbackStats(feedback) {
  * Prepare tab configuration based on available data
  */
 function buildTabConfig(data, { isCustomer = false } = {}) {
-  // A customer sees Notas and Seguimiento greyed out: the coach's tracking and notes are not theirs.
-  const coachOnly = isCustomer ? { isEnabled: false, showDisabled: true } : { isEnabled: true };
-  return [
+  const tabs = [
     {
       id: 'program',
       label: t('tabs.program'),
@@ -57,7 +55,7 @@ function buildTabConfig(data, { isCustomer = false } = {}) {
       // Always enabled — a client with zero entries still sees the Feedback tab,
       // showing an honest empty state rather than being hidden (US3 edge cases).
       label: t('tabs.feedback'),
-      ...coachOnly,
+      isEnabled: true,
       contentType: 'feedback',
       order: 2,
     },
@@ -69,22 +67,17 @@ function buildTabConfig(data, { isCustomer = false } = {}) {
       order: 3,
     },
     {
-      id: 'add-entry',
-      label: t('tabs.add-entry'),
-      isEnabled: true, // Always enabled for adding feedback
-      contentType: 'add-entry',
-      order: 4,
-    },
-    {
       id: 'notes',
       // Always enabled — a client with no notes.md still sees the Notes tab,
       // showing a dashed empty state rather than being hidden (FR-018).
       label: t('tabs.notes'),
-      ...coachOnly,
+      isEnabled: true,
       contentType: 'notes',
       order: 5,
     },
   ];
+  // Seguimiento and Notas are the coach's: a customer's bar simply doesn't have them.
+  return isCustomer ? tabs.filter((tab) => tab.id !== 'feedback' && tab.id !== 'notes') : tabs;
 }
 
 /**
@@ -132,8 +125,7 @@ function buildTabData(customerData) {
     notes,
     nutrition,
     progress: customerData.measurements || { columns: [], rows: [] },
-    'add-entry': {}, // Placeholder for form tab (form rendered via global renderFeedbackForm function)
-  };
+      };
 }
 
 // The coach gets full entries; a customer gets only completed days (same date/label/completed
@@ -302,9 +294,7 @@ export async function renderCustomer(container, slug, { role = 'coach' } = {}) {
     tabs = new TabContainer(tabsContainer, buildTabConfig(customerData, { isCustomer }), buildTabData(customerData), {
       readOnly: isCustomer,
       slug,
-      feedbackTemplate: data.feedback?.template,
       feedbackEntries: feedbackEntriesOf(customerData),
-      onFeedbackAdded,
       onSessionLogged,
       onContentSaved,
       onMeasurementAdded,
@@ -330,19 +320,6 @@ export async function renderCustomer(container, slug, { role = 'coach' } = {}) {
       showToast(t('toast.measurementsSaved'));
     } catch (err) {
       showToast(err.message || t('common.refreshFailed'), 3000, 'error');
-    }
-  };
-
-  // Callback when new feedback is added - refreshes the feedback data, confirms the
-  // save, and hands the coach off to the Feedback tab (FR-016).
-  const onFeedbackAdded = async () => {
-    try {
-      mountTabs(await getCustomer(slug));
-      tabs.setActiveTab(isCustomer ? 'program' : 'feedback');
-      showToast(t('toast.feedbackSaved'));
-      refreshSidebar();
-    } catch (err) {
-      console.error('Failed to refresh feedback:', err);
     }
   };
 

@@ -9,7 +9,6 @@ import { renderWeekSubnav } from './week-subnav.js';
 import { getProgramWeek, quickCompleteSession, saveDayNotes } from '../api-client.js';
 import { findDayEntry, findDoneEntry, sessionLabel, todayIso } from '../lib/day-completion.js';
 import { renderFeedbackEntry } from './feedback-entry.js';
-import { renderFeedbackForm } from '../views/feedback-form-view.js';
 import { renderTrendChart } from './trend-chart.js';
 import { renderContentEditor } from './content-editor.js';
 import { renderProgressPanel } from './progress-panel.js';
@@ -47,8 +46,6 @@ export class TabContainer {
 
     // Options for feedback form integration
     this.slug = options.slug; // Customer slug for feedback API calls
-    this.feedbackTemplate = options.feedbackTemplate; // Feedback template for form rendering
-    this.onFeedbackAdded = options.onFeedbackAdded; // Callback when new feedback is added
     // "Mark done" on Program days (specs/012): raw API feedback entries decide which
     // cards show as done; onSessionLogged refreshes stats without leaving the tab.
     this.feedbackEntries = options.feedbackEntries || [];
@@ -93,23 +90,10 @@ export class TabContainer {
     const header = document.createElement('div');
     header.className = 'tab-header';
     header.setAttribute('role', 'tablist');
+    // Up to four tabs fit a phone: share the width instead of scrolling sideways.
+    header.classList.toggle('tab-header-fill', this.tabs.filter((t) => t.isEnabled).length <= 4);
 
     this.tabs.forEach((tab) => {
-      if (!tab.isEnabled && tab.showDisabled) {
-        // Visible but not usable (a customer's Notas / Seguimiento): no panel, no focus, no click.
-        const button = document.createElement('button');
-        button.className = 'tab-button is-disabled';
-        button.id = `tab-${tab.id}`;
-        button.setAttribute('role', 'tab');
-        button.setAttribute('aria-selected', 'false');
-        button.setAttribute('aria-disabled', 'true');
-        button.disabled = true;
-        button.title = t('login.disabledTab');
-        button.dataset.tabId = tab.id;
-        button.textContent = tab.label;
-        header.appendChild(button);
-        return;
-      }
       if (tab.isEnabled) {
         const button = document.createElement('button');
         button.className = 'tab-button';
@@ -201,9 +185,6 @@ export class TabContainer {
         break;
       case 'progress':
         renderProgressPanel(container, data, { slug: this.slug, onMeasurementAdded: this.onMeasurementAdded, readOnly: this.readOnly });
-        break;
-      case 'add-entry':
-        this.renderAddEntryContent(container);
         break;
     }
 
@@ -423,13 +404,6 @@ export class TabContainer {
     panel.replaceChildren(this.renderTabContent(tab));
   }
 
-  /** "Add details": open Log Session prefilled with that session's date and label. */
-  openLogSession({ date, label }) {
-    this.feedbackFormEl?.prefill?.({ date, label });
-    this.setActiveTab('add-entry');
-    this.feedbackFormEl?.focusFirstField?.();
-  }
-
   renderFeedbackContent(container, feedbackData) {
     container.appendChild(this.renderFeedbackStatStrip(feedbackData.stats));
 
@@ -462,15 +436,6 @@ export class TabContainer {
       const emptyMsg = document.createElement('p');
       emptyMsg.textContent = t('feedback.empty');
       emptyWrap.appendChild(emptyMsg);
-
-      if (this.tabElements['add-entry']) {
-        const cta = document.createElement('button');
-        cta.type = 'button';
-        cta.className = 'empty-state-cta';
-        cta.textContent = t('tabs.add-entry');
-        cta.addEventListener('click', () => this.setActiveTab('add-entry'));
-        emptyWrap.appendChild(cta);
-      }
 
       container.appendChild(emptyWrap);
     }
@@ -514,18 +479,6 @@ export class TabContainer {
     }
 
     return strip;
-  }
-
-  renderAddEntryContent(container) {
-    if (this.slug && this.feedbackTemplate && this.onFeedbackAdded) {
-      this.feedbackFormEl = renderFeedbackForm(this.slug, this.feedbackTemplate, this.onFeedbackAdded);
-      container.appendChild(this.feedbackFormEl);
-    } else {
-      const msg = document.createElement('p');
-      msg.className = 'empty-state';
-      msg.textContent = t('logForm.missing');
-      container.appendChild(msg);
-    }
   }
 
   /**
@@ -607,7 +560,7 @@ export class TabContainer {
   }
 
   getEmptyStateMessage(contentType) {
-    const known = ['program', 'nutrition', 'add-entry'];
+    const known = ['program', 'nutrition'];
     return t(known.includes(contentType) ? `empty.${contentType}` : 'empty.default');
   }
 }
