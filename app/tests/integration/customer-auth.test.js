@@ -215,6 +215,7 @@ test('a customer reaches only their own data and no coach routes', async (t) => 
     ['GET', `/api/customers/${ANA.slug}/program/weeks`],
     ['GET', `/api/customers/${ANA.slug}/nutrition`],
     ['POST', `/api/customers/${ANA.slug}/feedback`],
+    ['PUT', `/api/customers/${ANA.slug}/feedback/day-notes`],
   ]) {
     const res = await ctx.call(path, { method, cookie, body: method === 'GET' ? undefined : {} });
     assert.ok(!GATE_STATUSES.includes(res.status), `${method} ${path} → ${res.status}`);
@@ -244,7 +245,6 @@ test('a customer reaches only their own data and no coach routes', async (t) => 
     ['POST', `/api/customers/${ANA.slug}/attachments`],
     ['POST', `/api/customers/${ANA.slug}/access`],
     ['POST', `/api/customers/${ANA.slug}/access/reset`],
-    ['PUT', `/api/customers/${ANA.slug}/feedback/day-notes`], // the coach's notepad
     ['POST', '/api/sync/upload'],
     ['GET', '/api/sync/status'],
   ]) {

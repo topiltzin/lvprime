@@ -43,7 +43,7 @@ Adds `access: { hasAccess, email, mustChangePassword }` for coach sessions only.
 
 | Route group | Signed out | Customer (own slug) | Customer (other slug) | Coach |
 |-------------|-----------|---------------------|-----------------------|-------|
-| `/api/customers` list, create, archive, content, measurements, attachments, day-notes, chat, sync, access | 401 | 403 | 403 | allowed |
+| `/api/customers` list, create, archive, content, measurements, attachments, access, sync | 401 | 403 | 403 | allowed |
 | `GET /api/customers/:slug` | 401 | allowed, **without notes and feedback entries** | 404 | full |
-| program weeks, nutrition, feedback POST, quick-complete, customer files | 401 | allowed | 404 | allowed |
+| program weeks, nutrition, feedback POST, quick-complete, day-notes, chat, customer files | 401 | allowed | 404 | allowed |
 | any route except password/session/logout while `mustChangePassword` | n/a | 403 `password_change_required` | 403 | n/a |

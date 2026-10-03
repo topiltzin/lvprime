@@ -11,16 +11,16 @@ const input = {
   template: { fields: [] },
 };
 
-test('a customer gets completed days only: no coach notes, no tracking detail', () => {
+test('a customer gets completed days and notepad text only: no coach notes, no tracking detail', () => {
   const view = shapeCustomerView('customer', input);
   assert.equal(view.role, 'customer');
   assert.deepEqual(view.notes, { present: false });
   assert.deepEqual(view.feedback, {
-    completedDays: [{ date: '2026-09-01', label: 'Day 1', completed: 'Yes' }],
+    completedDays: [{ date: '2026-09-01', label: 'Day 1', completed: 'Yes', notes: 'private-note' }],
     template: { fields: [] },
   });
   const text = JSON.stringify(view);
-  for (const secret of ['coach-secret', 'tired-secret', 'private-note']) assert.ok(!text.includes(secret), secret);
+  for (const secret of ['coach-secret', 'tired-secret']) assert.ok(!text.includes(secret), secret);
   assert.equal(view.program.present, true);
 });
 

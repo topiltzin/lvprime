@@ -152,7 +152,7 @@ export async function handleGetCustomer(req, res, slug) {
 /**
  * The customer page payload for a role. Customers get no coach notes and no tracking
  * detail (Notas / Seguimiento are coach only, specs/015 FR-011): only which days they
- * completed, for the Program tab's done marks, plus the form template for Registrar sesión.
+ * completed and each day's notepad text, for the Program tab, plus the form template for Registrar sesión.
  */
 export function shapeCustomerView(role, { base, notes, feedbackRows, template }) {
   if (role === 'customer') {
@@ -160,6 +160,7 @@ export function shapeCustomerView(role, { base, notes, feedbackRows, template })
       date: row.entry_date,
       label: row.label,
       completed: row.completed,
+      notes: row.notes ?? '', // the day's notepad, which the customer edits
     }));
     return { ...base, role: 'customer', notes: { present: false }, feedback: { completedDays, template } };
   }

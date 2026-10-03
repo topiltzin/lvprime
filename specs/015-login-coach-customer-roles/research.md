@@ -28,11 +28,11 @@
 ## R6. Authorization enforcement
 - **Decision**: Every route in `server/index.js` declares `access: 'coach' | 'customer-own'`. `access.js` rejects with 401/403 before the handler runs. `customer-own` routes require the URL slug to equal the session's slug; a mismatch returns 404 `customer_not_found` (does not reveal that other customers exist).
 - **Customer-allowed routes** (own slug only): `GET /api/customers/:slug`, `GET .../program/weeks[/:n]`, `GET .../nutrition`, `POST .../feedback`, `POST .../feedback/quick-complete`, `GET /customer-files/:slug/*`.
-- **Coach-only**: the day notepad (`PUT .../feedback/day-notes`; a customer cannot read the notes it would overwrite), customer list, create, content read/write, archive/restore, measurements, attachment upload/delete, chat, sync, and the new access endpoints.
+- **Coach-only**: customer list, create, content read/write, archive/restore, measurements, attachment upload/delete, chat, sync, and the new access endpoints.
 - **Rationale**: One table, one check, easy to test exhaustively (SC-004).
 
 ## R7. Notas and Seguimiento never reach customers
-- **Decision**: For customer sessions `GET /api/customers/:slug` omits `notes`, `measurements` stays (Progreso is allowed), and replaces `feedback.entries` with a minimal `completedDays` projection (date, label, completed only), because the Program tab's "done" marks (spec 012) depend on it. Notas and Seguimiento tabs render disabled client-side.
+- **Decision**: For customer sessions `GET /api/customers/:slug` omits `notes`, `measurements` stays (Progreso is allowed), and replaces `feedback.entries` with a minimal `completedDays` projection (date, label, completed, and the day's notepad text so the customer can edit it), because the Program tab's "done" marks (spec 012) depend on it. Notas and Seguimiento tabs render disabled client-side.
 - **Open point for tasks**: `measurements` is parsed from the notes row, so Progreso must read measurements without exposing the note text. The customer payload sends only the parsed measurements. Whether customers may add measurements stays coach-only for now.
 - **Alternatives**: Hiding tabs in CSS only (rejected: data would still be delivered, violates FR-011).
 

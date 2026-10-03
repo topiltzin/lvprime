@@ -56,7 +56,7 @@ export class TabContainer {
     // Coach edits: onContentSaved(tabId) remounts with fresh data; onMeasurementAdded refreshes Progress.
     this.onContentSaved = options.onContentSaved;
     this.onMeasurementAdded = options.onMeasurementAdded;
-    // A customer's view: no editing of programs, nutrition, notes or measurements, and no coach notepad.
+    // A customer's view: no editing of programs, nutrition, notes or measurements (the day notepad stays).
     this.readOnly = !!options.readOnly;
 
     this.render();
@@ -357,7 +357,7 @@ export class TabContainer {
         doneEntry: findDoneEntry(this.feedbackEntries, sessionLabel(day)),
         onMarkDone: (d) => this.markDayDone(d),
         noteEntry: findDayEntry(this.feedbackEntries, sessionLabel(day)),
-        onSaveNotes: this.readOnly ? undefined : (d, entry, text) => this.saveDayNotes(d, entry, text),
+        onSaveNotes: (d, entry, text) => this.saveDayNotes(d, entry, text),
       }));
       cards.forEach((card) => scheduleSection.appendChild(card));
       weekBody.appendChild(scheduleSection);

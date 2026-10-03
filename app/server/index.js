@@ -114,6 +114,7 @@ const ROUTES = [
     handler: (req, res, m) => handlePostQuickComplete(req, res, decodeURIComponent(m[1])),
   },
   {
+    access: 'customer-own',
     method: 'PUT',
     pattern: /^\/api\/customers\/([^/]+)\/feedback\/day-notes\/?$/,
     handler: (req, res, m) => handlePutDayNotes(req, res, decodeURIComponent(m[1])),
