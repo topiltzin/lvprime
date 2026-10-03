@@ -39,6 +39,35 @@ function sign(data) {
   return crypto.createHmac('sha256', sessionSecret()).update(data).digest('base64url');
 }
 
+// Password-reset links use their own derived key, so a reset token can never be
+// replayed as a session cookie (or the other way round).
+function signReset(data) {
+  const key = crypto.createHmac('sha256', sessionSecret()).update('lvprime-password-reset').digest();
+  return crypto.createHmac('sha256', key).update(data).digest('base64url');
+}
+
+/** A signed, expiring token for the password-reset email link. */
+export function createResetToken(payload, ttlSeconds = 60 * 60) {
+  const exp = Math.floor(Date.now() / 1000) + ttlSeconds;
+  const data = Buffer.from(JSON.stringify({ ...payload, exp })).toString('base64url');
+  return `${data}.${signReset(data)}`;
+}
+
+/** The token's payload, or null when it is malformed, forged or expired. */
+export function readResetToken(token) {
+  if (typeof token !== 'string') return null;
+  const dot = token.indexOf('.');
+  if (dot === -1) return null;
+  const data = token.slice(0, dot);
+  if (!safeEqual(token.slice(dot + 1), signReset(data))) return null;
+  try {
+    const payload = JSON.parse(Buffer.from(data, 'base64url').toString('utf8'));
+    return typeof payload.exp === 'number' && payload.exp * 1000 >= Date.now() ? payload : null;
+  } catch {
+    return null;
+  }
+}
+
 function safeEqual(a, b) {
   const bufA = Buffer.from(a);
   const bufB = Buffer.from(b);
@@ -193,6 +222,18 @@ const supabaseAdmin = {
     const { error } = await adminClient().auth.admin.updateUserById(userId, { password });
     return error ? { error } : {};
   },
+  /** Resolves { user: { id, email } | null }. Pages through Auth users (a small list here). */
+  async findUserByEmail(email) {
+    const client = adminClient();
+    for (let page = 1; page <= 20; page++) {
+      const { data, error } = await client.auth.admin.listUsers({ page, perPage: 200 });
+      if (error) return { error };
+      const hit = data.users.find((u) => (u.email || '').toLowerCase() === email);
+      if (hit) return { user: { id: hit.id, email: hit.email } };
+      if (data.users.length < 200) break;
+    }
+    return { user: null };
+  },
   async getEmail(userId) {
     const { data, error } = await adminClient().auth.admin.getUserById(userId);
     return error ? { error } : { email: data.user?.email || null };
@@ -211,6 +252,10 @@ export function createAuthUser(email, password) {
 
 export function setAuthPassword(userId, password) {
   return adminImpl.setPassword(userId, password);
+}
+
+export function findAuthUserByEmail(email) {
+  return adminImpl.findUserByEmail(email);
 }
 
 export function getAuthUserEmail(userId) {

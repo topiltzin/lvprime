@@ -428,7 +428,7 @@ export async function getCustomerByAuthUserId(userId) {
   if (accountsOverride) return accountsOverride.getByAuthUserId(userId);
   const { data, error } = await getSupabaseClient()
     .from('customers')
-    .select('slug, name, archived_at, must_change_password')
+    .select('slug, name, archived_at, must_change_password, updated_at')
     .eq('auth_user_id', userId)
     .maybeSingle();
   if (error) throw accountsError('getCustomerByAuthUserId', error);

@@ -6,6 +6,7 @@ import { AccountsUnavailableError, getCustomerByAuthUserId } from './lib/custome
 // Routes in server/index.js carry an `access` tag:
 //   'coach'         coach sessions only (the default for an untagged route)
 //   'customer-own'  coach, or the customer whose slug is in the URL
+//   'any'           any signed-in user, coach or customer (e.g. the chat assistant)
 //   'signed-in'     any signed-in user, even a customer who must still set a password
 //
 // Coach sessions need no lookup. A customer session is re-checked against the
@@ -58,6 +59,7 @@ export async function authorize(req, route, slug = null) {
   const access = route.access || 'coach';
   if (access === 'signed-in') return { ok: true, actor };
   if (actor.customer.must_change_password) return deny('passwordRequired');
+  if (access === 'any') return { ok: true, actor };
   if (access === 'customer-own') {
     // 404, not 403: don't reveal that other customers exist.
     return slug === actor.slug ? { ok: true, actor } : deny('notFound');

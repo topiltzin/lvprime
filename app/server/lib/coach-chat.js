@@ -45,7 +45,7 @@ export function buildCoachMessage(question) {
 /** The coach prompt, plus what the assistant remembers from earlier conversations (lib/chat-memory.js). */
 export function buildSystemPrompt(memory) {
   if (!memory) return COACH_SYSTEM_PROMPT;
-  return `${COACH_SYSTEM_PROMPT}\n\nWhat you know about this coach from earlier conversations:\n${memory}`;
+  return `${COACH_SYSTEM_PROMPT}\n\nWhat you know about this user from earlier conversations:\n${memory}`;
 }
 
 /**

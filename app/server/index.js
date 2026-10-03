@@ -22,6 +22,7 @@ import { handleSyncDownload, handleSyncStatus, handleSyncUpload } from './handle
 import { handleDeleteChatHistory, handleGetChatHistory, handlePostChat } from './handlers/chat.js';
 import { handleCustomerFile, handleDeleteAttachment, handleUploadAttachment } from './handlers/attachments.js';
 import { handleChangePassword, handleLogin, handleLogout, handleSession } from './handlers/auth.js';
+import { handleForgotPassword, handleResetPassword } from './handlers/password-reset.js';
 import { handleCreateAccess, handleResetAccess } from './handlers/customer-access.js';
 import { CustomerNotFoundError, ValidationError } from './lib/customer-data.js';
 
@@ -38,6 +39,8 @@ export function resetDbForTests() {}
 const PUBLIC_ROUTES = [
   { method: 'POST', pattern: /^\/api\/login\/?$/, handler: (req, res) => handleLogin(req, res) },
   { method: 'POST', pattern: /^\/api\/logout\/?$/, handler: (req, res) => handleLogout(req, res) },
+  { method: 'POST', pattern: /^\/api\/password\/forgot\/?$/, handler: (req, res) => handleForgotPassword(req, res) },
+  { method: 'POST', pattern: /^\/api\/password\/reset\/?$/, handler: (req, res) => handleResetPassword(req, res) },
   { method: 'GET', pattern: /^\/api\/session\/?$/, handler: (req, res) => handleSession(req, res) },
 ];
 
@@ -137,9 +140,9 @@ const ROUTES = [
     pattern: /^\/api\/customers\/([^/]+)\/access\/reset\/?$/,
     handler: (req, res, m) => handleResetAccess(req, res, decodeURIComponent(m[1])),
   },
-  { method: 'POST', pattern: /^\/api\/chat\/?$/, handler: (req, res) => handlePostChat(req, res) },
-  { method: 'GET', pattern: /^\/api\/chat\/history\/?$/, handler: (req, res) => handleGetChatHistory(req, res) },
-  { method: 'DELETE', pattern: /^\/api\/chat\/history\/?$/, handler: (req, res) => handleDeleteChatHistory(req, res) },
+  { method: 'POST', access: 'any', pattern: /^\/api\/chat\/?$/, handler: (req, res) => handlePostChat(req, res) },
+  { method: 'GET', access: 'any', pattern: /^\/api\/chat\/history\/?$/, handler: (req, res) => handleGetChatHistory(req, res) },
+  { method: 'DELETE', access: 'any', pattern: /^\/api\/chat\/history\/?$/, handler: (req, res) => handleDeleteChatHistory(req, res) },
   {
     method: 'POST',
     pattern: /^\/api\/sync\/upload\/?$/,

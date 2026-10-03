@@ -1,4 +1,5 @@
 import { login, ApiError } from '../api-client.js';
+import { renderForgotPassword } from './reset-password-view.js';
 import { icon } from '../lib/icons.js';
 import { t } from '../lib/i18n.js';
 
@@ -131,6 +132,17 @@ export function renderLogin(container, { notice = '' } = {}) {
     submit.type = 'submit';
     submit.textContent = t('login.title');
     form.appendChild(submit);
+
+    // Clients reset by email; the page returns to sign-in afterwards.
+    const forgot = document.createElement('button');
+    forgot.type = 'button';
+    forgot.className = 'login-link';
+    forgot.textContent = t('forgot.link');
+    forgot.addEventListener('click', async () => {
+      await renderForgotPassword(container, email.input.value.trim());
+      resolve(renderLogin(container));
+    });
+    form.appendChild(forgot);
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();

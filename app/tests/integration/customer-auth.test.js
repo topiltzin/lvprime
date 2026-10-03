@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { startTestServer } from './helpers.js';
+import { setEmailSenderForTests } from '../../server/lib/email.js';
 import { setAdminForTests, setSignInForTests } from '../../server/auth.js';
 import { CustomerNotFoundError, AccessExistsError, setAccountsForTests } from '../../server/lib/customer-data.js';
 
@@ -18,10 +19,11 @@ function makeWorld() {
   const users = new Map([[COACH.id, { ...COACH }]]);
   // customers: slug -> row
   const customers = new Map([
-    ['ana-lopez', { slug: 'ana-lopez', name: 'Ana Lopez', auth_user_id: null, must_change_password: false, archived_at: null }],
-    ['luis-perez', { slug: 'luis-perez', name: 'Luis Perez', auth_user_id: null, must_change_password: false, archived_at: null }],
+    ['ana-lopez', { slug: 'ana-lopez', name: 'Ana Lopez', auth_user_id: null, must_change_password: false, archived_at: null, updated_at: 'v0' }],
+    ['luis-perez', { slug: 'luis-perez', name: 'Luis Perez', auth_user_id: null, must_change_password: false, archived_at: null, updated_at: 'v0' }],
   ]);
   let nextId = 1;
+  let version = 0;
   const byEmail = (email) => [...users.values()].find((u) => u.email === email);
 
   setSignInForTests(async (email, password) => {
@@ -40,6 +42,10 @@ function makeWorld() {
     async setPassword(id, password) {
       users.get(id).password = password;
       return {};
+    },
+    async findUserByEmail(email) {
+      const u = byEmail(email);
+      return { user: u ? { id: u.id, email: u.email } : null };
     },
     async getEmail(id) {
       return { email: users.get(id)?.email ?? null };
@@ -67,9 +73,12 @@ function makeWorld() {
       if (r.auth_user_id) throw new AccessExistsError(slug);
       r.auth_user_id = id;
       r.must_change_password = true;
+      r.updated_at = `v${++version}`;
     },
     async setMustChange(slug, value) {
-      row(slug).must_change_password = value;
+      const r = row(slug);
+      r.must_change_password = value;
+      r.updated_at = `v${++version}`; // like the real table, any change moves updated_at
     },
   });
   return { users, customers };
@@ -211,6 +220,12 @@ test('a customer reaches only their own data and no coach routes', async (t) => 
     assert.ok(!GATE_STATUSES.includes(res.status), `${method} ${path} → ${res.status}`);
   }
 
+  // The chat assistant is open to customers too (no 401/403; past the gate it needs the chatbot).
+  for (const [method, path] of [['POST', '/api/chat'], ['GET', '/api/chat/history']]) {
+    const res = await ctx.call(path, { method, cookie, body: method === 'GET' ? undefined : { message: 'hola' } });
+    assert.ok(![401, 403].includes(res.status), `${method} ${path} → ${res.status}`);
+  }
+
   // Another customer: 404, same as a customer that does not exist.
   for (const slug of ['luis-perez', 'nobody-here']) {
     const res = await ctx.call(`/api/customers/${slug}`, { cookie });
@@ -230,8 +245,6 @@ test('a customer reaches only their own data and no coach routes', async (t) => 
     ['POST', `/api/customers/${ANA.slug}/access`],
     ['POST', `/api/customers/${ANA.slug}/access/reset`],
     ['PUT', `/api/customers/${ANA.slug}/feedback/day-notes`], // the coach's notepad
-    ['POST', '/api/chat'],
-    ['GET', '/api/chat/history'],
     ['POST', '/api/sync/upload'],
     ['GET', '/api/sync/status'],
   ]) {
@@ -282,4 +295,49 @@ test('archiving a customer cuts them off at once; a coach reset forces a new pas
   const old = await ctx.call(ownPath, { cookie: ana.cookie });
   assert.equal(old.status, 403);
   assert.equal((await old.json()).error, 'account_disabled');
+});
+
+test('a customer can reset a forgotten password from an emailed link, once', async (t) => {
+  const ctx = await setup(t);
+  const sent = [];
+  setEmailSenderForTests(async (message) => {
+    sent.push(message);
+  });
+  t.after(() => setEmailSenderForTests(null));
+
+  const coach = await ctx.login(COACH.email, COACH.password);
+  await giveAccess(ctx, coach.cookie, ANA.slug, ANA.email, 'Default123');
+  const post = (path, body) => ctx.call(path, { method: 'POST', body });
+
+  // Same answer for a customer, the coach and a stranger; only the customer is emailed.
+  assert.equal((await post('/api/password/forgot', { email: 'bad' })).status, 422);
+  for (const email of ['nobody@example.com', COACH.email, ANA.email]) {
+    const res = await post('/api/password/forgot', { email });
+    assert.equal(res.status, 200, email);
+    assert.deepEqual(await res.json(), { ok: true });
+  }
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].to, ANA.email);
+  const token = decodeURIComponent(sent[0].text.match(/token=([^\s]+)/)[1]);
+
+  // Asking again straight away does not send another email.
+  await post('/api/password/forgot', { email: ANA.email });
+  assert.equal(sent.length, 1);
+
+  const reset = (body) => post('/api/password/reset', { token, newPassword: 'Brand9new', confirmPassword: 'Brand9new', ...body });
+  assert.equal((await reset({ token: 'forged.token' })).status, 400);
+  assert.equal((await reset({ newPassword: 'short', confirmPassword: 'short' })).status, 422);
+  assert.equal((await reset({ confirmPassword: 'Other1234' })).status, 422);
+
+  assert.equal((await reset({})).status, 200);
+  assert.equal(ctx.world.customers.get(ANA.slug).must_change_password, false);
+  assert.equal((await ctx.login(ANA.email, 'Default123')).res.status, 401);
+  assert.equal((await ctx.login(ANA.email, 'Brand9new')).body.mustChangePassword, false);
+
+  // The link is spent.
+  assert.equal((await reset({ newPassword: 'Again8pass', confirmPassword: 'Again8pass' })).status, 400);
+
+  // A reset token is not a session.
+  const asCookie = await ctx.call('/api/customers', { cookie: `coach_session=${token}` });
+  assert.equal(asCookie.status, 401);
 });

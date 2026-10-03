@@ -194,6 +194,14 @@ export function changePassword({ currentPassword, newPassword, confirmPassword }
   );
 }
 
+export function requestPasswordReset(email) {
+  return request('/api/password/forgot', { method: 'POST', body: JSON.stringify({ email }) }, true);
+}
+
+export function resetPasswordWithToken({ token, newPassword, confirmPassword }) {
+  return request('/api/password/reset', { method: 'POST', body: JSON.stringify({ token, newPassword, confirmPassword }) }, true);
+}
+
 export function createCustomerAccess(slug, { email, defaultPassword }) {
   return request(`/api/customers/${encodeURIComponent(slug)}/access`, {
     method: 'POST',

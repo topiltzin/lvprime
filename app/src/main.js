@@ -2,6 +2,7 @@ import { renderOverview } from './views/overview-view.js';
 import { renderCustomer } from './views/customer-view.js';
 import { renderLogin } from './views/login-view.js';
 import { renderChangePassword } from './views/change-password-view.js';
+import { renderResetPassword } from './views/reset-password-view.js';
 import { getSession, logout, setPasswordRequiredHandler, setUnauthorizedHandler } from './api-client.js';
 import { t } from './lib/i18n.js';
 import { renderSidebar } from './components/sidebar.js';
@@ -63,6 +64,15 @@ setPasswordRequiredHandler(async () => {
 window.addEventListener('hashchange', render);
 
 async function start() {
+  // The emailed link (#/reset-password?token=…) works signed out and replaces the app.
+  const resetMatch = window.location.hash.match(/^#\/reset-password\?token=(.+)$/);
+  if (resetMatch) {
+    await renderResetPassword(app, decodeURIComponent(resetMatch[1]));
+    window.location.hash = '#/';
+    window.location.reload();
+    return;
+  }
+
   try {
     session = await getSession();
   } catch {
@@ -86,9 +96,9 @@ async function start() {
   // Once per page load, after the first view has passed the sign-in gate.
   await render();
   renderHeaderAccount(document.getElementById('header-account'), session);
-  // The coach's assistant: not for customers. Signed in by now (the login screen
-  // reloads the page), so never on the sign-in page.
-  if (!isCustomer()) mountChatPanel(document.body);
+  // The assistant is for the coach and customers alike (each has their own memory).
+  // Signed in by now (the login screen reloads the page), so never on the sign-in page.
+  mountChatPanel(document.body);
 }
 
 start();

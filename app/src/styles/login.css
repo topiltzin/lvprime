@@ -222,3 +222,21 @@ form.login-form button[type='submit'] {
 .sign-out-button:disabled {
   opacity: 0.6;
 }
+
+/* Text-style button under a sign-in form ("Forgot your password?", "Back to sign in"). */
+.login-link {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.login-link:hover {
+  color: var(--ink);
+}
