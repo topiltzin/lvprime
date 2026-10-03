@@ -371,19 +371,19 @@ a.exercise-name:hover .exercise-video-icon {
   border-radius: var(--radius-input);
 }
 
-/* Per-day notepad: one note for the whole session, opened from "Add details". */
+/* Per-day notepad: one note for the whole session, between the exercises and the footer. */
 .day-notepad {
-  flex: 1 1 100%;
-  order: 3;
   display: grid;
   gap: 0.5rem;
-}
-
-.day-notepad[hidden] {
-  display: none;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
 }
 
 .day-notepad-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   font-weight: 700;
 }
 
@@ -406,6 +406,8 @@ a.exercise-name:hover .exercise-video-icon {
   font-size: 1rem; /* 16px: iOS does not zoom the page on focus */
   line-height: 1.6;
   resize: vertical;
+  field-sizing: content;
+  max-height: 30rem;
 }
 
 .day-notepad-text:focus {
@@ -438,12 +440,6 @@ a.exercise-name:hover .exercise-video-icon {
   cursor: pointer;
 }
 
-.day-notepad-cancel {
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--ink);
-}
-
 .day-notepad-save {
   border: none;
   background: var(--accent-fill);
@@ -462,7 +458,7 @@ a.exercise-name:hover .exercise-video-icon {
 
 @media (max-width: 600px) {
   .day-notepad-actions button {
-    flex: 1 1 0;
+    flex: 1 1 100%;
   }
 }
 

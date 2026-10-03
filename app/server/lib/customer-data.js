@@ -511,7 +511,8 @@ export const MAX_DAY_NOTES_CHARS = 5000;
  * The per-day notepad: saves one free-text note for the whole session as the notes
  * field of that date + label entry, so a day is always a single entry however often it
  * is edited. Only the notes field changes on an existing entry; a missing entry is
- * created as completed (the notepad opens from a done day). Returns { entry, created }.
+ * created with every other field "not reported" (completed included), so notes saved
+ * before "Mark done" never count as a finished session. Returns { entry, created }.
  */
 export async function saveDayNotes(slug, displayName, { date, label, notes }, { customer } = {}) {
   if (!DATE_RE.test(date)) throw new ValidationError('date', 'must be in YYYY-MM-DD format');
@@ -528,9 +529,7 @@ export async function saveDayNotes(slug, displayName, { date, label, notes }, { 
   const created = !findFeedbackEntryBlock(content, { date, label });
   if (created) {
     const fieldValues = {};
-    for (const field of template.fields) {
-      fieldValues[field] = /^complet/i.test(field.trim()) ? completedYesValue(template) : notReportedValue(template);
-    }
+    for (const field of template.fields) fieldValues[field] = notReportedValue(template);
     content = upsertFeedbackEntryText(
       content,
       template,

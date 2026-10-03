@@ -42,3 +42,15 @@ export function findDoneEntry(entries, label, today = todayIso()) {
   }
   return best;
 }
+
+/**
+ * The entry the day's notepad edits: the done entry when the card is done, otherwise
+ * today's entry for this label (notes saved before "Mark done"), otherwise null.
+ */
+export function findDayEntry(entries, label, today = todayIso()) {
+  const done = findDoneEntry(entries, label, today);
+  if (done) return done;
+  const wanted = normalize(label);
+  const todays = (entries || []).filter((e) => e.date === today && normalize(e.label) === wanted);
+  return todays[todays.length - 1] || null;
+}

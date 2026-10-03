@@ -1,10 +1,13 @@
 // The per-day notepad's starting text: one line per exercise for the customer to finish
 // ("Goblet squat — 3x12: ") so they never have to remember what the day held.
 
-/** The exercise list as editable lines, or '' for a day without structured exercises. */
+/** Separates one exercise's notes from the next. */
+export const NOTE_DIVIDER = '____________________';
+
+/** The exercise list as editable lines, each followed by a divider; '' without exercises. */
 export function notepadPrefill(day) {
   return (day.exercises || [])
-    .map((e) => `${e.name}${e.setsReps ? ` — ${e.setsReps}` : ''}: `)
+    .map((e) => `${e.name}${e.setsReps ? ` — ${e.setsReps}` : ''}: \n${NOTE_DIVIDER}`)
     .join('\n');
 }
 

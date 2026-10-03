@@ -7,7 +7,7 @@ import { marked } from 'marked';
 import { renderProgramDay, renderDaySubnav, trackActiveDay } from './program-day.js';
 import { renderWeekSubnav } from './week-subnav.js';
 import { getProgramWeek, quickCompleteSession, saveDayNotes } from '../api-client.js';
-import { findDoneEntry, sessionLabel, todayIso } from '../lib/day-completion.js';
+import { findDayEntry, findDoneEntry, sessionLabel, todayIso } from '../lib/day-completion.js';
 import { renderFeedbackEntry } from './feedback-entry.js';
 import { renderFeedbackForm } from '../views/feedback-form-view.js';
 import { renderTrendChart } from './trend-chart.js';
@@ -333,7 +333,8 @@ export class TabContainer {
         editable: !detail.isLocked,
         doneEntry: findDoneEntry(this.feedbackEntries, sessionLabel(day)),
         onMarkDone: (d) => this.markDayDone(d),
-        onSaveNotes: (entry, text) => this.saveDayNotes(entry, text),
+        noteEntry: findDayEntry(this.feedbackEntries, sessionLabel(day)),
+        onSaveNotes: (d, entry, text) => this.saveDayNotes(d, entry, text),
       }));
       cards.forEach((card) => scheduleSection.appendChild(card));
       weekBody.appendChild(scheduleSection);
@@ -366,9 +367,16 @@ export class TabContainer {
     return entry;
   }
 
-  /** Saves a day's notepad as its single entry; resolves with the saved entry. */
-  async saveDayNotes(entry, notes) {
-    const { entry: saved } = await saveDayNotes(this.slug, { date: entry.date, label: entry.label, notes });
+  /**
+   * Saves a day's notepad as its single entry (today's, unless the day already has one);
+   * resolves with the saved entry.
+   */
+  async saveDayNotes(day, entry, notes) {
+    const { entry: saved } = await saveDayNotes(this.slug, {
+      date: entry?.date ?? todayIso(),
+      label: entry?.label ?? sessionLabel(day),
+      notes,
+    });
     const same = (e) => e.date === saved.date && (e.label || '') === (saved.label || '');
     this.feedbackEntries = [...this.feedbackEntries.filter((e) => !same(e)), saved];
     try {

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { notepadPrefill, notepadStartText } from '../../src/lib/day-notes.js';
+import { NOTE_DIVIDER, notepadPrefill, notepadStartText } from '../../src/lib/day-notes.js';
+import { findDayEntry } from '../../src/lib/day-completion.js';
 import {
   extractFeedbackTemplate,
   formatFeedbackEntry,
@@ -19,8 +20,8 @@ const day = {
 const template = { headingLevel: 2, fields: ['How customer felt', 'Completed', 'Notes', 'Overall impression'] };
 const key = { date: '2026-10-03', label: 'Monday - Legs' };
 
-test('notepadPrefill lists each exercise as a line to finish', () => {
-  assert.equal(notepadPrefill(day), 'Goblet squat — 3x12: \nPlank: ');
+test('notepadPrefill lists each exercise as a line to finish, split by dividers', () => {
+  assert.equal(notepadPrefill(day), `Goblet squat — 3x12: \n${NOTE_DIVIDER}\nPlank: \n${NOTE_DIVIDER}`);
   assert.equal(notepadPrefill({ day: 'Sunday' }), '');
 });
 
@@ -72,4 +73,26 @@ test('clearing the note stores "not reported", which reads back as no note', () 
   }).content;
   const cleared = setEntryNotes(base, template, { ...key, notes: '   ' }).content;
   assert.equal(parseFeedbackEntries(cleared)[0].notes, null);
+});
+
+test('the prefilled notepad (dividers included) round-trips as one note', () => {
+  const key = { date: '2026-10-03', label: 'Monday' };
+  const t2 = { headingLevel: 2, fields: ['Completed', 'Notes'] };
+  const base = upsertFeedbackEntryText('', t2, { ...key, fieldValues: { Completed: 'Not reported', Notes: 'x' } }).content;
+  const text = notepadPrefill(day).replace('3x12: ', '3x12: 40kg');
+  const out = setEntryNotes(base, t2, { ...key, notes: text }).content;
+  const [entry] = parseFeedbackEntries(out);
+  // Trailing spaces on a line are not kept.
+  assert.equal(entry.notes, text.split('\n').map((l) => l.trimEnd()).join('\n'));
+  assert.equal(entry.completed, null);
+});
+
+test('findDayEntry: the done entry, else today\'s entry for the label, else null', () => {
+  const today = '2026-10-03';
+  const todays = { date: today, label: 'Monday - Legs', completed: null, notes: 'x' };
+  const old = { date: '2026-09-20', label: 'Monday - Legs', completed: null };
+  const done = { date: '2026-10-01', label: 'Monday - Legs', completed: true };
+  assert.equal(findDayEntry([old, todays], 'Monday - Legs', today), todays);
+  assert.equal(findDayEntry([old], 'Monday - Legs', today), null);
+  assert.equal(findDayEntry([todays, done], 'Monday - Legs', today), done);
 });
