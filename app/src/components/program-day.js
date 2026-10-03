@@ -90,13 +90,16 @@ function doneChip(entry, animate) {
   return chip;
 }
 
-// Inline notepad between the exercises and the footer: one note for the whole session,
-// preloaded with the day's exercises, usable before or after "Mark done". Saved as the
+// Inline notepad between the exercises and the footer, collapsed until the footer's
+// details button opens it: one note for the whole session, preloaded with the day's
+// exercises, usable before or after "Mark done". Saved as the
 // day's single feedback entry. Save stays off until the text differs from what was last
 // saved, so an untouched preload is never stored.
 function renderNotepad(day, initialEntry, onSaveNotes, id) {
   const pad = document.createElement('form');
   pad.className = 'day-notepad';
+  pad.id = id;
+  pad.hidden = true;
 
   const label = document.createElement('label');
   label.className = 'day-notepad-label';
@@ -158,6 +161,7 @@ function renderNotepad(day, initialEntry, onSaveNotes, id) {
       entry = next;
       saved = (next?.notes ?? text.value).trim();
       save.disabled = text.value.trim() === saved;
+      pad.dispatchEvent(new CustomEvent('notepad-saved'));
     } catch {
       error.textContent = t('common.couldNotSave');
       save.disabled = false;
@@ -170,6 +174,8 @@ function renderNotepad(day, initialEntry, onSaveNotes, id) {
 
   return {
     pad,
+    text,
+    hasNote: () => !!saved,
     /** "Mark done" produced/updated the day's entry: later saves go to it. */
     setEntry(next) {
       entry = next;
@@ -178,7 +184,7 @@ function renderNotepad(day, initialEntry, onSaveNotes, id) {
 }
 
 function renderDayFooter(card, day, options) {
-  const { editable, onMarkDone, onEntryChange } = options;
+  const { editable, onMarkDone, onEntryChange, notepad } = options;
   const footer = document.createElement('footer');
   footer.className = 'program-day-footer';
   // Announces the switch to "Done" without making the buttons part of a live region.
@@ -187,11 +193,43 @@ function renderDayFooter(card, day, options) {
   status.setAttribute('role', 'status');
   footer.appendChild(status);
 
+  // Opens/closes the notepad; one button for both the idle and done footers.
+  let details = null;
+  if (notepad) {
+    details = document.createElement('button');
+    details.type = 'button';
+    details.className = 'day-add-details';
+    details.setAttribute('aria-expanded', 'false');
+    details.setAttribute('aria-controls', notepad.pad.id);
+    const detailsLabel = document.createElement('span');
+    const syncLabel = () => {
+      detailsLabel.textContent = t(notepad.hasNote() ? 'day.editDetails' : 'day.addDetails');
+    };
+    syncLabel();
+    details.append(icon('note-pencil'), detailsLabel);
+    const setOpen = (open) => {
+      notepad.pad.hidden = !open;
+      details.setAttribute('aria-expanded', String(open));
+      if (open) {
+        notepad.text.focus();
+        notepad.text.setSelectionRange(notepad.text.value.length, notepad.text.value.length);
+      } else {
+        details.focus();
+      }
+    };
+    details.addEventListener('click', () => setOpen(notepad.pad.hidden));
+    notepad.pad.addEventListener('notepad-saved', () => {
+      syncLabel();
+      setOpen(false);
+    });
+  }
+
   const showDone = (entry, animate) => {
     footer.replaceChildren(status);
     footer.classList.add('is-done');
     card.classList.add('program-day-card--done');
     status.replaceChildren(doneChip(entry, animate));
+    if (details) footer.appendChild(details);
   };
 
   const showIdle = () => {
@@ -203,7 +241,7 @@ function renderDayFooter(card, day, options) {
     button.append(icon('check-circle'), label);
     const error = document.createElement('p');
     error.className = 'field-error day-done-error';
-    footer.append(button, error);
+    footer.append(...(details ? [details] : []), button, error);
 
     let saving = false;
     button.addEventListener('click', async () => {
@@ -282,7 +320,7 @@ export function renderProgramDay(day, index = 0, options = {}) {
       notepad = renderNotepad(day, options.noteEntry, options.onSaveNotes, `${card.id}-notepad`);
       card.appendChild(notepad.pad);
     }
-    const footer = renderDayFooter(card, day, { ...options, onEntryChange: notepad?.setEntry });
+    const footer = renderDayFooter(card, day, { ...options, onEntryChange: notepad?.setEntry, notepad });
     if (footer) card.appendChild(footer);
   } else {
     const body = document.createElement('div');

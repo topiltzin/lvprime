@@ -380,6 +380,10 @@ a.exercise-name:hover .exercise-video-icon {
   border-top: 1px solid var(--border);
 }
 
+.day-notepad[hidden] {
+  display: none;
+}
+
 .day-notepad-label {
   display: inline-flex;
   align-items: center;
