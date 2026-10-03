@@ -179,6 +179,15 @@ form.login-form button[type='submit'] {
   min-width: 0;
 }
 
+.header-role {
+  padding: 0.1rem 0.55rem;
+  border: 1px solid var(--on-header-muted);
+  border-radius: 999px;
+  font-size: var(--meta-size);
+  color: var(--on-header-muted);
+  white-space: nowrap;
+}
+
 .header-email {
   max-width: 240px;
   overflow: hidden;

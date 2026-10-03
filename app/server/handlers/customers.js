@@ -21,9 +21,12 @@ import {
   saveDayNotes,
   listAllCustomers,
   computeFeedbackTrend,
+  getCustomerAccess,
+  AccountsUnavailableError,
   WeekNotFoundError,
 } from '../lib/customer-data.js';
 import { listAttachments } from '../lib/attachments.js';
+import { getAuthUserEmail } from '../auth.js';
 
 // Customer reads and feedback writes.
 
@@ -111,7 +114,7 @@ export async function handleGetCustomer(req, res, slug) {
     : { present: false };
 
   let notes = { present: !!notesRow };
-  if (notesRow) {
+  if (notesRow && req.actor?.role !== 'customer') {
     notes = { present: true, html: renderMarkdown(notesRow.content) };
   }
 
@@ -124,22 +127,62 @@ export async function handleGetCustomer(req, res, slug) {
     };
   }
 
-  const entries = feedback.entries.map(toFeedbackEntryJson);
-  const trend = computeFeedbackTrend(feedback.entries);
-
-  sendJson(res, 200, {
+  const base = {
     slug: customer.slug,
     displayName: customer.name,
     archivedAt: customer.archived_at ?? null,
     program,
     programWeeks,
-    notes,
     nutrition,
     measurements: parseMeasurements(notesRow?.content),
-    feedback: { entries, trend, template: feedback.template },
     // null when Storage couldn't be read; the page still loads and says so.
     attachments: attachmentList,
+  };
+
+  const view = shapeCustomerView(req.actor?.role, {
+    base,
+    notes,
+    feedbackRows: feedback.entries,
+    template: feedback.template,
   });
+  if (view.role === 'coach') view.access = await loadAccessSummary(slug);
+  sendJson(res, 200, view);
+}
+
+/**
+ * The customer page payload for a role. Customers get no coach notes and no tracking
+ * detail (Notas / Seguimiento are coach only, specs/015 FR-011): only which days they
+ * completed, for the Program tab's done marks, plus the form template for Registrar sesión.
+ */
+export function shapeCustomerView(role, { base, notes, feedbackRows, template }) {
+  if (role === 'customer') {
+    const completedDays = feedbackRows.map((row) => ({
+      date: row.entry_date,
+      label: row.label,
+      completed: row.completed,
+    }));
+    return { ...base, role: 'customer', notes: { present: false }, feedback: { completedDays, template } };
+  }
+  return {
+    ...base,
+    role: 'coach',
+    notes,
+    feedback: { entries: feedbackRows.map(toFeedbackEntryJson), trend: computeFeedbackTrend(feedbackRows), template },
+  };
+}
+
+// Whether the client can sign in (coach view). Never fails the page: before the 017
+// migration, or if Auth is down, the summary just reads as "no access".
+async function loadAccessSummary(slug) {
+  try {
+    const access = await getCustomerAccess(slug);
+    let email = null;
+    if (access.authUserId) email = (await getAuthUserEmail(access.authUserId)).email ?? null;
+    return { hasAccess: access.hasAccess, email, mustChangePassword: access.mustChangePassword };
+  } catch (err) {
+    if (!(err instanceof AccountsUnavailableError)) console.error('Access summary unavailable:', err.message);
+    return { hasAccess: false, email: null, mustChangePassword: false, unavailable: true };
+  }
 }
 
 // Attachments are secondary to the program: a Storage outage (or a bucket that

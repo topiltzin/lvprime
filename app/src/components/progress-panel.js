@@ -209,7 +209,7 @@ function renderMeasurementForm(columns, slug, onAdded) {
   return wrap;
 }
 
-export function renderProgressPanel(container, measurements, { slug, onMeasurementAdded }) {
+export function renderProgressPanel(container, measurements, { slug, onMeasurementAdded, readOnly = false }) {
   const columns = measurements.columns.length ? measurements.columns : DEFAULT_COLUMNS;
   const charts = columns
     .map((name) => [name, seriesFor(measurements, name)])
@@ -227,5 +227,5 @@ export function renderProgressPanel(container, measurements, { slug, onMeasureme
     container.appendChild(empty);
   }
 
-  container.appendChild(renderMeasurementForm(columns, slug, onMeasurementAdded));
+  if (!readOnly) container.appendChild(renderMeasurementForm(columns, slug, onMeasurementAdded));
 }

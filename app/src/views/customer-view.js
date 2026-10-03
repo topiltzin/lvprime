@@ -1,4 +1,4 @@
-import { getCustomer, setCustomerArchived } from '../api-client.js';
+import { createCustomerAccess, getCustomer, resetCustomerPassword, setCustomerArchived } from '../api-client.js';
 import { TabContainer } from '../components/tab-container.js';
 import { renderClientHero } from '../components/client-hero.js';
 import { renderAttachmentsCard } from '../components/attachments-card.js';
@@ -33,7 +33,9 @@ function buildFeedbackStats(feedback) {
 /**
  * Prepare tab configuration based on available data
  */
-function buildTabConfig(data) {
+function buildTabConfig(data, { isCustomer = false } = {}) {
+  // A customer sees Notas and Seguimiento greyed out: the coach's tracking and notes are not theirs.
+  const coachOnly = isCustomer ? { isEnabled: false, showDisabled: true } : { isEnabled: true };
   return [
     {
       id: 'program',
@@ -55,7 +57,7 @@ function buildTabConfig(data) {
       // Always enabled — a client with zero entries still sees the Feedback tab,
       // showing an honest empty state rather than being hidden (US3 edge cases).
       label: t('tabs.feedback'),
-      isEnabled: true,
+      ...coachOnly,
       contentType: 'feedback',
       order: 2,
     },
@@ -78,7 +80,7 @@ function buildTabConfig(data) {
       // Always enabled — a client with no notes.md still sees the Notes tab,
       // showing a dashed empty state rather than being hidden (FR-018).
       label: t('tabs.notes'),
-      isEnabled: true,
+      ...coachOnly,
       contentType: 'notes',
       order: 5,
     },
@@ -134,6 +136,102 @@ function buildTabData(customerData) {
   };
 }
 
+// The coach gets full entries; a customer gets only completed days (same date/label/completed
+// shape), which is all the Program tab's done marks read.
+function feedbackEntriesOf(customerData) {
+  return customerData.feedback?.entries || customerData.feedback?.completedDays || [];
+}
+
+// Coach-only: give this client sign-in access with a default password, or reset it.
+function renderAccessPanel(slug, access, onChanged) {
+  const section = document.createElement('section');
+  section.className = 'card access-panel';
+  const h2 = document.createElement('h2');
+  h2.textContent = t('access.title');
+  section.appendChild(h2);
+
+  const message = document.createElement('p');
+  message.className = 'field-error';
+  message.setAttribute('role', 'alert');
+
+  const hasAccess = !!access?.hasAccess;
+  const status = document.createElement('p');
+  status.className = 'form-intro';
+  if (hasAccess) {
+    status.textContent = `${access.email || ''} · ${access.mustChangePassword ? t('access.pending') : t('access.active')}`;
+  } else {
+    status.textContent = t('access.none');
+  }
+  section.appendChild(status);
+
+  const form = document.createElement('form');
+  form.className = 'feedback-form access-form';
+  form.noValidate = true;
+  const fieldRow = (labelText, input, name) => {
+    const wrap = document.createElement('div');
+    const label = document.createElement('label');
+    label.textContent = labelText;
+    label.htmlFor = `access-${name}`;
+    input.id = `access-${name}`;
+    const error = document.createElement('p');
+    error.className = 'field-error';
+    error.setAttribute('aria-live', 'polite');
+    wrap.append(label, input, error);
+    return { wrap, input, error };
+  };
+
+  const rows = [];
+  if (!hasAccess) {
+    const email = document.createElement('input');
+    Object.assign(email, { type: 'email', name: 'email', autocomplete: 'off', spellcheck: false });
+    rows.push({ key: 'email', ...fieldRow(t('access.email'), email, 'email') });
+  }
+  const password = document.createElement('input');
+  Object.assign(password, { type: 'text', name: 'defaultPassword', autocomplete: 'off', spellcheck: false });
+  rows.push({ key: 'defaultPassword', ...fieldRow(t('access.defaultPassword'), password, 'password') });
+  const hint = document.createElement('p');
+  hint.className = 'form-intro';
+  hint.textContent = `${t('access.defaultPasswordHint')} ${t('password.rules')}`;
+  rows[rows.length - 1].wrap.appendChild(hint);
+
+  const submit = document.createElement('button');
+  submit.type = 'submit';
+  submit.textContent = hasAccess ? t('access.reset') : t('access.create');
+  form.append(...rows.map((r) => r.wrap), message, submit);
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    message.textContent = '';
+    for (const r of rows) r.error.textContent = '';
+    const values = Object.fromEntries(rows.map((r) => [r.key, r.input.value.trim()]));
+    if (hasAccess ? false : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
+      rows[0].error.textContent = t('login.invalidEmail');
+      return;
+    }
+    if (!(values.defaultPassword.length >= 8 && /\p{L}/u.test(values.defaultPassword) && /\d/.test(values.defaultPassword))) {
+      rows[rows.length - 1].error.textContent = t('password.tooWeak');
+      return;
+    }
+    submit.disabled = true;
+    submit.textContent = hasAccess ? t('access.resetting') : t('access.creating');
+    try {
+      if (hasAccess) await resetCustomerPassword(slug, { defaultPassword: values.defaultPassword });
+      else await createCustomerAccess(slug, values);
+      showToast(hasAccess ? t('access.resetDone') : t('access.created'), 5000);
+      await onChanged();
+    } catch (err) {
+      const fields = err.fields || {};
+      for (const r of rows) if (fields[r.key]) r.error.textContent = fields[r.key];
+      if (!Object.keys(fields).length) message.textContent = err.message;
+      submit.disabled = false;
+      submit.textContent = hasAccess ? t('access.reset') : t('access.create');
+    }
+  });
+
+  section.appendChild(form);
+  return section;
+}
+
 function renderCustomerSkeleton(container) {
   container.setAttribute('aria-busy', 'true');
   container.innerHTML = `
@@ -145,7 +243,8 @@ function renderCustomerSkeleton(container) {
   `;
 }
 
-export async function renderCustomer(container, slug) {
+export async function renderCustomer(container, slug, { role = 'coach' } = {}) {
+  const isCustomer = role === 'customer';
   renderCustomerSkeleton(container);
 
   let data;
@@ -160,7 +259,7 @@ export async function renderCustomer(container, slug) {
     back.className = 'back-link';
     back.href = '#/';
     back.append(icon('caret-left'), t('common.allClients'));
-    header.appendChild(back);
+    if (!isCustomer) header.appendChild(back);
     container.appendChild(header);
     const banner = document.createElement('div');
     banner.className = 'error-banner';
@@ -183,7 +282,8 @@ export async function renderCustomer(container, slug) {
       showToast(err.message || t('archive.failed'), 4000, 'error');
     }
   };
-  container.appendChild(renderClientHero(data, { onToggleArchived }));
+  container.appendChild(renderClientHero(data, { onToggleArchived: isCustomer ? null : onToggleArchived, isCustomer }));
+  if (!isCustomer) container.appendChild(renderAccessPanel(slug, data.access, () => renderCustomer(container, slug, { role })));
 
   // Nutrition, Feedback, Log Session and Notes are always enabled, so there is
   // always at least one tab to show.
@@ -199,10 +299,11 @@ export async function renderCustomer(container, slug) {
 
   const mountTabs = (customerData) => {
     tabsContainer.innerHTML = '';
-    tabs = new TabContainer(tabsContainer, buildTabConfig(customerData), buildTabData(customerData), {
+    tabs = new TabContainer(tabsContainer, buildTabConfig(customerData, { isCustomer }), buildTabData(customerData), {
+      readOnly: isCustomer,
       slug,
       feedbackTemplate: data.feedback?.template,
-      feedbackEntries: customerData.feedback?.entries || [],
+      feedbackEntries: feedbackEntriesOf(customerData),
       onFeedbackAdded,
       onSessionLogged,
       onContentSaved,
@@ -237,7 +338,7 @@ export async function renderCustomer(container, slug) {
   const onFeedbackAdded = async () => {
     try {
       mountTabs(await getCustomer(slug));
-      tabs.setActiveTab('feedback');
+      tabs.setActiveTab(isCustomer ? 'program' : 'feedback');
       showToast(t('toast.feedbackSaved'));
       refreshSidebar();
     } catch (err) {
@@ -252,7 +353,7 @@ export async function renderCustomer(container, slug) {
     try {
       const updatedData = await getCustomer(slug);
       tabs.data.feedback = buildTabData(updatedData).feedback;
-      tabs.setFeedbackEntries(updatedData.feedback?.entries || []);
+      tabs.setFeedbackEntries(feedbackEntriesOf(updatedData));
       tabs.rerenderPanel('feedback');
       refreshSidebar();
     } catch (err) {
@@ -262,5 +363,5 @@ export async function renderCustomer(container, slug) {
 
   mountTabs(data);
 
-  container.appendChild(renderAttachmentsCard(slug, data.attachments ?? null));
+  container.appendChild(renderAttachmentsCard(slug, data.attachments ?? null, { readOnly: isCustomer }));
 }

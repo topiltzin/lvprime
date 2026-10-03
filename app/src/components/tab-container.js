@@ -56,6 +56,8 @@ export class TabContainer {
     // Coach edits: onContentSaved(tabId) remounts with fresh data; onMeasurementAdded refreshes Progress.
     this.onContentSaved = options.onContentSaved;
     this.onMeasurementAdded = options.onMeasurementAdded;
+    // A customer's view: no editing of programs, nutrition, notes or measurements, and no coach notepad.
+    this.readOnly = !!options.readOnly;
 
     this.render();
     this.attachEventListeners();
@@ -93,6 +95,21 @@ export class TabContainer {
     header.setAttribute('role', 'tablist');
 
     this.tabs.forEach((tab) => {
+      if (!tab.isEnabled && tab.showDisabled) {
+        // Visible but not usable (a customer's Notas / Seguimiento): no panel, no focus, no click.
+        const button = document.createElement('button');
+        button.className = 'tab-button is-disabled';
+        button.id = `tab-${tab.id}`;
+        button.setAttribute('role', 'tab');
+        button.setAttribute('aria-selected', 'false');
+        button.setAttribute('aria-disabled', 'true');
+        button.disabled = true;
+        button.title = t('login.disabledTab');
+        button.dataset.tabId = tab.id;
+        button.textContent = tab.label;
+        header.appendChild(button);
+        return;
+      }
       if (tab.isEnabled) {
         const button = document.createElement('button');
         button.className = 'tab-button';
@@ -183,7 +200,7 @@ export class TabContainer {
         this.renderNotesContent(container, data);
         break;
       case 'progress':
-        renderProgressPanel(container, data, { slug: this.slug, onMeasurementAdded: this.onMeasurementAdded });
+        renderProgressPanel(container, data, { slug: this.slug, onMeasurementAdded: this.onMeasurementAdded, readOnly: this.readOnly });
         break;
       case 'add-entry':
         this.renderAddEntryContent(container);
@@ -272,6 +289,8 @@ export class TabContainer {
   }
 
   createActionButton(label, onClick) {
+    // Coach-only actions render as an empty placeholder in a customer's read-only view.
+    if (this.readOnly) return document.createElement('span');
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'pdf-download-button';
@@ -285,6 +304,10 @@ export class TabContainer {
     card.className = 'empty-state-card empty-state-with-cta';
     const text = document.createElement('p');
     text.textContent = message;
+    if (this.readOnly) {
+      card.appendChild(text);
+      return card;
+    }
     const cta = document.createElement('button');
     cta.type = 'button';
     cta.className = 'empty-state-cta';
@@ -334,7 +357,7 @@ export class TabContainer {
         doneEntry: findDoneEntry(this.feedbackEntries, sessionLabel(day)),
         onMarkDone: (d) => this.markDayDone(d),
         noteEntry: findDayEntry(this.feedbackEntries, sessionLabel(day)),
-        onSaveNotes: (d, entry, text) => this.saveDayNotes(d, entry, text),
+        onSaveNotes: this.readOnly ? undefined : (d, entry, text) => this.saveDayNotes(d, entry, text),
       }));
       cards.forEach((card) => scheduleSection.appendChild(card));
       weekBody.appendChild(scheduleSection);

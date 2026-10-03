@@ -28,7 +28,7 @@ function fileName(relativePath) {
  * attachments: [{ relativePath, sizeBytes }] from GET /api/customers/<slug>, or null
  * when Storage couldn't be read (the card says so and hides the upload control).
  */
-export function renderAttachmentsCard(slug, attachments) {
+export function renderAttachmentsCard(slug, attachments, { readOnly = false } = {}) {
   const section = document.createElement('section');
   section.className = 'card attachments';
 
@@ -52,7 +52,7 @@ export function renderAttachmentsCard(slug, attachments) {
   list.className = 'attachment-list';
   const empty = document.createElement('p');
   empty.className = 'empty-state attachments-empty';
-  empty.textContent = t('attach.empty', { mb: MAX_MB });
+  empty.textContent = readOnly ? t('attach.emptyReadOnly') : t('attach.empty', { mb: MAX_MB });
   const error = document.createElement('p');
   error.className = 'field-error';
   error.setAttribute('role', 'alert');
@@ -76,6 +76,7 @@ export function renderAttachmentsCard(slug, attachments) {
     size.textContent = formatBytes(a.sizeBytes);
     link.appendChild(size);
     li.appendChild(link);
+    if (readOnly) return li;
 
     const remove = document.createElement('button');
     remove.type = 'button';
@@ -120,7 +121,7 @@ export function renderAttachmentsCard(slug, attachments) {
   uploadLabel.textContent = t('attach.upload');
   uploadButton.append(icon('upload'), uploadLabel);
   uploadButton.addEventListener('click', () => input.click());
-  header.append(uploadButton, input);
+  if (!readOnly) header.append(uploadButton, input);
 
   input.addEventListener('change', async () => {
     const file = input.files?.[0];

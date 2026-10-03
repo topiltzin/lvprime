@@ -57,6 +57,14 @@
   color: var(--ink);
 }
 
+/* Visible but unavailable (a customer's Notas / Seguimiento). */
+.tab-button.is-disabled,
+.tab-button.is-disabled:hover {
+  color: var(--muted);
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .tab-button.active {
   color: var(--ink);
 }

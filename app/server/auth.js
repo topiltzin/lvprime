@@ -54,7 +54,7 @@ function readCookie(req, name) {
   return null;
 }
 
-/** The signed-in coach ({ sub, email }) for this request, or null. */
+/** The signed-in user ({ sub, email, role, slug }) for this request, or null. */
 export function getSession(req) {
   const raw = readCookie(req, COOKIE_NAME);
   if (!raw) return null;
@@ -65,7 +65,13 @@ export function getSession(req) {
   try {
     const payload = JSON.parse(Buffer.from(data, 'base64url').toString('utf8'));
     if (typeof payload.exp !== 'number' || payload.exp * 1000 < Date.now()) return null;
-    return { sub: payload.sub, email: payload.email };
+    // Cookies issued before customer accounts existed carry no role: they are the coach's.
+    return {
+      sub: payload.sub,
+      email: payload.email,
+      role: payload.role === 'customer' ? 'customer' : 'coach',
+      slug: payload.slug || null,
+    };
   } catch {
     return null;
   }
@@ -96,10 +102,12 @@ function cookieHeader(req, value, maxAge) {
   ].join('; ');
 }
 
-/** Set-Cookie value starting a session for a Supabase user ({ id, email }). */
-export function sessionCookie(req, user) {
+/** Set-Cookie value starting a session for a Supabase user ({ id, email }) and their role. */
+export function sessionCookie(req, user, { role = 'coach', slug = null } = {}) {
   const exp = Math.floor(Date.now() / 1000) + SESSION_MAX_AGE_S;
-  const data = Buffer.from(JSON.stringify({ sub: user.id, email: user.email, exp })).toString('base64url');
+  const payload = { sub: user.id, email: user.email, role, exp };
+  if (role === 'customer' && slug) payload.slug = slug;
+  const data = Buffer.from(JSON.stringify(payload)).toString('base64url');
   return cookieHeader(req, `${data}.${sign(data)}`, SESSION_MAX_AGE_S);
 }
 
@@ -131,4 +139,89 @@ export function signIn(email, password) {
 /** Test-only: replaces the Supabase call; pass null to restore it. */
 export function setSignInForTests(fn) {
   signInImpl = fn || supabaseSignIn;
+}
+
+// ---- Passwords (specs/015-login-coach-customer-roles data-model.md "Validation rules") ----
+
+const MIN_PASSWORD_LENGTH = 8;
+export const PASSWORD_RULE_MESSAGE = 'Use at least 8 characters, with a letter and a number.';
+
+/** True when a password has at least 8 characters, one letter and one number. */
+export function isStrongPassword(password) {
+  return (
+    typeof password === 'string' &&
+    password.length >= MIN_PASSWORD_LENGTH &&
+    /\p{L}/u.test(password) &&
+    /\d/.test(password)
+  );
+}
+
+/**
+ * Field errors for a password change (empty object when valid). The client makes the
+ * same checks in Spanish first; these are the server's own backstop.
+ */
+export function validateNewPassword({ currentPassword, newPassword, confirmPassword }) {
+  const fields = {};
+  if (!isStrongPassword(newPassword)) fields.newPassword = PASSWORD_RULE_MESSAGE;
+  else if (newPassword === currentPassword) fields.newPassword = 'The new password must be different from the current one.';
+  if (newPassword !== confirmPassword) fields.confirmPassword = 'The passwords do not match.';
+  return fields;
+}
+
+// ---- Supabase Auth admin (customer accounts) ----
+
+function adminClient() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SECRET_KEY;
+  if (!url || !key) throw new Error('SUPABASE_URL and SUPABASE_SECRET_KEY must be set to manage accounts.');
+  return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+}
+
+const ALREADY_REGISTERED = /already (been )?registered|already exists/i;
+
+const supabaseAdmin = {
+  /** Resolves { user: { id, email } } or { error: 'email_taken' | Error }. */
+  async createUser(email, password) {
+    const { data, error } = await adminClient().auth.admin.createUser({ email, password, email_confirm: true });
+    if (error) {
+      if (error.code === 'email_exists' || ALREADY_REGISTERED.test(error.message || '')) return { error: 'email_taken' };
+      return { error };
+    }
+    return { user: { id: data.user.id, email: data.user.email } };
+  },
+  async setPassword(userId, password) {
+    const { error } = await adminClient().auth.admin.updateUserById(userId, { password });
+    return error ? { error } : {};
+  },
+  async getEmail(userId) {
+    const { data, error } = await adminClient().auth.admin.getUserById(userId);
+    return error ? { error } : { email: data.user?.email || null };
+  },
+  async deleteUser(userId) {
+    const { error } = await adminClient().auth.admin.deleteUser(userId);
+    return error ? { error } : {};
+  },
+};
+
+let adminImpl = supabaseAdmin;
+
+export function createAuthUser(email, password) {
+  return adminImpl.createUser(email, password);
+}
+
+export function setAuthPassword(userId, password) {
+  return adminImpl.setPassword(userId, password);
+}
+
+export function getAuthUserEmail(userId) {
+  return adminImpl.getEmail(userId);
+}
+
+export function deleteAuthUser(userId) {
+  return adminImpl.deleteUser(userId);
+}
+
+/** Test-only: replaces the Supabase admin calls; pass null to restore them. */
+export function setAdminForTests(impl) {
+  adminImpl = impl || supabaseAdmin;
 }
