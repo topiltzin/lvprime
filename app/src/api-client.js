@@ -87,6 +87,14 @@ export function quickCompleteSession(slug, { date, label }) {
   });
 }
 
+/** Saves a Program day's notepad as that session's single entry: { created, entry }. */
+export function saveDayNotes(slug, { date, label, notes }) {
+  return request(`/api/customers/${encodeURIComponent(slug)}/feedback/day-notes`, {
+    method: 'PUT',
+    body: JSON.stringify({ date, label, notes }),
+  });
+}
+
 /** POST /api/chat → { answer } (specs/013 contracts/chat-api.md). Throws ApiError on any non-2xx. */
 export function askCoach(message, { signal } = {}) {
   return request('/api/chat', { method: 'POST', body: JSON.stringify({ message }), signal });

@@ -6,7 +6,7 @@
 import { marked } from 'marked';
 import { renderProgramDay, renderDaySubnav, trackActiveDay } from './program-day.js';
 import { renderWeekSubnav } from './week-subnav.js';
-import { getProgramWeek, quickCompleteSession } from '../api-client.js';
+import { getProgramWeek, quickCompleteSession, saveDayNotes } from '../api-client.js';
 import { findDoneEntry, sessionLabel, todayIso } from '../lib/day-completion.js';
 import { renderFeedbackEntry } from './feedback-entry.js';
 import { renderFeedbackForm } from '../views/feedback-form-view.js';
@@ -56,7 +56,6 @@ export class TabContainer {
     // Coach edits: onContentSaved(tabId) remounts with fresh data; onMeasurementAdded refreshes Progress.
     this.onContentSaved = options.onContentSaved;
     this.onMeasurementAdded = options.onMeasurementAdded;
-    this.onAddDetails = (entry) => this.openLogSession({ date: entry.date, label: entry.label });
 
     this.render();
     this.attachEventListeners();
@@ -334,7 +333,7 @@ export class TabContainer {
         editable: !detail.isLocked,
         doneEntry: findDoneEntry(this.feedbackEntries, sessionLabel(day)),
         onMarkDone: (d) => this.markDayDone(d),
-        onAddDetails: (entry) => this.onAddDetails(entry),
+        onSaveNotes: (entry, text) => this.saveDayNotes(entry, text),
       }));
       cards.forEach((card) => scheduleSection.appendChild(card));
       weekBody.appendChild(scheduleSection);
@@ -365,6 +364,19 @@ export class TabContainer {
       console.error('Failed to refresh after marking a day done:', err);
     }
     return entry;
+  }
+
+  /** Saves a day's notepad as its single entry; resolves with the saved entry. */
+  async saveDayNotes(entry, notes) {
+    const { entry: saved } = await saveDayNotes(this.slug, { date: entry.date, label: entry.label, notes });
+    const same = (e) => e.date === saved.date && (e.label || '') === (saved.label || '');
+    this.feedbackEntries = [...this.feedbackEntries.filter((e) => !same(e)), saved];
+    try {
+      await this.onSessionLogged?.(saved);
+    } catch (err) {
+      console.error('Failed to refresh after saving day details:', err);
+    }
+    return saved;
   }
 
   /** Entries used for the done state on later week renders. */

@@ -1,7 +1,12 @@
 import { parseProgramDetail, parseProgramGoal } from '../markdown-parser.js';
 import { renderMarkdown } from '../markdown-render.js';
 import { parseMeasurements } from '../measurements.js';
-import { validateFeedbackSubmission, validateQuickCompleteSubmission, withNotReported } from '../feedback-writer.js';
+import {
+  validateDayNotesSubmission,
+  validateFeedbackSubmission,
+  validateQuickCompleteSubmission,
+  withNotReported,
+} from '../feedback-writer.js';
 import { readJsonBodyOr422, sendJson } from '../http.js';
 import {
   getCustomer,
@@ -13,6 +18,7 @@ import {
   getExerciseVideoLinkMap,
   addFeedbackEntry,
   quickCompleteFeedbackEntry,
+  saveDayNotes,
   listAllCustomers,
   computeFeedbackTrend,
   WeekNotFoundError,
@@ -214,6 +220,28 @@ export async function handlePostQuickComplete(req, res, slug) {
   const { entry, created } = await quickCompleteFeedbackEntry(slug, customer.name, {
     date: body.date,
     label: body.label.trim(),
+  }, { customer });
+  sendJson(res, created ? 201 : 200, { created, entry: toFeedbackEntryJson(entry) });
+}
+
+// The per-day notepad: one free-text note for the whole session, saved as that day's
+// single feedback entry (created when missing, otherwise only its notes change).
+export async function handlePutDayNotes(req, res, slug) {
+  const customer = await getCustomer(slug);
+
+  const body = await readJsonBodyOr422(req, res);
+  if (body === undefined) return;
+
+  const result = validateDayNotesSubmission(body);
+  if (!result.valid) {
+    sendJson(res, 422, { error: 'validation_failed', fields: result.fields });
+    return;
+  }
+
+  const { entry, created } = await saveDayNotes(slug, customer.name, {
+    date: body.date,
+    label: body.label.trim(),
+    notes: body.notes,
   }, { customer });
   sendJson(res, created ? 201 : 200, { created, entry: toFeedbackEntryJson(entry) });
 }

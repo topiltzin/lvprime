@@ -79,3 +79,14 @@ export function validateQuickCompleteSubmission(body) {
 
   return Object.keys(fields).length ? { valid: false, fields } : { valid: true };
 }
+
+/**
+ * Validates a per-day notepad save: a quick-complete body ({ date, label }) plus
+ * `notes`, a string (may be empty; its length cap is enforced by saveDayNotes).
+ */
+export function validateDayNotesSubmission(body) {
+  const base = validateQuickCompleteSubmission(body);
+  const fields = base.valid ? {} : { ...base.fields };
+  if (!body || typeof body.notes !== 'string') fields.notes = 'required (text)';
+  return Object.keys(fields).length ? { valid: false, fields } : { valid: true };
+}

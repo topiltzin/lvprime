@@ -2,6 +2,7 @@ import { setSafeHtml } from '../lib/safe-html.js';
 import { icon } from '../lib/icons.js';
 import { formatDayDate } from '../lib/format.js';
 import { todayIso } from '../lib/day-completion.js';
+import { notepadStartText } from '../lib/day-notes.js';
 import { t, tn } from '../lib/i18n.js';
 
 // Program tab "workout poster" (User Story 2): one card per training day, with structured
@@ -89,8 +90,88 @@ function doneChip(entry, animate) {
   return chip;
 }
 
+// Inline notepad (one note for the whole session, opened from "Add details"): preloaded
+// with the day's exercises, saved as the day's single feedback entry. Save stays off
+// until the text differs from what was last saved, so an untouched preload is never stored.
+function renderNotepad(day, entry, onSaveNotes, id) {
+  const pad = document.createElement('form');
+  pad.className = 'day-notepad';
+  pad.id = id;
+  pad.hidden = true;
+
+  const label = document.createElement('label');
+  label.className = 'day-notepad-label';
+  label.htmlFor = `${id}-text`;
+  label.textContent = t('day.notes.title');
+  const hint = document.createElement('p');
+  hint.className = 'day-notepad-hint';
+  hint.id = `${id}-hint`;
+  hint.textContent = t('day.notes.hint');
+
+  const text = document.createElement('textarea');
+  text.id = `${id}-text`;
+  text.className = 'day-notepad-text';
+  text.rows = Math.min(14, Math.max(6, notepadStartText(day, entry).split('\n').length + 2));
+  text.maxLength = 5000;
+  text.setAttribute('aria-describedby', hint.id);
+
+  const error = document.createElement('p');
+  error.className = 'field-error day-notepad-error';
+  error.setAttribute('role', 'alert');
+
+  const actions = document.createElement('div');
+  actions.className = 'day-notepad-actions';
+  const cancel = document.createElement('button');
+  cancel.type = 'button';
+  cancel.className = 'day-notepad-cancel';
+  cancel.textContent = t('common.cancel');
+  const save = document.createElement('button');
+  save.type = 'submit';
+  save.className = 'day-notepad-save';
+  save.textContent = t('common.save');
+  actions.append(cancel, save);
+
+  pad.append(label, hint, text, error, actions);
+
+  let saved = (entry.notes || '').trim();
+  const reset = () => {
+    text.value = notepadStartText(day, { notes: saved });
+    error.textContent = '';
+    save.disabled = true;
+  };
+  reset();
+  text.addEventListener('input', () => {
+    save.disabled = text.value.trim() === saved;
+  });
+
+  let busy = false;
+  pad.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (busy || save.disabled) return;
+    busy = true;
+    error.textContent = '';
+    save.disabled = true;
+    save.setAttribute('aria-busy', 'true');
+    save.textContent = t('common.saving');
+    try {
+      const next = await onSaveNotes(entry, text.value.trim());
+      saved = (next?.notes ?? text.value).trim();
+      pad.dispatchEvent(new CustomEvent('notepad-saved', { bubbles: true, detail: { entry: next } }));
+    } catch {
+      error.textContent = t('common.couldNotSave');
+      save.disabled = false;
+    } finally {
+      busy = false;
+      save.removeAttribute('aria-busy');
+      save.textContent = t('common.save');
+    }
+  });
+
+  return { pad, text, cancel, reset, hasSavedNote: () => !!saved };
+}
+
 function renderDayFooter(card, day, options) {
-  const { editable, onMarkDone, onAddDetails } = options;
+  const { editable, onMarkDone, onSaveNotes } = options;
   const footer = document.createElement('footer');
   footer.className = 'program-day-footer';
   // Announces the switch to "Done" without making the buttons part of a live region.
@@ -104,14 +185,40 @@ function renderDayFooter(card, day, options) {
     footer.classList.add('is-done');
     card.classList.add('program-day-card--done');
     status.replaceChildren(doneChip(entry, animate));
-    if (editable && onAddDetails) {
+    if (editable && onSaveNotes) {
+      const notepad = renderNotepad(day, entry, onSaveNotes, `${card.id}-notepad`);
       const details = document.createElement('button');
       details.type = 'button';
       details.className = 'day-add-details';
-      details.appendChild(icon('note-pencil'));
-      details.append(t('day.addDetails'));
-      details.addEventListener('click', () => onAddDetails(entry));
-      footer.appendChild(details);
+      details.setAttribute('aria-expanded', 'false');
+      details.setAttribute('aria-controls', notepad.pad.id);
+      const detailsLabel = document.createElement('span');
+      const syncLabel = () => {
+        detailsLabel.textContent = t(notepad.hasSavedNote() ? 'day.editDetails' : 'day.addDetails');
+      };
+      syncLabel();
+      details.append(icon('note-pencil'), detailsLabel);
+
+      const setOpen = (open) => {
+        notepad.pad.hidden = !open;
+        details.setAttribute('aria-expanded', String(open));
+        if (open) {
+          notepad.text.focus();
+          notepad.text.setSelectionRange(notepad.text.value.length, notepad.text.value.length);
+        } else {
+          details.focus();
+        }
+      };
+      details.addEventListener('click', () => setOpen(notepad.pad.hidden));
+      notepad.cancel.addEventListener('click', () => {
+        notepad.reset();
+        setOpen(false);
+      });
+      notepad.pad.addEventListener('notepad-saved', () => {
+        syncLabel();
+        setOpen(false);
+      });
+      footer.append(details, notepad.pad);
       return details;
     }
     return null;
@@ -158,7 +265,7 @@ function renderDayFooter(card, day, options) {
 
 /**
  * options (specs/012): { editable, doneEntry, onMarkDone(day) => Promise<entry>,
- * onAddDetails(entry) }. Without options the card renders exactly as before.
+ * onSaveNotes(entry, text) => Promise<entry> } (the per-day notepad). Without options the card renders exactly as before.
  */
 export function renderProgramDay(day, index = 0, options = {}) {
   const hasExercises = !!(day.exercises && day.exercises.length);

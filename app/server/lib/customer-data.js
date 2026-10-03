@@ -17,6 +17,8 @@ import {
   parseProgramGoal,
   upsertFeedbackEntryText,
   setEntryCompleted,
+  setEntryNotes,
+  findFeedbackEntryBlock,
   notReportedValue,
   completedYesValue,
 } from '../markdown-parser.js';
@@ -501,6 +503,45 @@ export async function quickCompleteFeedbackEntry(slug, displayName, { date, labe
   );
   await writeFeedbackContent(customer.id, content, context);
   return { entry: findParsedEntry(content, date, label), created: true };
+}
+
+export const MAX_DAY_NOTES_CHARS = 5000;
+
+/**
+ * The per-day notepad: saves one free-text note for the whole session as the notes
+ * field of that date + label entry, so a day is always a single entry however often it
+ * is edited. Only the notes field changes on an existing entry; a missing entry is
+ * created as completed (the notepad opens from a done day). Returns { entry, created }.
+ */
+export async function saveDayNotes(slug, displayName, { date, label, notes }, { customer } = {}) {
+  if (!DATE_RE.test(date)) throw new ValidationError('date', 'must be in YYYY-MM-DD format');
+  if (typeof notes !== 'string') throw new ValidationError('notes', 'must be text');
+  if (notes.length > MAX_DAY_NOTES_CHARS) {
+    throw new ValidationError('notes', `must be ${MAX_DAY_NOTES_CHARS} characters or fewer`);
+  }
+
+  customer = await resolveCustomer(slug, customer);
+  const existing = await getCustomerFeedbackById(customer.id);
+  const { template } = existing;
+
+  let content = existing.content;
+  const created = !findFeedbackEntryBlock(content, { date, label });
+  if (created) {
+    const fieldValues = {};
+    for (const field of template.fields) {
+      fieldValues[field] = /^complet/i.test(field.trim()) ? completedYesValue(template) : notReportedValue(template);
+    }
+    content = upsertFeedbackEntryText(
+      content,
+      template,
+      { date, label, fieldValues },
+      `# ${displayName} - Feedback & Progress Log`
+    ).content;
+  }
+
+  const updated = setEntryNotes(content, template, { date, label, notes });
+  await writeFeedbackContent(customer.id, updated.content, `saveDayNotes(${slug})`);
+  return { entry: findParsedEntry(updated.content, date, label), created };
 }
 
 export async function updateCustomerNotes(slug, content) {

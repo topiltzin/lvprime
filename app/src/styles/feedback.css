@@ -212,4 +212,5 @@
   padding-left: 0.9rem;
   border-left: 3px solid var(--accent-fill);
   line-height: 1.6;
+  white-space: pre-wrap; /* the per-day notepad is multi-line */
 }

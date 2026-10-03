@@ -281,9 +281,13 @@ export function parseFeedbackEntries(feedbackMdText) {
       const fieldMatch = line.match(FIELD_LINE);
       if (fieldMatch) {
         fieldsRaw.push({ label: fieldMatch[1].trim(), value: fieldMatch[2].trim() });
+      } else if (fieldsRaw.length && line.startsWith(CONTINUATION_INDENT)) {
+        // Extra line of a multi-line value (see fieldToLines).
+        fieldsRaw[fieldsRaw.length - 1].value += `\n${line.slice(CONTINUATION_INDENT.length).replace(/^​/, '')}`;
       }
       j++;
     }
+    for (const f of fieldsRaw) f.value = f.value.trim();
 
     const fieldsByKey = {};
     for (const { label, value } of fieldsRaw) {
@@ -330,8 +334,69 @@ function parseCompleted(value) {
  */
 export function formatFeedbackEntry(template, { date, label, fieldValues }) {
   const heading = `${'#'.repeat(template.headingLevel)} ${date}${label ? ` - ${label}` : ''}`;
-  const fieldLines = template.fields.map((f) => `- ${f}: ${fieldValues[f] ?? ''}`);
+  const fieldLines = template.fields.flatMap((f) => fieldToLines(f, fieldValues[f] ?? ''));
   return [heading, ...fieldLines].join('\n');
+}
+
+// ---- Multi-line field values (the per-day notepad) ----
+// A value spanning several lines is written as `- Field: first line` followed by one
+// continuation line per extra line, indented two spaces (a blank line is just the
+// indent). parseFeedbackEntries() folds them back. Lines that would end an entry block
+// (`---`, a code fence) get a zero-width space so they can't.
+const CONTINUATION_INDENT = '  ';
+const ZERO_WIDTH_SPACE = '​';
+
+function fieldToLines(field, value) {
+  const lines = String(value)
+    .replace(/\r\n?/g, '\n')
+    .trim()
+    .split('\n')
+    .map((l) => l.trimEnd());
+  const [first, ...rest] = lines;
+  const guarded = rest.map((l) => {
+    const t = l.trim();
+    return t === '---' || t.startsWith('```') ? `${ZERO_WIDTH_SPACE}${l}` : l;
+  });
+  return [`- ${field}: ${first}`, ...guarded.map((l) => `${CONTINUATION_INDENT}${l}`)];
+}
+
+/** The template's own notes field label, or a language-appropriate default. */
+export function notesFieldLabel(template) {
+  return template.fields.find((f) => classifyLabel(f) === 'notes')
+    || (isSpanishTemplate(template) ? 'Notas' : 'Notes');
+}
+
+/**
+ * Sets the notes field of the existing date + label entry to `notes` (multi-line OK),
+ * keeping every other line. An empty `notes` is stored as "not reported". Adds the
+ * field when the entry has none. Returns { content }, or null when no entry matches.
+ */
+export function setEntryNotes(content, template, { date, label, notes }) {
+  const block = findFeedbackEntryBlock(content, { date, label });
+  if (!block) return null;
+
+  const lines = content.split('\n');
+  const text = String(notes ?? '').trim();
+  const newLines = fieldToLines(notesFieldLabel(template), text || notReportedValue(template));
+
+  let start = -1;
+  for (let i = block.start + 1; i < block.end; i++) {
+    const m = lines[i].replace(/\r$/, '').match(FIELD_LINE);
+    if (m && classifyLabel(m[1].trim()) === 'notes') {
+      start = i;
+      break;
+    }
+  }
+  if (start === -1) {
+    let at = block.end;
+    while (at - 1 > block.start && lines[at - 1].trim() === '') at--;
+    lines.splice(at, 0, ...newLines);
+  } else {
+    let end = start + 1;
+    while (end < block.end && lines[end].startsWith(CONTINUATION_INDENT)) end++;
+    lines.splice(start, end - start, ...newLines);
+  }
+  return { content: lines.join('\n') };
 }
 
 // ---- "Mark done" quick-complete + Log Session upsert (specs/012-program-day-mark-done) ----

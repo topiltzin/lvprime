@@ -9,6 +9,7 @@ import {
   handleGetProgramWeeks,
   handlePostFeedback,
   handlePostQuickComplete,
+  handlePutDayNotes,
 } from './handlers/customers.js';
 import {
   handleCreateCustomer,
@@ -101,6 +102,11 @@ const ROUTES = [
     method: 'POST',
     pattern: /^\/api\/customers\/([^/]+)\/feedback\/quick-complete\/?$/,
     handler: (req, res, m) => handlePostQuickComplete(req, res, decodeURIComponent(m[1])),
+  },
+  {
+    method: 'PUT',
+    pattern: /^\/api\/customers\/([^/]+)\/feedback\/day-notes\/?$/,
+    handler: (req, res, m) => handlePutDayNotes(req, res, decodeURIComponent(m[1])),
   },
   {
     method: 'POST',
