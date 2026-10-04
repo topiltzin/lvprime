@@ -53,8 +53,17 @@ function renderExerciseRow(exercise, index) {
 
   const setsReps = document.createElement('span');
   setsReps.className = 'exercise-sets-reps';
-  setsReps.textContent = exercise.setsReps;
+  // A trailing "(note)" (e.g. "3 x 10 - 12 kg (subir a 14 kg si…)") moves to its own
+  // small line so the sets and load stay short enough to fit a phone screen.
+  const noteMatch = exercise.setsReps.match(/^(.*?)\s*\(([^()]+)\)\s*$/);
+  setsReps.textContent = noteMatch && noteMatch[1] ? noteMatch[1] : exercise.setsReps;
   dose.appendChild(setsReps);
+  if (noteMatch && noteMatch[1]) {
+    const note = document.createElement('span');
+    note.className = 'exercise-dose-note';
+    note.textContent = noteMatch[2];
+    dose.appendChild(note);
+  }
 
   if (exercise.rest) {
     const rest = document.createElement('span');

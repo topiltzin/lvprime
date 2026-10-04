@@ -293,10 +293,23 @@ a.exercise-name:hover .exercise-video-icon {
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.5rem;
-  line-height: 1;
-  white-space: nowrap;
+  line-height: 1.1;
+  text-align: right;
+  overflow-wrap: anywhere;
   font-variant-numeric: tabular-nums;
   color: var(--ink);
+}
+
+.exercise-dose {
+  min-width: 0;
+  max-width: 16rem;
+}
+
+.exercise-dose-note {
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  text-align: right;
+  color: var(--muted);
 }
 
 .exercise-rest {

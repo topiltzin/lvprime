@@ -91,12 +91,28 @@
     grid-template-columns: 2.25rem minmax(0, 1fr);
   }
 
+  /* Dose sits under the name, using the full width so long loads wrap instead of clipping. */
   .exercise-dose {
     grid-column: 2;
+    max-width: none;
     flex-direction: row;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: 0.5rem 0.9rem;
+    gap: 0.25rem 0.9rem;
+  }
+
+  .exercise-sets-reps {
+    font-size: 1.25rem;
+    text-align: left;
+  }
+
+  .exercise-dose-note {
+    flex-basis: 100%;
+    text-align: left;
+  }
+
+  .exercise-name {
+    overflow-wrap: anywhere;
   }
 
   .program-day-header {
