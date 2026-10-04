@@ -31,8 +31,11 @@ export async function renderHeaderAccount(el, knownSession = null) {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'sign-out-button';
+  button.setAttribute('aria-label', t('account.signOut'));
+  button.title = t('account.signOut');
   button.appendChild(icon('sign-out'));
   const label = document.createElement('span');
+  label.className = 'sign-out-label';
   label.textContent = t('account.signOut');
   button.appendChild(label);
   button.addEventListener('click', async () => {

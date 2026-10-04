@@ -279,7 +279,7 @@
     left: 16px;
     right: 16px;
     top: calc(var(--header-height) + 8px);
-    bottom: 84px;
+    bottom: calc(84px + env(safe-area-inset-bottom));
     width: auto;
     max-height: none;
   }

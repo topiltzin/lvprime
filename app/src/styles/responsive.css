@@ -25,8 +25,66 @@
     font-size: 2.25rem;
   }
 
-  .header-email {
+  /* Header: logo, language, icon-only sign out. Role and email add noise on a phone. */
+  .header-email,
+  .header-role,
+  .logo-subtitle,
+  .header-chip {
     display: none;
+  }
+
+  .header-content {
+    padding: 0 1rem;
+    gap: 0.5rem;
+  }
+
+  .logo {
+    min-width: 0;
+    gap: 0.5rem;
+  }
+
+  .logo-mark {
+    width: 34px;
+    height: 34px;
+  }
+
+  .logo-text {
+    font-size: 1.5rem;
+  }
+
+  .header-account {
+    gap: 0.5rem;
+  }
+
+  .sign-out-label {
+    display: none;
+  }
+
+  .sign-out-button {
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+  }
+
+  .lang-option {
+    min-width: 36px;
+    min-height: 36px;
+    padding: 0 0.5rem;
+  }
+
+  /* Never let a wide child widen the layout viewport (it shrinks the page and
+     pushes fixed controls such as the chat button off screen). */
+  html,
+  body {
+    overflow-x: clip;
+  }
+
+  .chat-launcher {
+    width: 52px;
+    height: 52px;
+    right: max(16px, env(safe-area-inset-right));
+    bottom: max(16px, env(safe-area-inset-bottom));
   }
 
   .exercise-row {
@@ -70,15 +128,6 @@
   .header-content {
     padding: 0 1rem;
     gap: 0.5rem;
-  }
-
-  .header-email {
-    display: none;
-  }
-
-  .logo-subtitle,
-  .header-chip {
-    display: none;
   }
 
   .stat-strip,
