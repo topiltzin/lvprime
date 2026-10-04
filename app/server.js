@@ -26,10 +26,14 @@ const MIME = {
   '.webmanifest': 'application/manifest+json',
 };
 
+// Public legal pages (public/*.html), served at clean URLs like the vercel.json rewrite.
+const LEGAL_PAGES = new Set(['/privacy', '/terms', '/support']);
+
 function serveStatic(req, res) {
   applySecurityHeaders(res);
   let reqPath = new URL(req.url, 'http://localhost').pathname;
   if (reqPath === '/') reqPath = '/index.html';
+  if (LEGAL_PAGES.has(reqPath)) reqPath += '.html';
   let filePath = path.join(DIST_DIR, reqPath);
   if (!filePath.startsWith(DIST_DIR + path.sep)) {
     res.statusCode = 403;

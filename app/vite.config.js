@@ -8,6 +8,12 @@ function localApiPlugin() {
   return {
     name: 'local-api-middleware',
     configureServer(server) {
+      // Clean URLs for the public legal pages (public/*.html), as vercel.json does in production.
+      server.middlewares.use((req, _res, next) => {
+        const [pathname, query = ''] = (req.url || '').split('?');
+        if (/^\/(privacy|terms|support)$/.test(pathname)) req.url = `${pathname}.html${query ? `?${query}` : ''}`;
+        next();
+      });
       server.middlewares.use(async (req, res, next) => {
         if (!req.url || !(req.url.startsWith('/api') || req.url.startsWith('/customer-files'))) {
           next();
