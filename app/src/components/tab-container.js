@@ -198,6 +198,7 @@ export class TabContainer {
     const weeks = program.weeks && program.weeks.length
       ? program.weeks
       : [{ weekNumber: program.weekNumber ?? 1, isCurrent: true, isLocked: false }];
+    this.programWeeks = weeks;
     this.activeWeek = program.weekNumber ?? weeks[weeks.length - 1].weekNumber;
     const weekCache = new Map([[this.activeWeek, program]]);
 
@@ -333,11 +334,14 @@ export class TabContainer {
 
       const scheduleSection = document.createElement('div');
       scheduleSection.className = 'weekly-schedule';
+      // Sessions logged before this week was published belong to an earlier week.
+      const publishedAt = this.programWeeks?.find((w) => w.weekNumber === detail.weekNumber)?.updatedAt;
+      const since = publishedAt ? String(publishedAt).slice(0, 10) : null;
       const cards = detail.weeklySchedule.map((day, i) => renderProgramDay(day, i, {
         editable: !detail.isLocked,
-        doneEntry: findDoneEntry(this.feedbackEntries, sessionLabel(day)),
+        doneEntry: findDoneEntry(this.feedbackEntries, sessionLabel(day), todayIso(), since),
         onMarkDone: (d) => this.markDayDone(d),
-        noteEntry: findDayEntry(this.feedbackEntries, sessionLabel(day)),
+        noteEntry: findDayEntry(this.feedbackEntries, sessionLabel(day), todayIso(), since),
         onSaveNotes: (d, entry, text) => this.saveDayNotes(d, entry, text),
       }));
       cards.forEach((card) => scheduleSection.appendChild(card));

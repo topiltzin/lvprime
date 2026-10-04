@@ -27,8 +27,13 @@ function normalize(label) {
   return (label || '').trim().toLowerCase();
 }
 
-/** Newest completed entry for this label within [today - 6 days, today], or null. */
-export function findDoneEntry(entries, label, today = todayIso()) {
+/**
+ * Newest completed entry for this label within [today - 6 days, today], or null.
+ * `since` (YYYY-MM-DD, optional) is when this week's routine was published: sessions
+ * logged before it belong to an earlier week, so a freshly published week starts with
+ * every day not done.
+ */
+export function findDoneEntry(entries, label, today = todayIso(), since = null) {
   const [y, m, d] = today.split('-').map(Number);
   const windowStart = toIso(new Date(y, m - 1, d - (WINDOW_DAYS - 1)));
   const wanted = normalize(label);
@@ -38,6 +43,7 @@ export function findDoneEntry(entries, label, today = todayIso()) {
     if (entry.completed !== true || !ISO_DATE.test(entry.date || '')) continue;
     if (normalize(entry.label) !== wanted) continue;
     if (entry.date < windowStart || entry.date > today) continue;
+    if (since && entry.date < since) continue;
     if (!best || entry.date >= best.date) best = entry;
   }
   return best;
@@ -47,8 +53,8 @@ export function findDoneEntry(entries, label, today = todayIso()) {
  * The entry the day's notepad edits: the done entry when the card is done, otherwise
  * today's entry for this label (notes saved before "Mark done"), otherwise null.
  */
-export function findDayEntry(entries, label, today = todayIso()) {
-  const done = findDoneEntry(entries, label, today);
+export function findDayEntry(entries, label, today = todayIso(), since = null) {
+  const done = findDoneEntry(entries, label, today, since);
   if (done) return done;
   const wanted = normalize(label);
   const todays = (entries || []).filter((e) => e.date === today && normalize(e.label) === wanted);

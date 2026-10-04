@@ -42,3 +42,10 @@ test('findDoneEntry matches labels case-insensitively and returns the newest', (
   );
   assert.equal(found.date, '2026-09-24');
 });
+
+test('findDoneEntry ignores sessions logged before the week was published (`since`)', () => {
+  const label = 'Lunes - Piernas A';
+  assert.equal(findDoneEntry([entry('2026-09-20')], label, TODAY, '2026-09-24'), null);
+  assert.equal(findDoneEntry([entry('2026-09-24')], label, TODAY, '2026-09-24')?.date, '2026-09-24');
+  assert.equal(findDoneEntry([entry('2026-09-20')], label, TODAY, null)?.date, '2026-09-20');
+});
