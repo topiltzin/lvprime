@@ -109,10 +109,12 @@ Escala del 0 al 10 en la ingle derecha, el pie izquierdo, la espalda baja, el cu
 Ya lo haces, así que queda dentro del plan. Es cardio suave, en el que puedes hablar en frases completas.
 - **Lunes, miércoles y viernes (pierna):** elíptica o caminata inclinada, 20 min.
 - **Martes:** caminata o elíptica, 20–30 min.
-- **Jueves:** caminata o elíptica, 20–30 min. Desde la semana 2 es tu segundo día de caminata-trote (ver progresión).
+- **Jueves:** semana 2: 5 x (2 min trote + 1 min caminata) en lugar del cardio, con la misma condición de dolor 0–2 que el sábado (ver progresión).
 - No trotes en otros días. Deja al menos 1 día entre dos días de trote para que el pie y la ingle se recuperen.
 
-## Semana 1
+## Semana 2
+
+> **Semana 2 (desde 2026-10-05):** mismas rutinas y cargas de la semana 1. Suma 1–2 repeticiones por serie hasta el tope del rango, con RIR 2 y sin fallo. Las cargas no suben todavía: eso es en la semana 3.
 
 ### Lunes - Cuádriceps y Glúteo (pies juntos)
 
@@ -161,7 +163,7 @@ Enfriamiento (5 min): pectoral en marco de puerta, dorsal colgando y cuello.
 2. **Abducción de cadera en máquina** (Biserie A) - 4 x 15 - 60-70 kg - Descanso 0s
    - Forma: Torso un poco inclinado hacia adelante, pausa 1 s abierta y regresa en 3 s.
 3. **Aducción de cadera en máquina** (Biserie A) - 3 x 12 - 40-50 kg - Descanso 90s
-   - Forma: Tope 50 kg, aunque ya hayas hecho 55. Cierra en 1 s y abre en 3 s, sin rebotar. Semana 1 a 40 kg y sin fallo.
+   - Forma: Tope 50 kg, aunque ya hayas hecho 55. Cierra en 1 s y abre en 3 s, sin rebotar. Semanas 1 y 2 a 40 kg y sin fallo.
 4. **Peso muerto rumano con barra** (Biserie B) - 4 x 12 - 30 kg - Descanso 0s
    - Forma: Cadera atrás, barra rozando las piernas, espalda neutra de la cadera al cuello. Postura al ancho de cadera (no sumo). Baja solo hasta donde la espalda no se redondea. Tope 35 kg por la hernia lumbar.
 5. **Curl femoral acostada** (Biserie B) - 4 x 12 - 15-20 kg - Descanso 90s
@@ -223,7 +225,7 @@ Llevas 8 meses sin correr. Primero se lesionó el metatarso izquierdo y luego la
 
 Calentamiento: 5 min de caminata rápida + 1 x 10 balanceos de pierna por lado + 1 x 10 elevación de talones + 2 x 20 m de marcha con rodillas altas (en lugar de skipping, que golpea más el antepié).
 
-- **Semana 1:** 8 x (2 min trote suave + 1 min caminata) ≈ 24 min
+- **Semana 2:** 6 x (3 min trote suave + 1 min caminata) ≈ 24 min, solo si la ingle y el pie terminaron la semana 1 en 0–2 (durante y a la mañana siguiente). Si salió en 3–4, repite 8 x (2 + 1); si salió en 5 o más, avísame.
 - Ritmo: conversacional; debes poder hablar en frases completas.
 - Pasos cortos y ligeros. No intentes pisar de punta.
 - Superficie: pista, parque o caminadora. Evita bajadas y curvas cerradas por ahora.

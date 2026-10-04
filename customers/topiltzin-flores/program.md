@@ -1,6 +1,6 @@
-# Topiltzin Flores - Muscle Gain Program — Week 3
+# Topiltzin Flores - Muscle Gain Program — Week 4
 
-**Versión vigente desde:** 2026-09-28 (Semana 3 — misma estructura híbrida, con twist de barra olímpica: press de banca, remo, sentadilla trasera y peso muerto con barra)
+**Versión vigente desde:** 2026-10-05 (Semana 4 — misma estructura, la barra sube de carga y el tweak son las pausas: 1 s en el pecho en el press de banca y 2 s abajo en la sentadilla)
 
 **Goal:** Muscle Gain — increase training volume by combining calisthenics with weights (barbell, dumbbells, kettlebells, pull-up/dip bar)
 **Level:** Intermediate
@@ -9,14 +9,11 @@
 **Skill focus:** Tuck Planche + Pike Push-up
 **Limitations:** Elbow pain — avoid heavy isolation exercises for forearms/triceps. Straight-arm calisthenics (planche, dips) can load the elbow if it's locked out — cue **soft/micro-bent elbows** on every hold and press. On barbell work: **overhand grips only** (no underhand rows, no mixed-grip deadlifts).
 
-> **Week 3 twist — the barbell comes in:** same 5-day split as Week 2, but each of four days gets one barbell compound lift as its main lift:
-> 1. **Monday:** Barbell Bench Press replaces Dumbbell Incline Press + Kettlebell Push Press.
-> 2. **Tuesday:** Bent-Over Barbell Rows replace Kettlebell Single-Arm Row + Inverted Rows.
-> 3. **Wednesday:** Barbell Back Squat replaces Kettlebell Goblet Squats (Kettlebell Swings out to make room).
-> 4. **Friday:** Deadlifts (Conventional) replace Kettlebell Deadlift.
->
-> Thursday stays barbell-free on purpose. With bench press on Monday, one push day without a heavy bar keeps the elbow's weekly load in check.
-> Week 3 is a **calibration week** for the barbell: pick loads that leave 2-3 good reps in the tank (RPE 7) and write them down. Week 4 builds from those numbers.
+> **Week 4 tweak — pauses on the bar:** same 5-day split and the same four barbell lifts as Week 3. Two changes:
+> 1. **Load goes up from your Week 3 numbers:** +2.5 kg on bench and row, +5 kg on back squat and deadlift, **only if** every Week 3 set hit the top of the rep range with 2-3 reps left. If not, repeat the Week 3 weight and chase the extra reps.
+> 2. **Pauses (the tweak):** Barbell Bench Press gets a 1-second pause on the chest, Back Squat a 2-second pause at the bottom. Expect to use ~5-10% less than you would without the pause on the first session. Rows and deadlifts stay as they were (reset every rep).
+> Thursday stays barbell-free on purpose, to keep the elbow's weekly load in check.
+> Log the exact weights in feedback so Week 5 can build from them.
 
 ---
 
@@ -33,11 +30,11 @@
 
 **Skill work (6 min):**
 1. **Tuck Planche Hold** - 4 × 10-12 sec - Rest 60 sec
-   - Form tip: push the floor away, protract shoulders, knees tucked tight, elbows slightly bent. Target: 12 sec on all 4 sets.
+   - Form tip: push the floor away, protract shoulders, knees tucked tight, elbows slightly bent. Target: 12 sec on all 4 sets. If you already hit 12 sec × 4 clean, swap the last 2 sets for Advanced Tuck Lean holds.
 
 **Volume work (~40 min):**
-2. **Barbell Bench Press** - 4 × 6-8 - Rest 2 min
-   - Form tip: NEW. Grip just outside shoulder width (not narrow), elbows ~45° from the body, wrists stacked over elbows, bar touches mid-chest. Don't slam the lockout. Use a spotter or safety pins.
+2. **Barbell Bench Press** - 4 × 6-8 (1 s pause on chest) - Rest 2 min
+   - Form tip: +2.5 kg vs Week 3 if all sets hit 8. Pause with the bar resting on the chest, no relaxing, then press. Grip just outside shoulder width (not narrow), elbows ~45° from the body, wrists stacked over elbows, bar touches mid-chest. Don't slam the lockout. Use a spotter or safety pins.
 3. **Pike Push-ups** - 3 × 8-10 - Rest 90 sec
    - Form tip: if 10 clean reps felt solid in Week 2, elevate the feet on a box. Head goes in front of the hands (tripod shape).
 4. **Weighted Dips (bar)** - 3 × 8-10 - Rest 90 sec
@@ -53,7 +50,7 @@
 1. **Weighted Pull-ups (bar)** - 4 × 5-6 - Rest 2 min
    - Form tip: keep the 3-second lowering from Week 2. Add a small plate only if all 4 sets hit 6 reps last week.
 2. **Bent-Over Barbell Rows** - 4 × 8-10 - Rest 90 sec
-   - Form tip: NEW. **Overhand grip** (underhand rows load the biceps tendon at the elbow). Hinge to ~45°, flat back, pull the bar to the lower ribs, squeeze shoulder blades, lower under control.
+   - Form tip: +2.5 kg vs Week 3 if all sets hit 10. **Overhand grip** (underhand rows load the biceps tendon at the elbow). Hinge to ~45°, flat back, pull the bar to the lower ribs, squeeze shoulder blades, lower under control.
 3. **Chin-ups (bodyweight, AMRAP)** - 3 × max reps - Rest 90 sec
    - Form tip: stop 1 rep short of failure if the elbow feels anything. Rows have already worked the biceps.
 4. **Band/Light Kettlebell Face Pulls** - 3 × 15 - Rest 45 sec
@@ -65,8 +62,8 @@
 ### Wednesday - Legs + Barbell Back Squat
 
 **Main work (~40 min):**
-1. **Barbell Back Squat** - 4 × 6-8 - Rest 2 min
-   - Form tip: NEW. Bar on the upper traps, hands just outside shoulders with a **loose grip** (a tight, narrow grip strains the elbow). Brace, sit down between the heels, knees track over toes, drive up. 2-second controlled lowering. Set the safety pins in the rack.
+1. **Barbell Back Squat** - 4 × 6-8 (2 s pause at the bottom) - Rest 2 min
+   - Form tip: +5 kg vs Week 3 if all sets hit 8. Pause in the hole with the brace on, then drive up. Bar on the upper traps, hands just outside shoulders with a **loose grip** (a tight, narrow grip strains the elbow). Brace, sit down between the heels, knees track over toes, drive up. 2-second controlled lowering. Set the safety pins in the rack.
 2. **Kettlebell Romanian Deadlifts** - 4 × 10-12 - Rest 90 sec
 3. **Bulgarian Split Squats (dumbbell/kettlebell)** - 3 × 8-10 per leg - Rest 90 sec
 4. **Assisted Pistol Squats** - 3 × 6-8 per leg - Rest 90 sec
@@ -94,7 +91,7 @@
 
 **Main work (~40 min):**
 1. **Deadlifts (Conventional)** - 4 × 5-6 - Rest 2 min
-   - Form tip: NEW. **Double overhand grip** (no mixed grip: the underhand side puts the biceps tendon at risk). Use lifting straps once grip limits the set. Bar over mid-foot, shoulders over the bar, flat back, push the floor away, bar stays close to the legs. Reset each rep.
+   - Form tip: +5 kg vs Week 3 if all sets hit 6. **Double overhand grip** (no mixed grip: the underhand side puts the biceps tendon at risk). Use lifting straps once grip limits the set. Bar over mid-foot, shoulders over the bar, flat back, push the floor away, bar stays close to the legs. Reset each rep.
 2. **Pull-ups (bodyweight/weighted)** - 3 × max reps - Rest 90 sec
 3. **Kettlebell Front Squat** - 3 × 10-12 - Rest 90 sec
    - Form tip: moderate load. Legs already did heavy back squats on Wednesday.
@@ -127,9 +124,9 @@
 
 ## Progression Semanal
 
-- **Week 3 (this week):** Barbell calibration. Find a working weight at RPE 7 (2-3 reps left) on bench, row, back squat and deadlift, and log it in feedback.
-- **Week 4:** Barbell lifts: +2.5 kg on bench and row, +5 kg on squat and deadlift if every set hit the top of the rep range. Re-assess planche: if Tuck Planche Hold reaches 12 sec × 4 clean, bring Advanced Tuck Lean back in.
-- **Week 5:** Keep adding load on the barbell lifts while reps stay in range; if a lift stalls two sessions in a row, hold the weight and add 1 rep per set instead.
+- **Week 3:** Barbell calibration (done).
+- **Week 4 (this week):** Barbell lifts +2.5 kg bench and row, +5 kg squat and deadlift if every set hit the top of the rep range, with the pause tweak on bench and squat. Re-assess planche: Tuck Planche Hold 12 sec × 4 clean brings Advanced Tuck Lean in.
+- **Week 5:** Drop the pauses, keep adding load while reps stay in range; if a lift stalls two sessions in a row, hold the weight and add 1 rep per set instead.
 
 ---
 

@@ -15,3 +15,7 @@
 ## Semana 1 (inicio 2026-09-28)
 
 <!-- Las entradas se agregan aquí -->
+
+## Semana 2 (inicio 2026-10-05)
+
+<!-- Las entradas se agregan aquí -->
