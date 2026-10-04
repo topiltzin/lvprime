@@ -33,4 +33,12 @@ export function translateShell() {
   const chip = document.querySelector('#header-account .header-chip');
   if (chip) chip.textContent = t('app.workspace');
   document.getElementById('sidebar')?.setAttribute('aria-label', t('app.sidebarLabel'));
+  const legal = document.getElementById('site-footer-nav');
+  if (legal) {
+    legal.setAttribute('aria-label', t('app.legalLabel'));
+    const [privacy, terms, support] = legal.querySelectorAll('a');
+    privacy.textContent = t('app.privacy');
+    terms.textContent = t('app.terms');
+    support.textContent = t('app.support');
+  }
 }
