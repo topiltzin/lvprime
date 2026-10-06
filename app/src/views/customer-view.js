@@ -67,6 +67,15 @@ function buildTabConfig(data, { isCustomer = false } = {}) {
       order: 3,
     },
     {
+      id: 'messages',
+      // Both profiles: the coach's thread with this customer. Never hidden, so a customer
+      // with no messages still sees where they will appear (specs/016).
+      label: t('tabs.messages'),
+      isEnabled: true,
+      contentType: 'messages',
+      order: 4,
+    },
+    {
       id: 'notes',
       // Always enabled — a client with no notes.md still sees the Notes tab,
       // showing a dashed empty state rather than being hidden (FR-018).
@@ -125,6 +134,9 @@ function buildTabData(customerData) {
     notes,
     nutrition,
     progress: customerData.measurements || { columns: [], rows: [] },
+    // Present so the tab renders the conversation instead of an empty state; the panel loads it itself.
+    messages: { present: true },
+    unreadMessages: customerData.unreadMessages || 0,
       };
 }
 
@@ -294,6 +306,8 @@ export async function renderCustomer(container, slug, { role = 'coach' } = {}) {
     tabs = new TabContainer(tabsContainer, buildTabConfig(customerData, { isCustomer }), buildTabData(customerData), {
       readOnly: isCustomer,
       slug,
+      role: isCustomer ? 'customer' : 'coach',
+      customerName: customerData.displayName,
       feedbackEntries: feedbackEntriesOf(customerData),
       onSessionLogged,
       onContentSaved,

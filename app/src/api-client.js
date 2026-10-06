@@ -123,6 +123,29 @@ export function clearChatHistory() {
   return request('/api/chat/history', { method: 'DELETE' });
 }
 
+/** GET /api/customers/:slug/messages → { messages, canReply, unread, latestCoachMessageRead } (specs/016 contracts/messages-api.md). */
+export function getMessages(slug) {
+  return request(`/api/customers/${encodeURIComponent(slug)}/messages`);
+}
+
+/** POST a message → { message }. A repeated clientId returns the stored message instead of a second one. */
+export function sendMessage(slug, { body, clientId }) {
+  return request(`/api/customers/${encodeURIComponent(slug)}/messages`, {
+    method: 'POST',
+    body: JSON.stringify({ body, clientId }),
+  });
+}
+
+/** The caller opened the thread: marks the other side's messages read → { marked, unread }. */
+export function markMessagesRead(slug) {
+  return request(`/api/customers/${encodeURIComponent(slug)}/messages/read`, { method: 'POST' });
+}
+
+/** Coach only: deletes one of their own messages → { deleted: true }. */
+export function deleteMessage(slug, id) {
+  return request(`/api/customers/${encodeURIComponent(slug)}/messages/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
 /** POST /api/customers → { slug, displayName }. 409 customer_exists when the name is taken. */
 export function createCustomer(name) {
   return request('/api/customers', { method: 'POST', body: JSON.stringify({ name }) });

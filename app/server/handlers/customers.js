@@ -27,6 +27,7 @@ import {
 } from '../lib/customer-data.js';
 import { listAttachments } from '../lib/attachments.js';
 import { getAuthUserEmail } from '../auth.js';
+import { countUnreadOrZero } from '../lib/messages.js';
 
 // Customer reads and feedback writes.
 
@@ -146,6 +147,8 @@ export async function handleGetCustomer(req, res, slug) {
     template: feedback.template,
   });
   if (view.role === 'coach') view.access = await loadAccessSummary(slug);
+  // Messages waiting for this viewer (specs/016); the Messages tab badge.
+  view.unreadMessages = await countUnreadOrZero(slug, view.role);
   sendJson(res, 200, view);
 }
 

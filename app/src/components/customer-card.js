@@ -1,7 +1,7 @@
 import { deriveStatus, statusLabel, formatRelativeCheckIn } from '../lib/status.js';
 import { icon } from '../lib/icons.js';
 import { initials, formatDate } from '../lib/format.js';
-import { t } from '../lib/i18n.js';
+import { t, tn } from '../lib/i18n.js';
 
 // Flag text is built here from its kind/level so it follows the interface language.
 function flagText(flag) {
@@ -23,10 +23,14 @@ function signalBadge(iconName, text, tone = '') {
  * Static badges (the whole card is the link): flags first, then a due week, adherence and the
  * current week. Every signal carries an icon and text, never colour alone.
  */
-function renderSignals(signals) {
-  if (!signals) return null;
+function renderSignals(signals, unreadMessages = 0) {
+  if (!signals && !unreadMessages) return null;
   const row = document.createElement('div');
   row.className = 'signal-row';
+
+  // Customer replies the coach hasn't opened (specs/016): first, icon + text, never colour alone.
+  if (unreadMessages > 0) row.appendChild(signalBadge('chat', tn('messages.cardSignal', unreadMessages), 'is-alert'));
+  if (!signals) return row;
 
   for (const flag of signals.flags || []) {
     row.appendChild(signalBadge('warning-circle', `${flagText(flag)} · ${formatDate(flag.date)}`, 'is-alert'));
@@ -96,7 +100,7 @@ export function renderCustomerCard(customer) {
   }
   a.appendChild(goalLine);
 
-  const signals = renderSignals(customer.signals);
+  const signals = renderSignals(customer.signals, customer.unreadMessages || 0);
   if (signals) a.appendChild(signals);
 
   const footer = document.createElement('div');

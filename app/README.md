@@ -38,6 +38,8 @@ Coach-only fitness/nutrition dashboard. Customer data (program, feedback, notes,
 
    Client sign-in (specs/015) needs two more columns: run `server/migrations/017-customer-accounts.sql` in the SQL Editor, then check it with `node --env-file=.env.local server/migrations/017-customer-accounts.js`. Until then only the coach can sign in, and "Dar acceso" on a client page reports that the update is missing.
 
+   Coach-client messages (specs/016) need one table: run `server/migrations/018-customer-messages.sql` in the SQL Editor, then check it with `node --env-file=.env.local server/migrations/018-customer-messages.js`. Until then the Messages tab reports that messages could not be loaded; everything else works.
+
 6. **Run the dev server**:
    ```bash
    npm run dev

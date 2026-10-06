@@ -1,0 +1,330 @@
+/* ---------- Messages with the coach (specs/016-coach-client-messaging) ----------
+   A tab on the customer page, not a floating panel: the AI Coach assistant keeps the
+   bottom-right corner. Tokens only; coach vs customer bubbles differ by side AND label. */
+
+.messages {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.messages-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--h2-size);
+  line-height: var(--h2-line);
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+}
+
+.messages-log {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 12rem; /* reserved so loading and loaded states don't shift the page */
+  max-height: min(60dvh, 560px);
+  padding: 1rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+.messages-empty,
+.messages-error {
+  margin: auto 0;
+  color: var(--muted);
+  text-align: center;
+}
+
+.messages-error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: var(--danger);
+}
+
+.messages-skeleton {
+  min-height: 12rem;
+  flex: 1;
+  border-radius: var(--radius-input);
+}
+
+/* One message: label + time above, bubble below. Mine on the right, theirs on the left. */
+.message {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-width: 85%;
+  min-width: 0;
+}
+
+.message--mine {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.message--theirs {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.message-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+  color: var(--muted);
+  font-size: var(--meta-size);
+  line-height: var(--meta-line);
+}
+
+.message-sender {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.message-bubble {
+  margin: 0;
+  padding: 0.625rem 0.875rem;
+  border-radius: var(--radius-card);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.message--mine .message-bubble {
+  background: var(--accent-tint);
+  color: var(--ink);
+}
+
+.message--theirs .message-bubble {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  color: var(--ink);
+}
+
+.message-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted);
+  font-size: var(--meta-size);
+}
+
+.message-read {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.message-read .icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.message-delete,
+.message-confirm-yes,
+.message-confirm-no {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 0.75rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--meta-size);
+  cursor: pointer;
+  transition: color var(--motion-fast) var(--motion-ease), background var(--motion-fast) var(--motion-ease);
+}
+
+.message-delete:hover,
+.message-confirm-no:hover {
+  color: var(--ink);
+  background: var(--muted-bg);
+}
+
+.message-confirm-yes {
+  border-color: var(--danger-border);
+  background: var(--danger-tint);
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.message-delete:focus-visible,
+.message-confirm-yes:focus-visible,
+.message-confirm-no:focus-visible,
+.messages-retry:focus-visible,
+.messages-send:focus-visible,
+.messages-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.message-delete .icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.messages-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem 0.75rem;
+  align-items: end;
+}
+
+.messages-label {
+  grid-column: 1 / -1;
+  font-size: var(--meta-size);
+  font-weight: 600;
+}
+
+.messages-input {
+  min-width: 0;
+  min-height: 44px;
+  max-height: calc(5 * var(--body-line) + 1.25rem);
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-input);
+  background: var(--surface-raised);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--body-size);
+  line-height: var(--body-line);
+  resize: none;
+}
+
+.messages-input[aria-invalid='true'] {
+  border-color: var(--danger-border);
+}
+
+.messages-send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 1.25rem;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--accent-fill);
+  color: var(--accent-contrast);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--motion-fast) var(--motion-ease);
+}
+
+.messages-send:hover:not(:disabled) {
+  background: var(--accent-fill-hover);
+}
+
+.messages-send:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.messages-send .icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.messages-feedback {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0;
+  min-height: 1.125rem;
+  font-size: var(--meta-size);
+  line-height: var(--meta-line);
+}
+
+.messages-feedback .messages-problem {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--danger);
+}
+
+.messages-counter {
+  margin-left: auto;
+  color: var(--muted);
+}
+
+.messages-counter.is-over {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.messages-retry {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 44px;
+  padding: 0 1rem;
+  border: 1px solid var(--danger-border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-raised);
+  color: var(--danger);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Unread count on the Messages tab: a number plus (for screen readers) a full phrase. */
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-width: 1.375rem;
+  height: 1.375rem;
+  margin-left: 0.5rem;
+  padding: 0 0.375rem;
+  border-radius: var(--radius-pill);
+  background: var(--accent-fill);
+  color: var(--accent-contrast);
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.tab-badge[hidden] {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .messages-log {
+    padding: 0.75rem;
+    max-height: 55dvh;
+  }
+
+  .message {
+    max-width: 92%;
+  }
+
+  .messages-form {
+    grid-template-columns: 1fr;
+  }
+
+  .messages-send {
+    width: 100%;
+  }
+}

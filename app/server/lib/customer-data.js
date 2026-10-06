@@ -10,6 +10,7 @@ import { getSupabaseClient } from './database-client.js';
 import { computeContentHash, verifyContentHash } from '../hash-utils.js';
 import { resolveCoachSync } from '../sync-engine.js';
 import { computeClientSignals } from './client-signals.js';
+import { unreadByCustomer } from './messages.js';
 import { deriveWeekState, validateNextWeekNumber } from './week-lock-rule.js';
 import {
   extractFeedbackTemplate,
@@ -347,6 +348,14 @@ export async function listAllCustomers() {
     .limit(1, { referencedTable: 'programs' });
   if (error) throw dbError('listAllCustomers', error);
 
+  // Customer replies the coach hasn't opened (specs/016). A hint, so a failure reads as none.
+  let unread = new Map();
+  try {
+    unread = await unreadByCustomer();
+  } catch (err) {
+    console.error('Unread messages overview failed:', err.message);
+  }
+
   return customers.map((customer) => {
     const program = firstEmbedded(customer.programs);
     const feedback = firstEmbedded(customer.feedbacks);
@@ -357,6 +366,7 @@ export async function listAllCustomers() {
       slug: customer.slug,
       displayName: customer.name,
       archivedAt: customer.archived_at ?? null,
+      unreadMessages: unread.get(customer.slug) ?? 0,
       hasProgram: !!program,
       hasNotes: !!firstEmbedded(customer.notes),
       programGoal: program?.content ? parseProgramGoal(program.content) : null,
