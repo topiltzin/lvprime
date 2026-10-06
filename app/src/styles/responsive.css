@@ -172,6 +172,239 @@
   }
 }
 
+/* ---------- Slim layout (iteration 1) ---------- */
+
+@media (min-width: 701px) {
+  .client-hero-name {
+    font-size: clamp(2.25rem, 4vw, 3rem);
+  }
+
+  .customer-card {
+    min-height: 0;
+  }
+}
+
+@media (max-width: 700px) {
+  :root {
+    --header-height: 56px;
+    --tab-header-height: 48px;
+  }
+
+  /* Hero: name, status and a compact facts row; no icons, no long goal. */
+  .client-hero {
+    margin-bottom: 0.75rem;
+  }
+
+  .client-hero-card {
+    padding: 1.1rem 1rem 1rem;
+    border-radius: var(--radius-card);
+  }
+
+  .client-hero-card::before {
+    left: 1rem;
+    width: 48px;
+    height: 3px;
+  }
+
+  .client-hero-top {
+    gap: 0.5rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .client-hero-name {
+    font-size: 2rem;
+  }
+
+  .client-hero-goal {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-top: 0.4rem;
+    font-size: 0.9375rem;
+    line-height: 1.45;
+  }
+
+  .hero-progress {
+    margin-top: 0.8rem;
+    gap: 0.4rem 0.75rem;
+  }
+
+  .hero-progress-label {
+    font-size: 1rem;
+  }
+
+  .hero-progress-segments {
+    flex: 1;
+    gap: 4px;
+  }
+
+  .hero-progress-segments span {
+    flex: 1;
+    width: auto;
+    height: 5px;
+  }
+
+  .hero-facts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-top: 0.8rem;
+    padding-top: 0.8rem;
+  }
+
+  .hero-fact-icon,
+  .hero-fact-detail {
+    display: none;
+  }
+
+  .hero-fact-value {
+    font-size: 1.0625rem;
+  }
+
+  .hero-fact-label {
+    font-size: 0.75rem;
+  }
+
+  /* Overview. */
+  .scoreboard {
+    margin-bottom: 1rem;
+  }
+
+  .scoreboard-item {
+    padding: 0.6rem 0.75rem;
+  }
+
+  .scoreboard-value {
+    font-size: 1.625rem;
+  }
+
+  .scoreboard-label {
+    margin-top: 0.15rem;
+    font-size: 0.75rem;
+  }
+
+  .customer-list {
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+  }
+
+  .customer-card {
+    gap: 0.5rem;
+    min-height: 0;
+    padding: 0.9rem 1rem;
+  }
+
+  .customer-avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1rem;
+  }
+
+  .customer-card h2 {
+    font-size: 1.25rem;
+  }
+
+  .customer-card-arrow {
+    opacity: 1;
+    transform: none;
+  }
+
+  .customer-card-footer {
+    padding-top: 0.55rem;
+  }
+
+  .page-header {
+    margin-bottom: 0.75rem;
+  }
+
+  .tab-panel {
+    padding: 0.9rem 0;
+  }
+
+  .tab-content {
+    gap: 0.9rem;
+  }
+
+  /* Program tab (iteration 2): chips stay >= 40px tall, everything else gets tighter. */
+  .program-toolbar {
+    gap: 0.5rem;
+  }
+
+  .week-subnav {
+    gap: 0.4rem;
+  }
+
+  .week-chip {
+    min-height: 40px;
+    padding: 0.35rem 0.95rem;
+    font-size: 1rem;
+  }
+
+  .day-subnav {
+    gap: 0.4rem;
+    padding: 0.5rem 0;
+    margin-bottom: 0.25rem;
+  }
+
+  .day-chip {
+    padding: 0.35rem 0.85rem;
+  }
+
+  .program-week-status {
+    margin-bottom: 0.6rem;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.9375rem;
+  }
+
+  .weekly-schedule {
+    gap: 0.75rem;
+  }
+
+  .program-day-card {
+    padding: 1rem;
+  }
+
+  .program-day-header {
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.7rem;
+  }
+
+  .program-day-focus {
+    font-size: 1.35rem;
+  }
+
+  .exercise-row {
+    gap: 0.2rem 0.6rem;
+    padding: 0.7rem 0.5rem;
+    margin: 0 -0.5rem;
+  }
+
+  .exercise-number {
+    font-size: 1.25rem;
+  }
+
+  .exercise-name {
+    font-size: 1rem;
+    line-height: 1.35;
+  }
+
+  .exercise-form-tip {
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
+
+  .program-day-footer,
+  .day-notepad {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+  }
+
+  .day-notepad-text {
+    min-height: 6rem;
+  }
+}
+
 /* ---------- Reduced motion ---------- */
 
 @media (prefers-reduced-motion: reduce) {
