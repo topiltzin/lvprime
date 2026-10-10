@@ -1,0 +1,184 @@
+/* In-page exercise video popup (specs/017-in-page-video-player). */
+
+body.video-dialog-open {
+  overflow: hidden;
+}
+
+.video-dialog {
+  width: min(960px, calc(100% - 16px));
+  max-width: none;
+  max-height: calc(100dvh - 16px);
+  margin: auto;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-card);
+  background: var(--surface-raised);
+  color: var(--ink);
+  box-shadow: var(--shadow-hero);
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+.video-dialog[open] {
+  animation: video-dialog-in var(--motion-base) var(--motion-out);
+}
+
+.video-dialog::backdrop {
+  background: rgb(0 0 0 / 0.7);
+}
+
+@keyframes video-dialog-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.video-dialog-panel {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 16px);
+}
+
+.video-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.5rem 0.5rem 1rem;
+}
+
+.video-dialog-header h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--h2-size);
+  line-height: var(--h2-line);
+  overflow-wrap: anywhere;
+}
+
+.video-dialog-close {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background var(--motion-fast) var(--motion-ease);
+}
+
+.video-dialog-close:hover {
+  background: var(--muted-bg);
+}
+
+.video-dialog-close:focus-visible,
+.video-dialog-external:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.video-dialog-close .icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* Fixed 16:9 box reserved from the start so the popup never resizes when the video appears. */
+.video-dialog-stage {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  max-height: calc(100dvh - 9rem);
+  margin-inline: auto;
+  background: #000;
+}
+
+.video-dialog-stage iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.video-dialog-status {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  color: #fff;
+  text-align: center;
+}
+
+.video-dialog-stage[data-state='ready'] .video-dialog-status {
+  display: none;
+}
+
+.video-dialog-stage:not([data-state])::before {
+  content: '';
+  position: absolute;
+  top: calc(50% - 2rem);
+  left: calc(50% - 0.875rem);
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 3px solid rgb(255 255 255 / 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: video-dialog-spin 0.8s linear infinite;
+}
+
+.video-dialog-stage:not([data-state]) .video-dialog-status {
+  padding-top: 3rem;
+}
+
+.video-dialog-stage[data-state='failed'] iframe {
+  display: none;
+}
+
+@keyframes video-dialog-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.video-dialog-external {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 1rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+@media (max-width: 480px) {
+  .video-dialog {
+    width: calc(100% - 16px);
+  }
+
+  .video-dialog-panel {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .video-dialog[open] {
+    animation: none;
+  }
+
+  .video-dialog-stage:not([data-state])::before {
+    animation: none;
+  }
+}

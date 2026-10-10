@@ -4,6 +4,7 @@ import { formatDayDate } from '../lib/format.js';
 import { todayIso } from '../lib/day-completion.js';
 import { notepadStartText } from '../lib/day-notes.js';
 import { t, tn } from '../lib/i18n.js';
+import { openVideoDialog } from './video-dialog.js';
 
 // Program tab "workout poster" (User Story 2): one card per training day, with structured
 // exercise rows when available, falling back to the day's raw rendered html otherwise
@@ -32,6 +33,15 @@ function renderExerciseRow(exercise, index) {
     name.rel = 'noopener noreferrer';
     name.classList.add('has-video');
     name.setAttribute('aria-label', t('day.watchVideo', { name: exercise.name }));
+    // Plain click plays the video in a popup on this page; modified clicks and links the popup
+    // can't play keep the default new-tab behaviour.
+    name.addEventListener('click', (event) => {
+      if (event.defaultPrevented || event.button !== 0) return;
+      if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+      if (openVideoDialog({ url: exercise.videoUrl, title: exercise.name, opener: name })) {
+        event.preventDefault();
+      }
+    });
   }
   const nameText = document.createElement('span');
   nameText.textContent = exercise.name;

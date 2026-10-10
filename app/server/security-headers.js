@@ -17,6 +17,7 @@ export const CONTENT_SECURITY_POLICY = [
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
+  'frame-src https://www.youtube-nocookie.com',
   "frame-ancestors 'none'",
 ].join('; ');
 

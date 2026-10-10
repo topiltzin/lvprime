@@ -22,3 +22,10 @@ test('applySecurityHeaders keeps a header a handler already set', () => {
   assert.equal(headers.get('X-Content-Type-Options'), 'nosniff');
   assert.match(headers.get('Content-Security-Policy'), /frame-ancestors 'none'/);
 });
+
+test('CSP allows only the privacy-enhanced YouTube embed host for frames', () => {
+  const csp = SECURITY_HEADERS['Content-Security-Policy'];
+  assert.match(csp, /frame-src https:\/\/www\.youtube-nocookie\.com(;|$)/);
+  assert.match(csp, /frame-ancestors 'none'/);
+  assert.doesNotMatch(csp, /frame-src \*/);
+});
