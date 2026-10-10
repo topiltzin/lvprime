@@ -191,3 +191,23 @@ Upper/Lower split, 6 days/week, 60 min/session. Kept here for reference only —
 - Week 3-4: Volume increase — +1-2 reps or +5 lbs on compounds
 - Week 5-6: Intensity focus — -1-2 reps, +5-10 lbs
 - Week 7-8: Deload — -30% volume
+
+---
+
+## Week 5 Plan (2026-10-10)
+
+### What changed and why
+- **Two leg days (customer request):** Wednesday = Legs A (back squat, Bulgarian split squat, pistols, RDL, calves, hollow hold). Friday = Legs B (deadlift, front squat, walking lunges, single-leg hip thrust) plus one pull-up block, a side plank and farmer's carry so back frequency stays at 2/week.
+- **Pauses dropped** on bench and squat, as planned in Week 4.
+- **Customer's own additions made official:** handstand push-up work after pike push-ups, weighted hollow hold, toes-to-bar progression, hammer curls (light, neutral grip), seated cable row, calf raises, clap push-ups (as an option).
+
+### Evidence from Week 4 feedback
+- Logged: Mon 10-05, Tue 10-07, Wed 10-06, Thu 10-09, all completed. Friday not yet logged.
+- Bench 52.5 + bar, dips 20 kg disc, chin-ups 10-9-7-7, 6 pistols, weighted pull-ups 15 kg × 5 and 20 kg × 4, DB bench 22 kg each, farmer's carry 20 kg each. Many athletic extras added by the customer (HSPU, clap push-ups, toes to bar, curls, machine row 80 kg × 6).
+- **Elbow status was not reported in any Week 4 entry**, so there is no pain data on the new biceps and clap push-up work.
+
+### Watch next
+- Ask for elbow status on every entry, especially after hammer curls and clap push-ups. If it flares, drop those two first.
+- Two leg days plus weighted pull-ups: check lower-back and leg fatigue between Wed and Fri.
+- Squat weight was logged as "55 barra libre", unclear if that is total or per side; ask for total kg.
+- Session length: Friday has 7 exercises. Cut side plank first if it runs over 60 min.

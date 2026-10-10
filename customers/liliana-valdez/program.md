@@ -109,12 +109,12 @@ Escala del 0 al 10 en la ingle derecha, el pie izquierdo, la espalda baja, el cu
 Ya lo haces, así que queda dentro del plan. Es cardio suave, en el que puedes hablar en frases completas.
 - **Lunes, miércoles y viernes (pierna):** elíptica o caminata inclinada, 20 min.
 - **Martes:** caminata o elíptica, 20–30 min.
-- **Jueves:** semana 2: 5 x (2 min trote + 1 min caminata) en lugar del cardio, con la misma condición de dolor 0–2 que el sábado (ver progresión).
+- **Jueves:** semana 3: 6 x (3 min trote + 1 min caminata) en lugar del cardio, con la misma condición de dolor 0–2 que el sábado (ver progresión).
 - No trotes en otros días. Deja al menos 1 día entre dos días de trote para que el pie y la ingle se recuperen.
 
-## Semana 2
+## Semana 3
 
-> **Semana 2 (desde 2026-10-05):** mismas rutinas y cargas de la semana 1. Suma 1–2 repeticiones por serie hasta el tope del rango, con RIR 2 y sin fallo. Las cargas no suben todavía: eso es en la semana 3.
+> **Semana 3 (desde 2026-10-12):** misma rutina, mismos ejercicios y mismas cargas de la semana 2. Esta semana busca el tope del rango de repeticiones en cada serie con RIR 2, y sube de carga solo si ya completaste todas las series en el tope. En tus registros hay ejercicios por debajo de la carga indicada (hip thrust 50 kg, extensión 35–45 kg), así que primero consolida esas cargas antes de subir. Se permite fallo solo en la última serie de extensiones y laterales. Anota el dolor de ingle, pie, codo y hombro en cada sesión.
 
 ### Lunes - Cuádriceps y Glúteo (pies juntos)
 
@@ -225,7 +225,7 @@ Llevas 8 meses sin correr. Primero se lesionó el metatarso izquierdo y luego la
 
 Calentamiento: 5 min de caminata rápida + 1 x 10 balanceos de pierna por lado + 1 x 10 elevación de talones + 2 x 20 m de marcha con rodillas altas (en lugar de skipping, que golpea más el antepié).
 
-- **Semana 2:** 6 x (3 min trote suave + 1 min caminata) ≈ 24 min, solo si la ingle y el pie terminaron la semana 1 en 0–2 (durante y a la mañana siguiente). Si salió en 3–4, repite 8 x (2 + 1); si salió en 5 o más, avísame.
+- **Semana 3:** 4 x (5 min trote suave + 1 min caminata) ≈ 24 min, solo si la ingle y el pie terminaron la semana 2 en 0–2 (durante y a la mañana siguiente). Si salió en 3–4, repite 6 x (3 + 1); si salió en 5 o más, avísame.
 - Ritmo: conversacional; debes poder hablar en frases completas.
 - Pasos cortos y ligeros. No intentes pisar de punta.
 - Superficie: pista, parque o caminadora. Evita bajadas y curvas cerradas por ahora.

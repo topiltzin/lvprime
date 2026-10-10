@@ -230,3 +230,22 @@ Jaqueline debe actualizar `feedback.md` después de cada sesión o mínimo 2x po
 - Confirmar en la próxima sesión de miércoles si el hip thrust a 4 series se tolera bien o genera fatiga lumbar/glútea excesiva para el resto de la semana.
 - Seguir vigilando si pull-up puede reducir asistencia, según lo notado en feedback del 2026-09-23.
 
+
+---
+
+## Semana 5 (2026-10-10): misma rutina que Liliana, con cargas de Jaqueline
+
+### Qué cambió y por qué
+- **Pedido del coach:** Jaqueline y Liliana hacen la misma rutina la próxima semana (mismos días y ejercicios), con distintos pesos. Se conserva la progresión de pull-up (martes y jueves) y la de push-up (jueves).
+- **Ajustes por nivel:** activaciones de 100 reps pasan a 50; Copenhague en versión corta; toes to bar y L-sit se sustituyen por knee raises colgada y hollow hold; sin curl/press con carga alta.
+- **Pull-up:** pasa de scapular pull-up (3 x 10 colgada) a pull-up asistida con liga morada, 3 x 5.
+
+### Evidencia de la semana 4
+- Lunes 10-05: goblet 16 kg 3 x 12, hip thrust 30 kg 3 x 10-12, búlgara 2 x 12 con 4 kg y 1 x 10 con 6 kg, extensión 20-25 kg, se agregaron knee raises.
+- Martes 10-06: push-up con liga negra 3 x 4 y 3 reps casi sin liga ("mucho progreso"), jalón 30 kg 3 x 12, press 6 kg 3 x 12, remo 25 kg 3 x 12, laterales 2.5 kg (faltaron mancuernas).
+- Viernes 10-09: prensa 90 kg 3 x 12. Miércoles y jueves sin pesos registrados.
+
+### A vigilar
+- Muñeca derecha (lesión antigua) en planchas y push-ups.
+- Cargas de aducción, face pull y Arnold son de partida: pedir que registre pesos.
+- Liliana: se deja su semana 2 vigente sin cambios.
