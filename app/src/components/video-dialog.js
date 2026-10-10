@@ -50,7 +50,6 @@ export function openVideoDialog({ url, title, opener }) {
   const frame = document.createElement('iframe');
   frame.title = title;
   frame.allow = 'autoplay; fullscreen; picture-in-picture';
-  frame.allowFullscreen = true;
   frame.referrerPolicy = 'strict-origin-when-cross-origin';
   stage.append(status, frame);
 
