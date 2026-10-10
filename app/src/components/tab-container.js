@@ -12,13 +12,13 @@ import { renderFeedbackEntry } from './feedback-entry.js';
 import { renderTrendChart } from './trend-chart.js';
 import { renderContentEditor } from './content-editor.js';
 import { renderProgressPanel } from './progress-panel.js';
-import { renderMessagesPanel } from './messages-panel.js';
+import { renderWelcomeEditor } from './welcome-editor.js';
 import { showToast } from './toast.js';
 import { setSafeHtml } from '../lib/safe-html.js';
 import { icon } from '../lib/icons.js';
 import { formatDate } from '../lib/format.js';
 import { formatRelativeCheckIn } from '../lib/status.js';
-import { t, tn } from '../lib/i18n.js';
+import { t } from '../lib/i18n.js';
 
 // The PDF modules pull in jsPDF (most of the bundle), so they load on first click.
 function createPdfButton() {
@@ -56,10 +56,8 @@ export class TabContainer {
     this.onMeasurementAdded = options.onMeasurementAdded;
     // A customer's view: no editing of programs, nutrition, notes or measurements (the day notepad stays).
     this.readOnly = !!options.readOnly;
-    // Messages tab (specs/016): who is looking, and whose conversation it is.
-    this.role = options.role || 'coach';
+    // Welcome message tab (specs/018, coach only): whose customer page this is.
     this.customerName = options.customerName || '';
-    this.messagesPanel = null;
 
     this.render();
     this.attachEventListeners();
@@ -111,7 +109,6 @@ export class TabContainer {
 
         this.tabElements[tab.id] = button;
         header.appendChild(button);
-        if (tab.id === 'messages') this.setTabBadge('messages', this.data.unreadMessages || 0);
       }
     });
 
@@ -192,13 +189,8 @@ export class TabContainer {
       case 'progress':
         renderProgressPanel(container, data, { slug: this.slug, onMeasurementAdded: this.onMeasurementAdded, readOnly: this.readOnly });
         break;
-      case 'messages':
-        this.messagesPanel = renderMessagesPanel(container, {
-          slug: this.slug,
-          role: this.role,
-          customerName: this.customerName,
-          onUnreadChange: (n) => this.setTabBadge('messages', n),
-        });
+      case 'welcome':
+        renderWelcomeEditor(container, { slug: this.slug, customerName: this.customerName });
         break;
     }
 
@@ -567,12 +559,6 @@ export class TabContainer {
       button.tabIndex = isActive ? 0 : -1; // roving tabindex: Tab enters the active tab, arrows move
     });
 
-    // The Messages tab only fetches and polls while it is the visible one.
-    if (this.messagesPanel) {
-      if (tabId === 'messages') this.messagesPanel.activate();
-      else this.messagesPanel.deactivate();
-    }
-
     // Update panel visibility and reset scroll
     Object.entries(this.panelElements).forEach(([id, panel]) => {
       const isActive = id === tabId;
@@ -581,24 +567,6 @@ export class TabContainer {
         panel.scrollTop = 0; // Reset scroll position to top
       }
     });
-  }
-
-  /** Unread count pill on a tab: the number for sighted users, a full phrase for screen readers. */
-  setTabBadge(tabId, count) {
-    const button = this.tabElements[tabId];
-    if (!button) return;
-    button.querySelector('.tab-badge')?.remove();
-    if (!(count > 0)) return;
-    const badge = document.createElement('span');
-    badge.className = 'tab-badge';
-    const shown = document.createElement('span');
-    shown.setAttribute('aria-hidden', 'true');
-    shown.textContent = count > 9 ? '9+' : String(count);
-    const phrase = document.createElement('span');
-    phrase.className = 'sr-only';
-    phrase.textContent = tn('messages.unread', count);
-    badge.append(shown, phrase);
-    button.appendChild(badge);
   }
 
   getEmptyStateMessage(contentType) {

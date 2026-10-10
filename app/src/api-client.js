@@ -123,27 +123,40 @@ export function clearChatHistory() {
   return request('/api/chat/history', { method: 'DELETE' });
 }
 
-/** GET /api/customers/:slug/messages → { messages, canReply, unread, latestCoachMessageRead } (specs/016 contracts/messages-api.md). */
+/** Coach only: the old two-way conversation (feature 016), kept as read-only history → { messages }. */
 export function getMessages(slug) {
   return request(`/api/customers/${encodeURIComponent(slug)}/messages`);
 }
 
-/** POST a message → { message }. A repeated clientId returns the stored message instead of a second one. */
-export function sendMessage(slug, { body, clientId }) {
-  return request(`/api/customers/${encodeURIComponent(slug)}/messages`, {
+/** GET …/welcome/due?today=YYYY-MM-DD → { due, message?, weekStart? } (specs/018 contracts/welcome-api.md). */
+export function getWelcomeDue(slug, today) {
+  return request(`/api/customers/${encodeURIComponent(slug)}/welcome/due?today=${encodeURIComponent(today)}`);
+}
+
+/** The customer dismissed this week's popup → { recorded }. */
+export function markWelcomeSeen(slug, weekStart) {
+  return request(`/api/customers/${encodeURIComponent(slug)}/welcome/seen`, {
     method: 'POST',
-    body: JSON.stringify({ body, clientId }),
+    body: JSON.stringify({ weekStart }),
   });
 }
 
-/** The caller opened the thread: marks the other side's messages read → { marked, unread }. */
-export function markMessagesRead(slug) {
-  return request(`/api/customers/${encodeURIComponent(slug)}/messages/read`, { method: 'POST' });
+/** Coach only: GET the customer's welcome message → { message: {...} | null }. */
+export function getWelcome(slug) {
+  return request(`/api/customers/${encodeURIComponent(slug)}/welcome`);
 }
 
-/** Coach only: deletes one of their own messages → { deleted: true }. */
-export function deleteMessage(slug, id) {
-  return request(`/api/customers/${encodeURIComponent(slug)}/messages/${encodeURIComponent(id)}`, { method: 'DELETE' });
+/** Coach only: create or replace the welcome message → { message }. */
+export function saveWelcome(slug, { body, deliveryWeekday, repeatWeekly }) {
+  return request(`/api/customers/${encodeURIComponent(slug)}/welcome`, {
+    method: 'PUT',
+    body: JSON.stringify({ body, deliveryWeekday, repeatWeekly }),
+  });
+}
+
+/** Coach only: remove the welcome message → { deleted: true }. */
+export function deleteWelcome(slug) {
+  return request(`/api/customers/${encodeURIComponent(slug)}/welcome`, { method: 'DELETE' });
 }
 
 /** POST /api/customers → { slug, displayName }. 409 customer_exists when the name is taken. */

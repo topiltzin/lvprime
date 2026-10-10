@@ -3,11 +3,12 @@ import { renderCustomer } from './views/customer-view.js';
 import { renderLogin } from './views/login-view.js';
 import { renderChangePassword } from './views/change-password-view.js';
 import { renderResetPassword } from './views/reset-password-view.js';
-import { getSession, logout, setPasswordRequiredHandler, setUnauthorizedHandler } from './api-client.js';
+import { getSession, getWelcomeDue, logout, markWelcomeSeen, setPasswordRequiredHandler, setUnauthorizedHandler } from './api-client.js';
 import { t } from './lib/i18n.js';
 import { renderSidebar } from './components/sidebar.js';
 import { renderHeaderAccount } from './components/header-account.js';
 import { mountChatPanel } from './components/chat-panel.js';
+import { openWelcomePopup } from './components/welcome-popup.js';
 import { renderLangSwitch, translateShell } from './components/lang-switch.js';
 
 const app = document.getElementById('app');
@@ -99,6 +100,26 @@ async function start() {
   // The assistant is for the coach and customers alike (each has their own memory).
   // Signed in by now (the login screen reloads the page), so never on the sign-in page.
   mountChatPanel(document.body);
+  if (isCustomer()) showWelcomeIfDue();
+}
+
+const pad2 = (n) => String(n).padStart(2, '0');
+
+// A customer's motivational welcome from the coach (specs/018): after the page is up, ask
+// whether one is due for the customer's local date and show it once. Never blocks or breaks
+// sign-in, so every failure is swallowed.
+async function showWelcomeIfDue() {
+  try {
+    const now = new Date();
+    const today = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
+    const due = await getWelcomeDue(session.slug, today);
+    if (!due?.due) return;
+    const name = (session.name || '').trim().split(/\s+/)[0];
+    await openWelcomePopup({ name, body: due.message.body, coachName: due.message.coachName });
+    await markWelcomeSeen(session.slug, due.weekStart);
+  } catch {
+    // The popup is a bonus; nothing to tell the customer if it can't be shown.
+  }
 }
 
 start();

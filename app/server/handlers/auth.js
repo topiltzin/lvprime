@@ -81,6 +81,7 @@ export async function handleSession(req, res) {
     email: actor?.email || null,
     role: actor?.role || null,
     slug: customer ? actor.slug : null,
+    name: customer ? actor.customer.name || null : null,
     mustChangePassword: customer ? !!actor.customer.must_change_password : false,
     disabled: customer ? !!actor.customer.archived_at : false,
   });
