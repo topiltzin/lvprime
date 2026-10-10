@@ -24,7 +24,14 @@ import { handleCustomerFile, handleDeleteAttachment, handleUploadAttachment } fr
 import { handleChangePassword, handleLogin, handleLogout, handleSession } from './handlers/auth.js';
 import { handleForgotPassword, handleResetPassword } from './handlers/password-reset.js';
 import { handleCreateAccess, handleResetAccess } from './handlers/customer-access.js';
-import { handleDeleteMessage, handleGetMessages, handleMarkMessagesRead, handlePostMessage } from './handlers/messages.js';
+import { handleGetMessages } from './handlers/messages.js';
+import {
+  handleDeleteWelcome,
+  handleGetWelcome,
+  handleGetWelcomeDue,
+  handleMarkWelcomeSeen,
+  handlePutWelcome,
+} from './handlers/welcome.js';
 import { CustomerNotFoundError, ValidationError } from './lib/customer-data.js';
 
 // Route tables and dispatch only; each handler lives under handlers/ (shared HTTP helpers in http.js).
@@ -87,26 +94,34 @@ const ROUTES = [
   {
     access: 'customer-own',
     method: 'GET',
+    pattern: /^\/api\/customers\/([^/]+)\/welcome\/due\/?$/,
+    handler: (req, res, m) => handleGetWelcomeDue(req, res, decodeURIComponent(m[1])),
+  },
+  {
+    access: 'customer-own',
+    method: 'POST',
+    pattern: /^\/api\/customers\/([^/]+)\/welcome\/seen\/?$/,
+    handler: (req, res, m) => handleMarkWelcomeSeen(req, res, decodeURIComponent(m[1])),
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/customers\/([^/]+)\/welcome\/?$/,
+    handler: (req, res, m) => handleGetWelcome(req, res, decodeURIComponent(m[1])),
+  },
+  {
+    method: 'PUT',
+    pattern: /^\/api\/customers\/([^/]+)\/welcome\/?$/,
+    handler: (req, res, m) => handlePutWelcome(req, res, decodeURIComponent(m[1])),
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/api\/customers\/([^/]+)\/welcome\/?$/,
+    handler: (req, res, m) => handleDeleteWelcome(req, res, decodeURIComponent(m[1])),
+  },
+  {
+    method: 'GET',
     pattern: /^\/api\/customers\/([^/]+)\/messages\/?$/,
     handler: (req, res, m) => handleGetMessages(req, res, decodeURIComponent(m[1])),
-  },
-  {
-    access: 'customer-own',
-    method: 'POST',
-    pattern: /^\/api\/customers\/([^/]+)\/messages\/?$/,
-    handler: (req, res, m) => handlePostMessage(req, res, decodeURIComponent(m[1])),
-  },
-  {
-    access: 'customer-own',
-    method: 'POST',
-    pattern: /^\/api\/customers\/([^/]+)\/messages\/read\/?$/,
-    handler: (req, res, m) => handleMarkMessagesRead(req, res, decodeURIComponent(m[1])),
-  },
-  {
-    access: 'customer-own',
-    method: 'DELETE',
-    pattern: /^\/api\/customers\/([^/]+)\/messages\/([^/]+)\/?$/,
-    handler: (req, res, m) => handleDeleteMessage(req, res, decodeURIComponent(m[1]), decodeURIComponent(m[2])),
   },
   {
     access: 'customer-own',

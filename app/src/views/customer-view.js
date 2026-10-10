@@ -67,12 +67,11 @@ function buildTabConfig(data, { isCustomer = false } = {}) {
       order: 3,
     },
     {
-      id: 'messages',
-      // Both profiles: the coach's thread with this customer. Never hidden, so a customer
-      // with no messages still sees where they will appear (specs/016).
-      label: t('tabs.messages'),
+      id: 'welcome',
+      // The coach writes the motivational message customers see as a popup (specs/018).
+      label: t('tabs.welcome'),
       isEnabled: true,
-      contentType: 'messages',
+      contentType: 'welcome',
       order: 4,
     },
     {
@@ -86,7 +85,7 @@ function buildTabConfig(data, { isCustomer = false } = {}) {
     },
   ];
   // Seguimiento and Notas are the coach's: a customer's bar simply doesn't have them.
-  return isCustomer ? tabs.filter((tab) => tab.id !== 'feedback' && tab.id !== 'notes') : tabs;
+  return isCustomer ? tabs.filter((tab) => !['feedback', 'notes', 'welcome'].includes(tab.id)) : tabs;
 }
 
 /**
@@ -134,9 +133,8 @@ function buildTabData(customerData) {
     notes,
     nutrition,
     progress: customerData.measurements || { columns: [], rows: [] },
-    // Present so the tab renders the conversation instead of an empty state; the panel loads it itself.
-    messages: { present: true },
-    unreadMessages: customerData.unreadMessages || 0,
+    // Present so the tab renders the editor instead of an empty state; the editor loads it itself.
+    welcome: { present: true },
       };
 }
 
@@ -306,7 +304,6 @@ export async function renderCustomer(container, slug, { role = 'coach' } = {}) {
     tabs = new TabContainer(tabsContainer, buildTabConfig(customerData, { isCustomer }), buildTabData(customerData), {
       readOnly: isCustomer,
       slug,
-      role: isCustomer ? 'customer' : 'coach',
       customerName: customerData.displayName,
       feedbackEntries: feedbackEntriesOf(customerData),
       onSessionLogged,
