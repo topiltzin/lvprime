@@ -4,7 +4,7 @@
 
 export const STRINGS_EN = {
   // App shell (index.html)
-  'app.title': 'LvPrime · Coach workspace',
+  'app.title': 'LvPrime · Personal training 40+',
   'app.logoLabel': 'LvPrime, go to overview',
   'app.subtitle': 'Personal training · 40+',
   'app.workspace': 'Coach workspace',
@@ -13,6 +13,7 @@ export const STRINGS_EN = {
   'app.privacy': 'Privacy',
   'app.terms': 'Terms',
   'app.support': 'Support',
+  'app.training': 'Training',
   'lang.groupLabel': 'Language',
   'lang.es': 'Español',
   'lang.en': 'English',
@@ -399,7 +400,7 @@ export const STRINGS_EN = {
 
 export const STRINGS_ES = {
   // App shell (index.html)
-  'app.title': 'LvPrime · Espacio del coach',
+  'app.title': 'LvPrime · Entrenamiento personal 40+',
   'app.logoLabel': 'LvPrime, ir al resumen',
   'app.subtitle': 'Entrenamiento personal · 40+',
   'app.workspace': 'Espacio del coach',
@@ -408,6 +409,7 @@ export const STRINGS_ES = {
   'app.privacy': 'Privacidad',
   'app.terms': 'Términos',
   'app.support': 'Soporte',
+  'app.training': 'Entrenamiento',
   'lang.groupLabel': 'Idioma',
   'lang.es': 'Español',
   'lang.en': 'English',

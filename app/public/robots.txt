@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /customer-files/
+
+Sitemap: https://lv-prime.eu/sitemap.xml

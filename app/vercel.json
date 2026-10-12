@@ -7,7 +7,7 @@
   },
   "rewrites": [
     {
-      "source": "/(privacy|terms|support)",
+      "source": "/(privacy|terms|support|entrenamiento-personal)",
       "destination": "/$1.html"
     },
     {

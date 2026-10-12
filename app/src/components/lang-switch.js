@@ -36,9 +36,10 @@ export function translateShell() {
   const legal = document.getElementById('site-footer-nav');
   if (legal) {
     legal.setAttribute('aria-label', t('app.legalLabel'));
-    const [privacy, terms, support] = legal.querySelectorAll('a');
+    const [privacy, terms, support, training] = legal.querySelectorAll('a');
     privacy.textContent = t('app.privacy');
     terms.textContent = t('app.terms');
     support.textContent = t('app.support');
+    if (training) training.textContent = t('app.training');
   }
 }

@@ -23,11 +23,13 @@ const MIME = {
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
   '.woff2': 'font/woff2',
+  '.txt': 'text/plain; charset=utf-8',
+  '.xml': 'application/xml; charset=utf-8',
   '.webmanifest': 'application/manifest+json',
 };
 
 // Public legal pages (public/*.html), served at clean URLs like the vercel.json rewrite.
-const LEGAL_PAGES = new Set(['/privacy', '/terms', '/support']);
+const LEGAL_PAGES = new Set(['/privacy', '/terms', '/support', '/entrenamiento-personal']);
 
 function serveStatic(req, res) {
   applySecurityHeaders(res);
