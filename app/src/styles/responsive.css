@@ -28,9 +28,12 @@
   /* Header: logo, language, icon-only sign out. Role and email add noise on a phone. */
   .header-email,
   .header-role,
-  .logo-subtitle,
   .header-chip {
     display: none;
+  }
+
+  :root {
+    --header-height: 76px;
   }
 
   .header-content {
@@ -44,12 +47,18 @@
   }
 
   .logo-mark {
-    width: 34px;
-    height: 34px;
+    width: 32px;
   }
 
   .logo-text {
-    font-size: 1.5rem;
+    font-size: 0.6875rem;
+  }
+
+  .logo-subtitle {
+    padding-left: 0.6rem;
+    font-size: 0.5625rem;
+    letter-spacing: 0.1em;
+    max-width: 6.5rem;
   }
 
   .header-account {
@@ -139,6 +148,10 @@
 @media (max-width: 480px) {
   #app {
     padding: 1.25rem 1rem 4rem;
+  }
+
+  :root {
+    --header-height: 76px;
   }
 
   .header-content {

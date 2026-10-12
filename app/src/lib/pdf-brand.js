@@ -1,7 +1,7 @@
 // LvPrime brand for jsPDF exports (specs/011 contracts/pdf-brand.md).
 // Draws the mark as vectors and the wordmark in built-in Helvetica, so PDFs stay sharp
 // and text stays selectable without embedding images or font files. No DOM imports:
-// `markSegments` is tested under plain `node --test`.
+// `markPolygons` is tested under plain `node --test`.
 
 import { t } from './i18n.js';
 
@@ -9,14 +9,14 @@ export const BRAND_NAME = 'LvPrime';
 
 // Mirrors the --brand-* tokens in src/styles/tokens.css (checked by tests/unit/brand.test.js).
 export const BRAND_RGB = {
-  graphite: [28, 31, 35],
-  graphiteDeep: [18, 20, 23],
-  volt: [194, 235, 87],
-  voltOnLight: [75, 107, 10],
-  chalk: [244, 245, 242],
-  steel: [221, 225, 220],
-  ink: [21, 24, 27],
-  muted: [90, 96, 104],
+  graphite: [12, 12, 12],
+  graphiteDeep: [5, 5, 5],
+  volt: [168, 225, 29],
+  voltOnLight: [67, 107, 12],
+  chalk: [247, 247, 245],
+  steel: [225, 225, 220],
+  ink: [12, 12, 12],
+  muted: [91, 91, 87],
 };
 
 const PT_PER_MM = 2.8346;
@@ -25,32 +25,26 @@ const WORDMARK_PT = 20;
 const FOOTER_TEXT_PT = 8;
 const FOOTER_RESERVE_PT = 40;
 
-// Mark geometry on its 64 grid, identical to design/brand/mark.svg.
-const GRID = 64;
-const TILE_RADIUS = 16;
-const STROKE_WIDTH = 6.5;
-const STROKES = [
-  { from: [16, 19], to: [16, 48], colour: BRAND_RGB.chalk },
-  { from: [16, 48], to: [24, 48], colour: BRAND_RGB.chalk },
-  { from: [26.5, 28], to: [35.5, 48], colour: BRAND_RGB.chalk },
-  { from: [35.5, 48], to: [49, 13], colour: BRAND_RGB.volt },
-];
+// Mark geometry on its own 330 x 397 grid, identical to design/brand/mark.svg
+// (traced from the logo: an angular L and v).
+const MARK_W = 330;
+const MARK_H = 397;
+const MARK_L = [[0, 0], [78, 68], [78, 296], [19, 355], [49, 355], [77, 327], [155, 327], [206, 397], [0, 397]];
+const MARK_V = [[102, 128], [216, 282], [330, 127], [330, 235], [219, 389], [102, 229]];
 
 function toUnit(pt, unit) {
   return unit === 'mm' ? pt / PT_PER_MM : pt;
 }
 
-/** Mark geometry scaled from the 64 grid to `size` (any unit), origin at the tile's top-left. */
-export function markSegments(size) {
-  const k = size / GRID;
+/** Mark polygons scaled so the mark is `height` tall (any unit), origin at its top-left. */
+export function markPolygons(height) {
+  const k = height / MARK_H;
+  const scale = (pts) => pts.map(([px, py]) => [px * k, py * k]);
   return {
-    tile: { x: 0, y: 0, w: size, h: size, r: TILE_RADIUS * k },
-    strokes: STROKES.map(({ from, to, colour }) => ({
-      from: [from[0] * k, from[1] * k],
-      to: [to[0] * k, to[1] * k],
-      colour,
-    })),
-    strokeWidth: STROKE_WIDTH * k,
+    width: MARK_W * k,
+    height,
+    l: { points: scale(MARK_L), colour: BRAND_RGB.graphite },
+    v: { points: scale(MARK_V), colour: BRAND_RGB.graphite },
   };
 }
 
@@ -82,40 +76,38 @@ function restoreState(doc, s) {
   doc.setLineCap('butt');
 }
 
-function drawMark(doc, x, y, size) {
-  const { tile, strokes, strokeWidth } = markSegments(size);
-  doc.setFillColor(...BRAND_RGB.graphite);
-  doc.roundedRect(x + tile.x, y + tile.y, tile.w, tile.h, tile.r, tile.r, 'F');
-  doc.setLineWidth(strokeWidth);
-  doc.setLineCap('round');
-  for (const { from, to, colour } of strokes) {
-    doc.setDrawColor(...colour);
-    doc.line(x + from[0], y + from[1], x + to[0], y + to[1]);
-  }
+function fillPolygon(doc, x, y, points, colour) {
+  doc.setFillColor(...colour);
+  const [first, ...rest] = points;
+  const deltas = rest.map(([px, py], i) => [px - (i === 0 ? first[0] : rest[i - 1][0]), py - (i === 0 ? first[1] : rest[i - 1][1])]);
+  doc.lines(deltas, x + first[0], y + first[1], [1, 1], 'F', true);
+}
+
+function drawMark(doc, x, y, height) {
+  const { l, v } = markPolygons(height);
+  fillPolygon(doc, x, y, l.points, l.colour);
+  fillPolygon(doc, x, y, v.points, v.colour);
 }
 
 /**
- * Mark + "Lv" (Helvetica bold, Graphite) + "Prime" (Helvetica bold oblique, Volt on light),
- * top-left at (x, y). Restores the caller's drawing state and returns the y below the lock-up.
+ * Mark + lowercase "prime" (Helvetica, tracked, green on light), top-left at (x, y).
+ * Restores the caller's drawing state and returns the y below the lock-up.
  */
 export function drawBrandHeader(doc, { x, y, unit }) {
   const state = saveState(doc);
-  const mark = toUnit(MARK_PT, unit);
-  drawMark(doc, x, y, mark);
+  const markH = toUnit(MARK_PT, unit);
+  drawMark(doc, x, y, markH);
+  const markW = markPolygons(markH).width;
 
-  const textX = x + mark + toUnit(10, unit);
-  const baseline = y + mark * 0.72;
+  const textX = x + markW + toUnit(12, unit);
+  const baseline = y + markH * 0.78;
   doc.setFontSize(WORDMARK_PT);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...BRAND_RGB.graphite);
-  doc.text('Lv', textX, baseline);
-  const lvWidth = doc.getTextWidth('Lv');
-  doc.setFont('helvetica', 'bolditalic');
+  doc.setFont('helvetica', 'normal');
   doc.setTextColor(...BRAND_RGB.voltOnLight);
-  doc.text('Prime', textX + lvWidth, baseline);
+  doc.text('prime', textX, baseline, { charSpace: toUnit(5, unit) });
 
   restoreState(doc, state);
-  return y + mark + toUnit(24, unit);
+  return y + markH + toUnit(24, unit);
 }
 
 /** Stamps every page with a Steel rule, "LvPrime" and "Page i of n". Call once, after all content. */
@@ -135,7 +127,7 @@ export function drawBrandFooter(doc, { unit }) {
     doc.line(margin, ruleY, width - margin, ruleY);
     doc.setFontSize(FOOTER_TEXT_PT);
     doc.setTextColor(...BRAND_RGB.muted);
-    doc.setFont('helvetica', 'bolditalic');
+    doc.setFont('helvetica', 'bold');
     doc.text(BRAND_NAME, margin, textY);
     doc.setFont('helvetica', 'normal');
     doc.text(t('pdf.page', { i, n: pageCount }), width - margin, textY, { align: 'right' });

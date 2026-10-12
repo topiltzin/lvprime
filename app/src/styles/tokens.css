@@ -10,37 +10,41 @@
 :root {
   color-scheme: light dark;
 
-  /* LvPrime performance palette: graphite, chalk and one volt accent.
-     Volt is a fill colour on light surfaces (dark text on top); text in the accent
-     uses --brand-volt-on-light there. On dark surfaces volt works as both. */
-  --brand-graphite: #1C1F23;
-  --brand-graphite-deep: #121417;
-  --brand-volt: #C2EB57;
-  --brand-volt-on-light: #4B6B0A;
-  --brand-chalk: #F4F5F2;
-  --brand-steel: #DDE1DC;
+  /* LvPrime palette, taken from the logo: ink black, white and one lime accent (#A8E11D).
+     Lime is a fill colour on light surfaces (black text on top); text in the accent
+     uses --brand-volt-on-light there. On dark surfaces lime works as both.
+     Token names (graphite, volt, chalk) predate the logo and are kept for stability. */
+  --brand-graphite: #0C0C0C;
+  --brand-graphite-deep: #050505;
+  --brand-volt: #A8E11D;
+  --brand-volt-on-light: #436B0C;
+  --brand-chalk: #F7F7F5;
+  --brand-steel: #E1E1DC;
 
   /* Color (locked visual system) */
   --bg: var(--brand-chalk);
-  --surface: #FCFCFB;
-  --surface-raised: #FFFFFE;
-  --ink: #15181B;
-  --muted: #5A6068;
-  --border: var(--brand-steel);
-  --accent: #4B6B0A;
-  --accent-deep: #3A5306;
-  --accent-tint: #EEF5DC;
-  --accent-fill: #C2EB57;
-  --accent-fill-hover: #B3DE45;
-  --accent-contrast: #14170F;
+  --surface: #FFFFFF;
+  --surface-raised: #FFFFFF;
+  --ink: #0C0C0C;
+  --muted: #5B5B57;
+  --border: var(--ink);
+  --accent: #436B0C;
+  --accent-deep: #345409;
+  --accent-tint: #EFF7D9;
+  --accent-fill: #A8E11D;
+  --accent-fill-hover: #98CF14;
+  --accent-contrast: #0C0C0C;
   --danger: #B42318;
   --danger-tint: #FDE8E6;
   --danger-border: #F4B4AD;
   --warning-deep: #8F5200;
   --warning-tint: #FFF1D6;
+  /* Header is a black slab with a lime rule: white LV mark, lime "prime" beneath, as in the logo. */
   --header-bg: var(--brand-graphite);
   --on-header: var(--brand-chalk);
-  --on-header-muted: #A9AFAC;
+  --on-header-muted: #A3A39D;
+  --on-dark-muted: #A3A39D; /* secondary text on black panels */
+  --rule: 3px; /* structural line weight */
 
   /* Type */
   --font-body: 'Geist Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -58,22 +62,26 @@
 
   /* Space & shape. Rule: actions and chips are pills, inputs --radius-input,
      cards --radius-card, feature panels --radius-hero. */
-  --radius-card: 14px;
-  --radius-hero: 20px;
+  --radius-card: 0;
+  --radius-hero: 0;
   --radius-pill: 999px;
-  --radius-input: 10px;
+  --radius-input: 0;
   --page-max-width: 1120px;
-  --header-height: 64px;
+  --header-height: 88px;
   --tab-header-height: 58px;
   --sidebar-width: 248px;
   --card-padding: 20px;
-  --shadow-rest: 0 1px 2px rgba(21, 24, 27, 0.05);
-  --shadow-hover: 0 10px 28px -8px rgba(21, 24, 27, 0.16);
-  --shadow-hero: 0 22px 44px -22px rgba(18, 20, 23, 0.55);
+  /* Hard offset shadows: no blur, always ink. */
+  --shadow-rest: 4px 4px 0 var(--ink);
+  --shadow-hover: 6px 6px 0 var(--ink);
+  --shadow-hero: 8px 8px 0 var(--brand-volt);
+
+  /* Logo-derived cut: the L's top-right corner is sliced at ~45deg. Used on hero panels. */
+  --cut: 28px;
 
   /* Surfaces & interactive accents */
-  --muted-bg: #ECEEEA;
-  --accent-hover: #3A5306;
+  --muted-bg: #EEEEEA;
+  --accent-hover: #345409;
 
   /* Chart (trend bars — read via getComputedStyle in JS) */
   --chart-completed: var(--accent);
@@ -97,27 +105,29 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0F1113;
-    --surface: #181B1F;
-    --surface-raised: #1E2126;
-    --ink: #ECEEE9;
-    --muted: #9CA3AB;
-    --border: #2A2E34;
-    --brand-volt-on-light: #C2EB57;
-    --accent: #C2EB57;
+    --bg: #0A0A0A;
+    --surface: #141414;
+    --surface-raised: #1B1B1B;
+    --ink: #F1F1EE;
+    --muted: #9A9A94;
+    --border: #5A5A55;
+    --shadow-rest: 4px 4px 0 #3A3A36;
+    --shadow-hover: 6px 6px 0 var(--brand-volt);
+    --brand-volt-on-light: #A8E11D;
+    --accent: #A8E11D;
     /* Tint text must stay light-on-dark, or it goes muddy against --accent-tint. */
-    --accent-deep: #C2EB57;
-    --accent-tint: #252D16;
-    --accent-contrast: #14170F;
+    --accent-deep: #A8E11D;
+    --accent-tint: #1E2A0A;
+    --accent-contrast: #0C0C0C;
     --danger: #FF8A80;
     --danger-tint: #3A1A18;
     --danger-border: #6B2A25;
     --warning-deep: #F0B34A;
     --warning-tint: #33270F;
-    --muted-bg: #22262B;
-    --accent-hover: #D2F27A;
+    --muted-bg: #1F1F1D;
+    --accent-hover: #BDF03F;
     --shadow-rest: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-hover: 0 12px 30px -10px rgba(0, 0, 0, 0.6);
-    --chart-hatch: #0F1113;
+    --chart-hatch: #0A0A0A;
   }
 }

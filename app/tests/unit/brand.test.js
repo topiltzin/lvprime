@@ -60,9 +60,9 @@ test('status and action colours match the locked palette', () => {
       'warning-deep': light['warning-deep'], 'warning-tint': light['warning-tint'],
     },
     {
-      accent: '#4B6B0A', 'accent-hover': '#3A5306', 'accent-deep': '#3A5306',
-      'accent-tint': '#EEF5DC', 'accent-contrast': '#14170F',
-      'accent-fill': '#C2EB57',
+      accent: '#436B0C', 'accent-hover': '#345409', 'accent-deep': '#345409',
+      'accent-tint': '#EFF7D9', 'accent-contrast': '#0C0C0C',
+      'accent-fill': '#A8E11D',
       danger: '#B42318', 'danger-tint': '#FDE8E6', 'danger-border': '#F4B4AD',
       'warning-deep': '#8F5200', 'warning-tint': '#FFF1D6',
     },
@@ -75,8 +75,8 @@ test('status and action colours match the locked palette', () => {
       'warning-deep': dark['warning-deep'], 'warning-tint': dark['warning-tint'],
     },
     {
-      accent: '#C2EB57', 'accent-hover': '#D2F27A', 'accent-deep': '#C2EB57',
-      'accent-tint': '#252D16', 'accent-contrast': '#14170F',
+      accent: '#A8E11D', 'accent-hover': '#BDF03F', 'accent-deep': '#A8E11D',
+      'accent-tint': '#1E2A0A', 'accent-contrast': '#0C0C0C',
       'danger-tint': '#3A1A18', 'danger-border': '#6B2A25',
       'warning-deep': '#F0B34A', 'warning-tint': '#33270F',
     },
@@ -85,23 +85,18 @@ test('status and action colours match the locked palette', () => {
 
 // specs/011 contracts/pdf-brand.md "Tests": the vector mark and palette drawn into the
 // PDFs stay identical to the SVG masters and tokens.css.
-test('markSegments matches the 64-grid mark and scales linearly', async () => {
-  const { markSegments, BRAND_RGB } = await import('../../src/lib/pdf-brand.js');
-  const full = markSegments(64);
-  assert.deepEqual(full.tile, { x: 0, y: 0, w: 64, h: 64, r: 16 });
-  assert.equal(full.strokeWidth, 6.5);
-  assert.deepEqual(full.strokes.map((s) => [s.from, s.to]), [
-    [[16, 19], [16, 48]],
-    [[16, 48], [24, 48]],
-    [[26.5, 28], [35.5, 48]],
-    [[35.5, 48], [49, 13]],
-  ]);
-  assert.deepEqual(full.strokes.at(-1).colour, BRAND_RGB.volt);
+test('markPolygons matches the logo mark grid and scales linearly', async () => {
+  const { markPolygons, BRAND_RGB } = await import('../../src/lib/pdf-brand.js');
+  const full = markPolygons(397);
+  assert.equal(full.width, 330);
+  assert.deepEqual(full.l.points[0], [0, 0]);
+  assert.deepEqual(full.l.points.at(-2), [206, 397]);
+  assert.deepEqual(full.v.points[1], [216, 282]);
+  assert.deepEqual(full.l.colour, BRAND_RGB.graphite);
 
-  const half = markSegments(32);
-  assert.deepEqual(half.tile, { x: 0, y: 0, w: 32, h: 32, r: 8 });
-  assert.equal(half.strokeWidth, 3.25);
-  assert.deepEqual(half.strokes[3].to, [24.5, 6.5]);
+  const half = markPolygons(198.5);
+  assert.equal(half.width, 165);
+  assert.deepEqual(half.v.points[2], [165, 63.5]);
 });
 
 test('PDF palette matches the brand tokens and name', async () => {

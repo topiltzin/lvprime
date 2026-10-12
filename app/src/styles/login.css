@@ -1,17 +1,17 @@
 /* ---------- Sign-in ---------- */
 
-/* Split screen: graphite brand panel (tagline set large, poster-style) beside the
+/* Split screen: black brand panel (tagline set large, poster-style) beside the
    form. Stacks on phones with a short panel on top. */
 .login-wrap {
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
-  max-width: 1040px;
+  max-width: none; /* fills the page column so the card shares the logo's left edge */
   min-height: min(640px, calc(100dvh - var(--header-height) - 4rem));
   margin: clamp(0.5rem, 3vh, 2rem) auto;
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-hero);
-  box-shadow: var(--shadow-hover);
+  border: var(--rule) solid var(--ink);
+  border-radius: 0;
+  box-shadow: var(--shadow-hero);
   overflow: hidden;
   animation: rise-in 500ms var(--motion-out) both;
 }
@@ -21,6 +21,8 @@
   display: flex;
   padding: clamp(2rem, 4vw, 3rem);
   background: var(--brand-graphite);
+  color: var(--brand-chalk);
+  border-right: var(--rule) solid var(--brand-volt);
   overflow: hidden;
 }
 
@@ -30,8 +32,7 @@
   top: 0;
   left: clamp(2rem, 4vw, 3rem);
   width: 72px;
-  height: 4px;
-  border-radius: 0 0 4px 4px;
+  height: 12px;
   background: var(--brand-volt);
 }
 
@@ -40,7 +41,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: repeating-linear-gradient(115deg, transparent 0 26px, rgba(194, 235, 87, 0.07) 26px 27px);
+  background: repeating-linear-gradient(115deg, transparent 0 26px, rgba(168, 225, 29, 0.07) 26px 27px);
   -webkit-mask-image: linear-gradient(200deg, #000 0%, transparent 70%);
   mask-image: linear-gradient(200deg, #000 0%, transparent 70%);
 }
@@ -56,24 +57,21 @@
 }
 
 .login-mark {
+  --mark-ink: var(--brand-chalk);
+  --mark-rise: var(--brand-chalk);
   width: 56px;
-  height: 56px;
+  height: auto;
 }
 
 .login-wordmark {
   margin: 0;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 2.25rem;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 1.5rem;
   line-height: 1;
-  letter-spacing: var(--logo-tracking);
-  color: var(--brand-chalk);
-}
-
-.login-wordmark em {
-  font-style: italic;
+  letter-spacing: 0.5em;
+  text-transform: lowercase;
   color: var(--brand-volt);
-  padding-right: 0.05em;
 }
 
 .login-tagline {
@@ -143,7 +141,9 @@ form.feedback-form button.password-toggle {
   width: 2.5rem;
   min-height: 2.5rem;
   padding: 0;
-  border-radius: var(--radius-input);
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
   background: transparent;
   color: var(--muted);
 }
@@ -155,6 +155,7 @@ form.feedback-form button.password-toggle:hover {
 
 form.feedback-form button.password-toggle:active:not(:disabled) {
   transform: translateY(-50%);
+  box-shadow: none;
 }
 
 form.feedback-form button.password-toggle .icon {
@@ -181,8 +182,8 @@ form.login-form button[type='submit'] {
 
 .header-role {
   padding: 0.1rem 0.55rem;
-  border: 1px solid var(--on-header-muted);
-  border-radius: 999px;
+  border: 2px solid var(--on-header);
+  border-radius: 0;
   font-size: var(--meta-size);
   color: var(--on-header-muted);
   white-space: nowrap;
@@ -203,10 +204,10 @@ form.login-form button[type='submit'] {
   gap: 0.4rem;
   min-height: 38px;
   padding: 0.35rem 0.9rem;
-  border: 1px solid rgba(244, 245, 242, 0.2);
-  border-radius: var(--radius-pill);
+  border: 2px solid var(--on-header);
+  border-radius: 0;
   background: transparent;
-  color: var(--brand-chalk);
+  color: var(--on-header);
   font: inherit;
   font-size: 0.875rem;
   font-weight: 600;
@@ -215,8 +216,9 @@ form.login-form button[type='submit'] {
 }
 
 .sign-out-button:hover:not(:disabled) {
-  border-color: var(--brand-volt);
-  color: var(--brand-volt);
+  border-color: var(--on-header);
+  background: var(--brand-volt);
+  color: var(--brand-graphite);
 }
 
 .sign-out-button:disabled {
@@ -224,19 +226,30 @@ form.login-form button[type='submit'] {
 }
 
 /* Text-style button under a sign-in form ("Forgot your password?", "Back to sign in"). */
-.login-link {
+.login-link,
+form.login-form .login-link {
+  display: inline-flex;
   align-self: flex-start;
   min-height: 44px;
   padding: 0;
   border: none;
+  border-radius: 0;
+  box-shadow: none;
   background: none;
   color: var(--accent);
   font: inherit;
+  text-transform: none;
+  letter-spacing: normal;
   text-decoration: underline;
   text-underline-offset: 3px;
   cursor: pointer;
 }
 
-.login-link:hover {
+.login-link:hover,
+form.login-form .login-link:hover:not(:disabled),
+form.login-form .login-link:active:not(:disabled) {
+  background: none;
+  transform: none;
+  box-shadow: none;
   color: var(--ink);
 }
