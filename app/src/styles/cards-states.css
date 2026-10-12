@@ -2,7 +2,7 @@
 
 .card {
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);
   border-radius: var(--radius-card);
   padding: var(--card-padding);
   margin-bottom: 1.5rem;
@@ -58,8 +58,9 @@ form.feedback-form button {
   gap: 0.5rem;
   min-height: 48px;
   padding: 0.7rem 1.75rem;
-  border: none;
-  border-radius: var(--radius-pill);
+  border: var(--rule) solid var(--brand-graphite);
+  border-radius: 0;
+  box-shadow: 4px 4px 0 var(--brand-graphite);
   background: var(--accent-fill);
   color: var(--accent-contrast);
   font-family: var(--font-display);
@@ -68,7 +69,7 @@ form.feedback-form button {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   cursor: pointer;
-  transition: background var(--motion-fast) var(--motion-ease), transform var(--motion-fast) var(--motion-ease);
+  transition: background var(--motion-fast) var(--motion-ease), transform var(--motion-fast) var(--motion-ease), box-shadow var(--motion-fast) var(--motion-ease);
 }
 
 .empty-state-cta:hover,
@@ -80,7 +81,8 @@ form.feedback-form button:hover:not(:disabled) {
 .empty-state-cta:active,
 .day-done-button:active:not(:disabled),
 form.feedback-form button:active:not(:disabled) {
-  transform: scale(0.98);
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 var(--brand-graphite);
 }
 
 .day-done-button:disabled,

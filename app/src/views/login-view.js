@@ -18,10 +18,7 @@ export function renderBrand() {
 
   const wordmark = document.createElement('p');
   wordmark.className = 'login-wordmark';
-  wordmark.append('Lv');
-  const prime = document.createElement('em');
-  prime.textContent = 'Prime';
-  wordmark.appendChild(prime);
+  wordmark.textContent = 'prime';
   brand.appendChild(wordmark);
 
   const tagline = document.createElement('p');

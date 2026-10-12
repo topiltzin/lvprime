@@ -1,25 +1,61 @@
+/* LvPrime static pages (landing, support, privacy, terms). Bauhaus x brutalism:
+   black, white and one lime; hard borders, offset shadows, no radii, geometric shapes.
+   Mirrors tokens.css; kept standalone so these pages load without the app bundle. */
 :root {
   color-scheme: light dark;
-  --bg: #F4F5F2; --surface: #FCFCFB; --ink: #15181B; --muted: #5A6068;
-  --border: #DDE1DC; --accent: #4B6B0A; --header: #1C1F23; --on-header: #F4F5F2;
+  --bg: #F7F7F5; --surface: #FFFFFF; --ink: #0C0C0C; --muted: #5B5B57;
+  --line: #0C0C0C; --accent: #436B0C; --lime: #A8E11D; --on-lime: #0C0C0C;
+  --header: #FFFFFF; --on-header: #0C0C0C; --shadow: #0C0C0C; --rule: 3px;
 }
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #121417; --surface: #1C1F23; --ink: #F4F5F2; --muted: #A9AFAC; --border: #2E3338; --accent: #C2EB57; }
+  :root { --bg: #0A0A0A; --surface: #141414; --ink: #F1F1EE; --muted: #9A9A94; --line: #F1F1EE;
+    --accent: #A8E11D; --header: #0A0A0A; --on-header: #F1F1EE; --shadow: #3A3A36; }
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 system-ui, -apple-system, 'Segoe UI', sans-serif; }
-header { background: var(--header); color: var(--on-header); }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.65 system-ui, -apple-system, 'Segoe UI', sans-serif; }
+
+/* Header: black slab, lime rule. White LV mark with lime "prime" beneath, as in the logo. */
+header { background: #0C0C0C; color: #F7F7F5; border-bottom: 4px solid var(--lime); }
 header div, main { max-width: 46rem; margin: 0 auto; padding: 1rem 1.25rem; }
-header a { color: var(--on-header); text-decoration: none; font-weight: 700; letter-spacing: .02em; }
-header span { color: #C2EB57; }
-nav { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; padding: .75rem 0 0; font-size: .9rem; }
-nav a { font-weight: 500; opacity: .85; }
-nav a[aria-current] { opacity: 1; text-decoration: underline; }
-main { padding-top: 2rem; padding-bottom: 4rem; }
-section + section { margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border); }
-h1 { font-size: 2rem; line-height: 1.15; margin: 0 0 .25rem; }
-h2 { font-size: 1.15rem; margin: 1.75rem 0 .25rem; }
+header a { color: #F7F7F5; text-decoration: none; }
+.brand { display: inline-flex; align-items: center; gap: 1rem; }
+.brand-stack { display: inline-flex; flex-direction: column; align-items: center; gap: .35rem; }
+.brand .mark { width: 36px; height: auto; flex: none; }
+.brand-stack b { color: var(--lime); font-size: .8125rem; font-weight: 500; line-height: 1; letter-spacing: .3em; margin-right: -.3em; text-transform: lowercase; }
+.brand small { padding-left: 1rem; border-left: 3px solid var(--lime); font-size: .6875rem; font-weight: 700; line-height: 1.3; letter-spacing: .14em; text-transform: uppercase; max-width: 11rem; }
+nav { display: flex; flex-wrap: wrap; gap: .5rem; padding: 1rem 0 0; font-size: .9rem; }
+nav a { font-weight: 700; padding: .35rem .7rem; border: 2px solid transparent; }
+nav a:hover, nav a:focus-visible { border-color: #F7F7F5; }
+nav a[aria-current] { background: var(--lime); color: #0C0C0C; border-color: var(--lime); }
+
+main { padding-top: 2.5rem; padding-bottom: 4rem; }
+section + section { margin-top: 3.5rem; padding-top: 2.5rem; border-top: var(--rule) solid var(--line); }
+h1 {
+  font-size: clamp(2rem, 6vw, 3rem); line-height: 1.02; letter-spacing: -.02em; font-weight: 900; margin: 0 0 1rem;
+  padding: 1.5rem; background: var(--lime); color: var(--on-lime);
+  border: var(--rule) solid var(--on-lime); box-shadow: 8px 8px 0 var(--shadow);
+}
+h2 { font-size: 1.25rem; margin: 2.25rem 0 .5rem; padding-bottom: .35rem; border-bottom: var(--rule) solid var(--line); text-transform: uppercase; letter-spacing: .04em; }
+h3 { font-size: 1rem; margin: 1.25rem 0 0; }
 p, li { max-width: 65ch; }
 .meta { color: var(--muted); font-size: .9rem; }
-a { color: var(--accent); }
+a { color: var(--accent); text-underline-offset: 3px; text-decoration-thickness: 2px; }
+a:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
 footer { text-align: center; color: var(--muted); font-size: .85rem; padding: 0 1rem 2rem; }
+
+/* Bauhaus primitives: circle, square, triangle in black and lime. */
+.shapes { display: flex; gap: .75rem; margin: 1.25rem 0; }
+.shapes i { display: block; width: 44px; height: 44px; background: var(--ink); }
+.shapes i:nth-child(1) { border-radius: 50%; background: var(--lime); border: var(--rule) solid var(--line); }
+.shapes i:nth-child(2) { background: var(--ink); }
+.shapes i:nth-child(3) { background: var(--lime); clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+
+/* Landing: services and steps as hard-edged blocks. */
+.landing ul { list-style: none; padding: 0; display: grid; gap: 1rem; margin: 1rem 0; }
+.landing li { max-width: none; padding: 1rem 1.1rem; background: var(--surface); border: var(--rule) solid var(--line); box-shadow: 5px 5px 0 var(--shadow); }
+.landing li strong { display: block; font-size: 1.05rem; }
+@media (min-width: 40rem) { .landing ul { grid-template-columns: 1fr 1fr; } }
+@media (prefers-reduced-motion: no-preference) {
+  .landing li { transition: transform .15s, box-shadow .15s; }
+  .landing li:hover { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 var(--shadow); }
+}

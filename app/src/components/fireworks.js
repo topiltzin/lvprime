@@ -14,7 +14,7 @@ export function prefersReducedMotion() {
 export function burstColors() {
   const css = getComputedStyle(document.documentElement);
   const read = (name, fallback) => css.getPropertyValue(name).trim() || fallback;
-  return [read('--brand-volt', '#C2EB57'), read('--brand-chalk', '#F4F5F2'), '#FFB547', '#7CE0B5'];
+  return [read('--brand-volt', '#A8E11D'), read('--brand-chalk', '#F7F7F5'), '#FFB547', '#7CE0B5'];
 }
 
 /**

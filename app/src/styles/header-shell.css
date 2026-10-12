@@ -6,11 +6,14 @@
   z-index: 100;
   background: var(--header-bg);
   color: var(--on-header);
-  border-bottom: 1px solid rgba(244, 245, 242, 0.08);
+  border-bottom: 4px solid var(--brand-volt);
 }
 
 .header-content {
   height: var(--header-height);
+  /* Same column and gutter as #app, so the logo sits on the page's left margin. */
+  max-width: var(--page-max-width);
+  margin: 0 auto;
   padding: 0 1.5rem;
   display: flex;
   align-items: center;
@@ -21,70 +24,58 @@
 .logo {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1rem;
   color: var(--on-header);
 }
 
-/* One SVG serves the header and the sign-in panel (login-view.js clones it).
-   The "Lv" monogram: chalk L and v, with the v's right arm in volt rising past the
-   L's cap height. A faint inner edge keeps the tile readable on the graphite header. */
 .logo-mark {
-  --mark-tile: var(--brand-graphite-deep);
   --mark-ink: var(--brand-chalk);
-  --mark-rise: var(--brand-volt);
+  --mark-rise: var(--brand-chalk);
   width: 40px;
-  height: 40px;
+  height: auto;
+  aspect-ratio: 330 / 397;
   flex: none;
 }
 
-.mark-tile {
-  fill: var(--mark-tile);
-}
-
-.mark-edge {
-  fill: none;
-  stroke: var(--brand-chalk);
-  stroke-opacity: 0.1;
-  stroke-width: 1.5;
-}
-
 .mark-ink {
-  stroke: var(--mark-ink);
-  fill: none;
+  fill: var(--mark-ink);
 }
 
 .mark-rise {
-  stroke: var(--mark-rise);
-  fill: none;
+  fill: var(--mark-rise);
 }
 
 .logo-lockup {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  align-items: center;
+  gap: 0.35rem;
 }
 
+/* The logo: white mark with lowercase, wide-tracked "prime" in lime beneath it. */
 .logo-text {
-  font-family: var(--font-display);
-  font-size: 1.75rem;
-  line-height: 0.9;
-  font-weight: 700;
-  letter-spacing: var(--logo-tracking);
-  color: var(--brand-chalk);
-}
-
-.logo-text em {
-  font-style: italic;
+  order: 2;
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  line-height: 1;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  margin-right: -0.3em; /* cancels trailing tracking so "prime" centres under the mark */
+  text-transform: lowercase;
   color: var(--brand-volt);
-  padding-right: 0.05em;
 }
 
+/* Descriptor beside the logo, not part of it. */
 .logo-subtitle {
+  padding-left: 1rem;
+  border-left: 3px solid var(--brand-volt);
   font-size: 0.6875rem;
-  font-weight: 600;
+  font-weight: 700;
+  line-height: 1.3;
   text-transform: uppercase;
-  letter-spacing: 0.16em;
-  color: var(--on-header-muted);
+  letter-spacing: 0.14em;
+  color: var(--on-header);
+  max-width: 11rem;
 }
 
 /* Static context label, not an action: no border, so it doesn't read as a button. */
@@ -112,6 +103,10 @@
 }
 
 @media (min-width: 1100px) {
+  body.has-sidebar .header-content {
+    max-width: none;
+  }
+
   body.has-sidebar .shell {
     display: grid;
     grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
@@ -252,8 +247,8 @@
 .lang-switch {
   display: inline-flex;
   padding: 3px;
-  border: 1px solid rgba(244, 245, 242, 0.2);
-  border-radius: var(--radius-pill);
+  border: 2px solid var(--on-header);
+  border-radius: 0;
 }
 
 .lang-option {
@@ -261,7 +256,7 @@
   min-height: 32px;
   padding: 0 0.6rem;
   border: 0;
-  border-radius: var(--radius-pill);
+  border-radius: 0;
   background: transparent;
   color: var(--on-header-muted);
   font: inherit;
@@ -273,16 +268,17 @@
 }
 
 .lang-option:hover {
-  color: var(--brand-chalk);
+  color: var(--on-header);
 }
 
 .lang-option[aria-pressed='true'] {
   background: var(--brand-volt);
   color: var(--brand-graphite);
+  box-shadow: inset 0 0 0 2px var(--brand-graphite);
 }
 
 .lang-option:focus-visible {
-  outline: 2px solid var(--brand-volt);
+  outline: 3px solid var(--on-header);
   outline-offset: 2px;
 }
 

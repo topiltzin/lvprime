@@ -11,11 +11,11 @@
   overflow: hidden;
   margin-top: 0.5rem;
   padding: clamp(1.5rem, 4vw, 2.25rem);
-  border-radius: var(--radius-hero);
+  border-radius: 0;
+  /* Top-right corner sliced like the L in the logo. */
+  clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, 0 100%);
   background: var(--brand-graphite);
-  border: 1px solid rgba(244, 245, 242, 0.06);
   color: var(--brand-chalk);
-  box-shadow: var(--shadow-hero);
   animation: rise-in 500ms var(--motion-out) both;
 }
 
@@ -26,7 +26,6 @@
   left: clamp(1.5rem, 4vw, 2.25rem);
   width: 72px;
   height: 4px;
-  border-radius: 0 0 4px 4px;
   background: var(--brand-volt);
 }
 
@@ -35,7 +34,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: repeating-linear-gradient(115deg, transparent 0 26px, rgba(194, 235, 87, 0.06) 26px 27px);
+  background: repeating-linear-gradient(115deg, transparent 0 26px, rgba(168, 225, 29, 0.06) 26px 27px);
   -webkit-mask-image: linear-gradient(270deg, #000 0%, transparent 55%);
   mask-image: linear-gradient(270deg, #000 0%, transparent 55%);
 }
@@ -54,7 +53,7 @@
 }
 
 .client-hero-card .status-pill.status-on-track {
-  background: rgba(194, 235, 87, 0.14);
+  background: rgba(168, 225, 29, 0.14);
   color: var(--brand-volt);
 }
 
@@ -64,13 +63,13 @@
 }
 
 .client-hero-card .status-pill.status-no-feedback {
-  border-color: rgba(244, 245, 242, 0.25);
-  color: var(--on-header-muted);
+  border-color: rgba(247, 247, 245, 0.25);
+  color: var(--on-dark-muted);
 }
 
 .client-hero-checkin {
   font-size: var(--meta-size);
-  color: var(--on-header-muted);
+  color: var(--on-dark-muted);
 }
 
 .client-hero-name {
@@ -113,11 +112,11 @@
   width: 44px;
   height: 6px;
   border-radius: 3px;
-  background: rgba(244, 245, 242, 0.14);
+  background: rgba(247, 247, 245, 0.14);
 }
 
 .hero-progress-segments .is-past {
-  background: rgba(194, 235, 87, 0.5);
+  background: rgba(168, 225, 29, 0.5);
 }
 
 .hero-progress-segments .is-current {
@@ -130,7 +129,7 @@
   gap: 1rem 1.5rem;
   margin-top: 1.5rem;
   padding-top: 1.25rem;
-  border-top: 1px solid rgba(244, 245, 242, 0.1);
+  border-top: 1px solid rgba(247, 247, 245, 0.1);
 }
 
 .hero-fact {
@@ -150,13 +149,13 @@
   height: 2.25rem;
   padding: 0.5rem;
   border-radius: 10px;
-  background: rgba(194, 235, 87, 0.12);
+  background: rgba(168, 225, 29, 0.12);
   color: var(--brand-volt);
 }
 
 .hero-fact-label {
   font-size: 0.8125rem;
-  color: var(--on-header-muted);
+  color: var(--on-dark-muted);
 }
 
 .hero-fact-value {
@@ -170,7 +169,7 @@
 .hero-fact-detail {
   font-size: 0.8125rem;
   line-height: 1.4;
-  color: var(--on-header-muted);
+  color: var(--on-dark-muted);
 }
 
 /* Back link on the left, Archive / Restore on the right. */
@@ -223,4 +222,12 @@
 
 .archived-banner .icon {
   color: var(--muted);
+}
+
+/* On the near-black dark theme the card would vanish into the page; lift it one step. */
+@media (prefers-color-scheme: dark) {
+  .client-hero-card {
+    background: var(--surface-raised);
+    box-shadow: inset 0 0 0 1px rgba(247, 247, 245, 0.08);
+  }
 }
