@@ -269,7 +269,7 @@ function renderDayFooter(card, day, options) {
       error.textContent = '';
       button.disabled = true;
       button.setAttribute('aria-busy', 'true');
-      label.textContent = t('common.saving');
+      swapLabel(label, t('common.saving'));
       try {
         const entry = await onMarkDone(day);
         onEntryChange?.(entry);
@@ -278,7 +278,7 @@ function renderDayFooter(card, day, options) {
         saving = false;
         button.disabled = false;
         button.removeAttribute('aria-busy');
-        label.textContent = t('day.markDone');
+        swapLabel(label, t('day.markDone'));
         error.textContent = t('common.couldNotSave');
       }
     });
@@ -288,6 +288,25 @@ function renderDayFooter(card, day, options) {
   else if (editable && onMarkDone) showIdle();
   else return null;
   return footer;
+}
+
+// Crossfades a button label with a touch of blur so the old and new text read as one
+// morphing element. Skipped for reduced motion; callers never wait on it.
+function swapLabel(label, text) {
+  if (label.textContent === text) return;
+  if (!label.animate || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    label.textContent = text;
+    return;
+  }
+  const hidden = { opacity: 0, filter: 'blur(2px)' };
+  const shown = { opacity: 1, filter: 'blur(0px)' };
+  label.getAnimations().forEach((a) => a.cancel());
+  const out = label.animate([shown, hidden], { duration: 80, easing: 'ease-out', fill: 'forwards' });
+  out.onfinish = () => {
+    label.textContent = text;
+    label.animate([hidden, shown], { duration: 140, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' });
+    out.cancel();
+  };
 }
 
 /**

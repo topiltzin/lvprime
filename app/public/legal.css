@@ -59,3 +59,18 @@ footer { text-align: center; color: var(--muted); font-size: .85rem; padding: 0 
   .landing li { transition: transform .15s, box-shadow .15s; }
   .landing li:hover { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 var(--shadow); }
 }
+
+/* Calls to action: hard-edged buttons with the same pressed-in feel as the app. */
+.cta { display: flex; flex-wrap: wrap; gap: .75rem; margin: 1.25rem 0; max-width: none; }
+.btn { display: inline-block; padding: .7rem 1.5rem; font-weight: 800; text-decoration: none; text-transform: uppercase; letter-spacing: .04em;
+  background: var(--surface); color: var(--ink); border: var(--rule) solid var(--line); box-shadow: 4px 4px 0 var(--shadow);
+  white-space: nowrap; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.btn-primary { background: var(--lime); color: var(--on-lime); border-color: var(--on-lime); }
+.btn:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--shadow); }
+@media (prefers-reduced-motion: no-preference) {
+  .btn { transition: transform .08s, box-shadow .08s; }
+  .btn:active { transition-duration: .08s; }
+}
+.quote { margin: 1rem 0; padding: 1rem 1.1rem; border: var(--rule) solid var(--line); box-shadow: 5px 5px 0 var(--shadow); background: var(--surface); }
+.quote p { margin: 0; }
+.quote footer { margin: .5rem 0 0; padding: 0; text-align: left; font-size: .9rem; }

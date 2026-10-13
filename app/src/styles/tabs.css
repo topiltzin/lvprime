@@ -84,7 +84,7 @@
 .tab-panel {
   display: block;
   padding: 1.25rem 0;
-  animation: fadeIn 150ms ease-in;
+  animation: fadeIn 140ms var(--motion-out);
 }
 
 .tab-panel[hidden] {

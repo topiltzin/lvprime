@@ -271,8 +271,10 @@ a.exercise-name:hover > span:first-child {
   transition: transform var(--motion-fast) var(--motion-ease);
 }
 
-a.exercise-name:hover .exercise-video-icon {
-  transform: scale(1.12);
+@media (hover: hover) and (pointer: fine) {
+  a.exercise-name:hover .exercise-video-icon {
+    transform: scale(1.12);
+  }
 }
 
 .exercise-form-tip {

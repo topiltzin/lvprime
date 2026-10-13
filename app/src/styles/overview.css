@@ -127,7 +127,7 @@
   overflow: hidden;
   transition: box-shadow var(--motion-base) var(--motion-ease), transform var(--motion-base) var(--motion-ease),
     border-color var(--motion-base) var(--motion-ease);
-  animation: rise-in 450ms var(--motion-out) both;
+  animation: rise-in 320ms var(--motion-out) both;
 }
 
 .customer-list .customer-card:nth-child(2) { animation-delay: 60ms; }
@@ -147,10 +147,12 @@
   background: var(--warning-deep);
 }
 
-.customer-card:hover {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
-  box-shadow: var(--shadow-hover);
-  transform: translateY(-2px);
+@media (hover: hover) and (pointer: fine) {
+  .customer-card:hover {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-2px);
+  }
 }
 
 .customer-card:active {
@@ -188,11 +190,18 @@
   transition: opacity var(--motion-base) var(--motion-ease), transform var(--motion-base) var(--motion-ease);
 }
 
-.customer-card:hover .customer-card-arrow,
 .customer-card:focus-visible .customer-card-arrow {
   opacity: 1;
   transform: none;
   color: var(--accent);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .customer-card:hover .customer-card-arrow {
+    opacity: 1;
+    transform: none;
+    color: var(--accent);
+  }
 }
 
 .customer-card .goal-line {
