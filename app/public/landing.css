@@ -1,0 +1,93 @@
+/* Landing only (entrenamiento-personal). Athletic editorial: big condensed type, hairline rules,
+   lime for actions only. Loaded after legal.css, which still styles the other static pages. */
+@font-face { font-family: 'Barlow Condensed'; font-weight: 700; font-display: swap; src: url('/fonts/barlow-condensed-latin-700-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Barlow Condensed'; font-weight: 800; font-display: swap; src: url('/fonts/barlow-condensed-latin-800-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Geist Variable'; font-weight: 100 900; font-display: swap; src: url('/fonts/geist-latin-wght-normal.woff2') format('woff2'); }
+
+.landing {
+  --display: 'Barlow Condensed', 'Arial Narrow', system-ui, sans-serif;
+  --hair: color-mix(in srgb, var(--ink) 22%, transparent);
+  font-family: 'Geist Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 1.0625rem;
+}
+.landing main { max-width: 64rem; padding: 3rem 1.25rem 5rem; }
+.landing section + section { margin-top: 5rem; padding-top: 3.5rem; border-top: 1px solid var(--hair); }
+
+/* Hero: left-aligned type; becomes a split with a photo when .hero-photo exists. */
+.hero { display: grid; gap: 1.5rem; align-items: center; }
+.landing h1 {
+  position: relative; margin: 0; padding: 1.25rem 0 0; background: none; color: var(--ink); border: 0; box-shadow: none;
+  font-family: var(--display); font-weight: 800; font-size: clamp(2.75rem, 8.5vw, 5.25rem);
+  line-height: .96; letter-spacing: -.015em; text-wrap: balance;
+}
+.landing h1::before { content: ''; position: absolute; top: 0; left: 0; width: 4rem; height: 6px; background: var(--lime); }
+.hero > p:not(.meta):not(.cta) { max-width: 46ch; margin: 0; font-size: 1.1875rem; color: var(--muted); }
+.landing .meta { margin: 0; order: -1; font-size: .875rem; }
+.hero-photo { margin: 0; }
+.hero-photo img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover; }
+@media (min-width: 48rem) {
+  .hero:has(.hero-photo) { grid-template-columns: 1.15fr .85fr; gap: 3rem; }
+  .hero:has(.hero-photo) .hero-photo { grid-row: 1 / span 4; grid-column: 2; }
+}
+
+/* Buttons: lime primary keeps the one hard shadow; secondary is a quiet outline. */
+.landing .cta { margin: .5rem 0 0; gap: 1rem; align-items: center; }
+.landing .btn { box-shadow: none; border-width: 2px; padding: .8rem 1.6rem; font-family: var(--display); font-size: 1.125rem; letter-spacing: .05em; }
+.landing .btn-primary { box-shadow: 4px 4px 0 var(--shadow); }
+.landing .btn-primary:active { box-shadow: 0 0 0 var(--shadow); }
+.landing .btn:not(.btn-primary) { background: transparent; border-color: var(--hair); }
+@media (hover: hover) and (pointer: fine) {
+  .landing .btn:not(.btn-primary):hover { border-color: var(--ink); }
+}
+
+/* Headings and sections: mixed case, hairline rules, no boxes. */
+.landing h2 {
+  margin: 4rem 0 1rem; padding: 0; border: 0; text-transform: none; letter-spacing: -.005em;
+  font-family: var(--display); font-weight: 700; font-size: clamp(1.75rem, 4vw, 2.5rem); line-height: 1;
+}
+.landing section > p { max-width: 62ch; }
+
+.landing .services { display: grid; gap: 0 3rem; margin: 0; padding: 0; list-style: none; }
+.landing .services li { max-width: none; padding: 1.1rem 0; background: none; border: 0; border-top: 1px solid var(--hair); box-shadow: none; transition: none; transform: none; }
+.landing .services li:hover { transform: none; box-shadow: none; }
+.landing li strong { display: block; margin-bottom: .2rem; font-family: var(--display); font-weight: 700; font-size: 1.5rem; line-height: 1.1; }
+@media (min-width: 48rem) { .landing .services { grid-template-columns: 1fr 1fr; } }
+
+/* Steps: one vertical sequence with large numerals, not a second grid of boxes. */
+.landing .steps { counter-reset: step; display: grid; gap: 0; margin: 0; padding: 0; list-style: none; grid-template-columns: 1fr; }
+.landing .steps li { counter-increment: step; position: relative; max-width: 44rem; padding: 1.25rem 0 1.25rem 4.5rem; background: none; border: 0; border-top: 1px solid var(--hair); box-shadow: none; transition: none; }
+.landing .steps li:hover { transform: none; box-shadow: none; }
+.landing .steps li::before {
+  content: counter(step, decimal-leading-zero); position: absolute; left: 0; top: .85rem;
+  font-family: var(--display); font-weight: 800; font-size: 2.5rem; line-height: 1; color: var(--accent);
+}
+
+/* FAQ: closed by default. */
+.faq { border-top: 1px solid var(--hair); }
+.faq:last-of-type { border-bottom: 1px solid var(--hair); }
+.faq summary {
+  display: flex; justify-content: space-between; gap: 1rem; align-items: center; min-height: 3.5rem; padding: .75rem 0;
+  font-weight: 600; cursor: pointer; list-style: none; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: '+'; flex: none; font-family: var(--display); font-size: 1.75rem; line-height: 1; color: var(--accent); }
+.faq[open] summary::after { content: '\2212'; }
+.faq p { margin: 0 0 1.1rem; max-width: 62ch; color: var(--muted); }
+
+.quote { border: 0; border-left: 6px solid var(--lime); box-shadow: none; background: none; padding: .25rem 0 .25rem 1.1rem; font-size: 1.25rem; }
+
+/* Motion: hero rises on load, lists reveal once on scroll. All gated for reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .hero > * { animation: lp-rise 520ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .hero > :nth-child(2) { animation-delay: 60ms; }
+  .hero > :nth-child(3) { animation-delay: 120ms; }
+  .hero > :nth-child(4) { animation-delay: 180ms; }
+  @keyframes lp-rise { from { opacity: 0; transform: translateY(12px); } }
+  .reveal-ready .services li, .reveal-ready .steps li, .reveal-ready .faq, .reveal-ready .quote {
+    opacity: 0; transform: translateY(10px);
+    transition: opacity 360ms cubic-bezier(0.16, 1, 0.3, 1) var(--d, 0ms), transform 360ms cubic-bezier(0.16, 1, 0.3, 1) var(--d, 0ms);
+  }
+  .reveal-ready .in { opacity: 1 !important; transform: none !important; }
+  .faq[open] p { animation: lp-fade 220ms ease-out; }
+  @keyframes lp-fade { from { opacity: 0; transform: translateY(-4px); } }
+}

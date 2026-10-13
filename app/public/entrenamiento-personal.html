@@ -15,7 +15,9 @@
     <meta name="twitter:card" content="summary" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <meta name="theme-color" content="#0C0C0C" />
+    <link rel="preload" href="/fonts/barlow-condensed-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="/legal.css" />
+    <link rel="stylesheet" href="/landing.css" />
     <script type="application/ld+json">
 [
   {
@@ -156,21 +158,22 @@
     </header>
     <main>
       <section lang="es" id="es">
-        <h1>Entrenador personal en Tallinn y coaching en línea para mayores de 40</h1>
-        <div class="shapes" aria-hidden="true"><i></i><i></i><i></i></div>
-        <p class="meta"><a href="#en">English</a></p>
-        <!-- PHOTO: hero image goes here once provided (public/photos/hero.jpg) -->
-        <p>LvPrime es entrenamiento personal en Tallinn, Estonia, y coaching en línea para personas de 40 años en adelante. Rutinas de fuerza, movilidad y acondicionamiento hechas a tu medida, con un entrenador que revisa tu progreso cada semana.</p>
-        <p class="cta"><a class="btn btn-primary" href="/support">Reservar sesión</a><a class="btn" href="/">Iniciar sesión</a></p>
+        <div class="hero">
+          <!-- PHOTO: add <figure class="hero-photo"><img src="/photos/hero.jpg" alt="..." width="1200" height="1500" fetchpriority="high"></figure> as the last child to enable the split hero -->
+          <h1>Entrenador personal en Tallinn y coaching en línea para mayores de 40</h1>
+          <p class="meta"><a href="#en">English</a></p>
+            <p>LvPrime es entrenamiento personal en Tallinn, Estonia, y coaching en línea para personas de 40 años en adelante. Rutinas de fuerza, movilidad y acondicionamiento hechas a tu medida, con un entrenador que revisa tu progreso cada semana.</p>
+          <p class="cta"><a class="btn btn-primary" href="/support">Reservar sesión</a><a class="btn" href="/">Iniciar sesión</a></p>
+        </div>
         <h2>Servicios</h2>
-        <ul>
+        <ul class="services">
           <li><strong>Entrenamiento personal en Tallinn:</strong> sesiones presenciales guiadas, con técnica corregida en el momento.</li>
           <li><strong>Coaching en línea:</strong> tu programa, videos de cada ejercicio y ajustes semanales, desde cualquier lugar.</li>
           <li><strong>Fuerza y movilidad:</strong> ganar músculo, proteger articulaciones y moverte mejor en tu día a día.</li>
           <li><strong>Pérdida de peso y condición física:</strong> progresión gradual y sostenible.</li>
         </ul>
         <h2>Cómo funciona</h2>
-        <ul>
+        <ul class="steps">
           <li><strong>Un programa para ti:</strong> según tu objetivo, nivel, equipo, tiempo y cualquier lesión o limitación.</li>
           <li><strong>Seguimiento semanal:</strong> cuentas cómo te sentiste y tu entrenador ajusta carga, ejercicios y progresión.</li>
           <li><strong>Empezamos simple:</strong> pocos ejercicios por sesión para construir constancia sin lesionarte.</li>
@@ -180,35 +183,31 @@
         <!-- RESULTS: add real client quotes here, with permission. Max 3 lines each:
         <blockquote class="quote"><p>“…”</p><footer>Name, role</footer></blockquote> -->
         <h2>Preguntas frecuentes</h2>
-        <h3>¿Dónde entrenan?</h3>
-        <p>En Tallinn, Estonia, de forma presencial, y en línea desde cualquier lugar. Tu entrenador te propone el formato que mejor encaje con tu agenda y tu equipo.</p>
-        <h3>¿Puedo empezar si hace años que no entreno?</h3>
-        <p>Sí. Empezamos simple, con pocos ejercicios por sesión, y subimos la carga poco a poco según cómo te sientas.</p>
-        <h3>¿Qué pasa si tengo lesiones o molestias?</h3>
-        <p>Las tenemos en cuenta desde el primer programa: adaptamos los ejercicios y trabajamos movilidad. Para dolor o condiciones médicas, consulta primero con tu médico.</p>
-        <h3>¿Cómo funciona el coaching en línea?</h3>
-        <p>Recibes tu rutina con video de cada ejercicio, registras cómo te fue cada semana y tu entrenador ajusta el programa según tu progreso.</p>
-        <h3>¿En qué idiomas trabajan?</h3>
-        <p>Español e inglés.</p>
+        <details class="faq"><summary>¿Dónde entrenan?</summary><p>En Tallinn, Estonia, de forma presencial, y en línea desde cualquier lugar. Tu entrenador te propone el formato que mejor encaje con tu agenda y tu equipo.</p></details>
+        <details class="faq"><summary>¿Puedo empezar si hace años que no entreno?</summary><p>Sí. Empezamos simple, con pocos ejercicios por sesión, y subimos la carga poco a poco según cómo te sientas.</p></details>
+        <details class="faq"><summary>¿Qué pasa si tengo lesiones o molestias?</summary><p>Las tenemos en cuenta desde el primer programa: adaptamos los ejercicios y trabajamos movilidad. Para dolor o condiciones médicas, consulta primero con tu médico.</p></details>
+        <details class="faq"><summary>¿Cómo funciona el coaching en línea?</summary><p>Recibes tu rutina con video de cada ejercicio, registras cómo te fue cada semana y tu entrenador ajusta el programa según tu progreso.</p></details>
+        <details class="faq"><summary>¿En qué idiomas trabajan?</summary><p>Español e inglés.</p></details>
         <h2>Empieza</h2>
         <p>¿Quieres entrenar en Tallinn o en línea con LvPrime? Visita nuestra página de <a href="/support">soporte</a> para ponerte en contacto, o <a href="/">inicia sesión</a> si ya eres cliente.</p>
         <p class="cta"><a class="btn btn-primary" href="/support">Reservar sesión</a><a class="btn" href="/">Iniciar sesión</a></p>
       </section>
       <section lang="en" id="en">
-        <h1>Personal trainer in Tallinn and online coaching for people over 40</h1>
-        <div class="shapes" aria-hidden="true"><i></i><i></i><i></i></div>
-        <p class="meta"><a href="#es">Español</a></p>
-        <p>LvPrime offers personal training in Tallinn, Estonia, and online coaching for people aged 40 and up. Strength, mobility and conditioning routines made for you, with a coach who reviews your progress every week.</p>
-        <p class="cta"><a class="btn btn-primary" href="/support">Book a session</a><a class="btn" href="/">Log in</a></p>
+        <div class="hero">
+          <h1>Personal trainer in Tallinn and online coaching for people over 40</h1>
+          <p class="meta"><a href="#es">Español</a></p>
+          <p>LvPrime offers personal training in Tallinn, Estonia, and online coaching for people aged 40 and up. Strength, mobility and conditioning routines made for you, with a coach who reviews your progress every week.</p>
+          <p class="cta"><a class="btn btn-primary" href="/support">Book a session</a><a class="btn" href="/">Log in</a></p>
+        </div>
         <h2>Services</h2>
-        <ul>
+        <ul class="services">
           <li><strong>Personal training in Tallinn:</strong> guided in-person sessions with technique corrected on the spot.</li>
           <li><strong>Online coaching:</strong> your program, a video for every exercise and weekly adjustments, from anywhere.</li>
           <li><strong>Strength and mobility:</strong> build muscle, protect your joints and move better in daily life.</li>
           <li><strong>Weight loss and fitness:</strong> gradual, sustainable progression.</li>
         </ul>
         <h2>How it works</h2>
-        <ul>
+        <ul class="steps">
           <li><strong>A program made for you:</strong> around your goal, level, equipment, time and any injury or limitation.</li>
           <li><strong>Weekly follow-up:</strong> you tell us how you felt and your coach adjusts load, exercises and progression.</li>
           <li><strong>We start simple:</strong> few exercises per session to build consistency without getting hurt.</li>
@@ -216,20 +215,31 @@
         <h2>Results</h2>
         <p>We track your progress every week: strength, body measurements, energy and how training feels. Results vary by person and consistency; we do not promise numbers, we show you your progress.</p>
         <h2>Frequently asked questions</h2>
-        <h3>Where do you train?</h3>
-        <p>In Tallinn, Estonia, in person, and online from anywhere. Your coach suggests the format that fits your schedule and equipment.</p>
-        <h3>Can I start if I have not trained in years?</h3>
-        <p>Yes. We start simple, with few exercises per session, and increase the load gradually based on how you feel.</p>
-        <h3>What if I have injuries or aches?</h3>
-        <p>We account for them from the first program: exercises are adapted and mobility work is included. For pain or medical conditions, check with your doctor first.</p>
-        <h3>How does online coaching work?</h3>
-        <p>You get your routine with a video for every exercise, log how each week went, and your coach adjusts the program to your progress.</p>
-        <h3>Which languages do you work in?</h3>
-        <p>Spanish and English.</p>
+        <details class="faq"><summary>Where do you train?</summary><p>In Tallinn, Estonia, in person, and online from anywhere. Your coach suggests the format that fits your schedule and equipment.</p></details>
+        <details class="faq"><summary>Can I start if I have not trained in years?</summary><p>Yes. We start simple, with few exercises per session, and increase the load gradually based on how you feel.</p></details>
+        <details class="faq"><summary>What if I have injuries or aches?</summary><p>We account for them from the first program: exercises are adapted and mobility work is included. For pain or medical conditions, check with your doctor first.</p></details>
+        <details class="faq"><summary>How does online coaching work?</summary><p>You get your routine with a video for every exercise, log how each week went, and your coach adjusts the program to your progress.</p></details>
+        <details class="faq"><summary>Which languages do you work in?</summary><p>Spanish and English.</p></details>
         <h2>Get started</h2>
         <p>Want to train in Tallinn or online with LvPrime? Visit our <a href="/support">support</a> page to get in touch, or <a href="/">sign in</a> if you are already a client.</p>
         <p class="cta"><a class="btn btn-primary" href="/support">Book a session</a><a class="btn" href="/">Log in</a></p>
       </section>
     </main>
+      <script>
+      // Scroll reveal for services/steps/FAQ. Content stays visible without JS or with reduced motion.
+      (function () {
+        if (!('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        var items = document.querySelectorAll('.services li, .steps li, .faq, .quote');
+        document.documentElement.classList.add('reveal-ready');
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) {
+            if (!e.isIntersecting) return;
+            e.target.classList.add('in');
+            io.unobserve(e.target);
+          });
+        }, { rootMargin: '0px 0px -8% 0px' });
+        items.forEach(function (el, i) { el.style.setProperty('--d', (i % 4) * 60 + 'ms'); io.observe(el); });
+      })();
+    </script>
   </body>
 </html>
