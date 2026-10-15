@@ -1,15 +1,15 @@
-/* LvPrime static pages (landing, support, privacy, terms). Bauhaus x brutalism:
-   black, white and one lime; hard borders, offset shadows, no radii, geometric shapes.
+/* LvPrime static pages (landing, support, privacy, terms). Clean athletic look:
+   black, white and one lime; soft borders, gentle shadows, rounded corners.
    Mirrors tokens.css; kept standalone so these pages load without the app bundle. */
 :root {
   color-scheme: light dark;
   --bg: #F7F7F5; --surface: #FFFFFF; --ink: #0C0C0C; --muted: #5B5B57;
-  --line: #0C0C0C; --accent: #436B0C; --lime: #A8E11D; --on-lime: #0C0C0C;
-  --header: #FFFFFF; --on-header: #0C0C0C; --shadow: #0C0C0C; --rule: 3px;
+  --line: #D8D8D2; --accent: #436B0C; --lime: #A8E11D; --on-lime: #0C0C0C;
+  --header: #FFFFFF; --on-header: #0C0C0C; --shadow: rgba(12,12,12,.14); --rule: 1px;
 }
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #0A0A0A; --surface: #141414; --ink: #F1F1EE; --muted: #9A9A94; --line: #F1F1EE;
-    --accent: #A8E11D; --header: #0A0A0A; --on-header: #F1F1EE; --shadow: #3A3A36; }
+  :root { --bg: #0A0A0A; --surface: #141414; --ink: #F1F1EE; --muted: #9A9A94; --line: #2E2E2B;
+    --accent: #A8E11D; --header: #0A0A0A; --on-header: #F1F1EE; --shadow: rgba(0,0,0,.5); }
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.65 system-ui, -apple-system, 'Segoe UI', sans-serif; }
@@ -33,9 +33,9 @@ section + section { margin-top: 3.5rem; padding-top: 2.5rem; border-top: var(--r
 h1 {
   font-size: clamp(2rem, 6vw, 3rem); line-height: 1.02; letter-spacing: -.02em; font-weight: 900; margin: 0 0 1rem;
   padding: 1.5rem; background: var(--lime); color: var(--on-lime);
-  border: var(--rule) solid var(--on-lime); box-shadow: 8px 8px 0 var(--shadow);
+  border: 0; border-radius: 22px; box-shadow: 0 16px 40px -16px var(--shadow);
 }
-h2 { font-size: 1.25rem; margin: 2.25rem 0 .5rem; padding-bottom: .35rem; border-bottom: var(--rule) solid var(--line); text-transform: uppercase; letter-spacing: .04em; }
+h2 { font-size: 1.25rem; margin: 2.25rem 0 .5rem; padding-bottom: .35rem; border-bottom: var(--rule) solid var(--line); letter-spacing: .01em; }
 h3 { font-size: 1rem; margin: 1.25rem 0 0; }
 p, li { max-width: 65ch; }
 .meta { color: var(--muted); font-size: .9rem; }
@@ -43,34 +43,27 @@ a { color: var(--accent); text-underline-offset: 3px; text-decoration-thickness:
 a:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
 footer { text-align: center; color: var(--muted); font-size: .85rem; padding: 0 1rem 2rem; }
 
-/* Bauhaus primitives: circle, square, triangle in black and lime. */
-.shapes { display: flex; gap: .75rem; margin: 1.25rem 0; }
-.shapes i { display: block; width: 44px; height: 44px; background: var(--ink); }
-.shapes i:nth-child(1) { border-radius: 50%; background: var(--lime); border: var(--rule) solid var(--line); }
-.shapes i:nth-child(2) { background: var(--ink); }
-.shapes i:nth-child(3) { background: var(--lime); clip-path: polygon(50% 0, 100% 100%, 0 100%); }
-
-/* Landing: services and steps as hard-edged blocks. */
+/* Landing: services and steps as soft cards. */
 .landing ul { list-style: none; padding: 0; display: grid; gap: 1rem; margin: 1rem 0; }
-.landing li { max-width: none; padding: 1rem 1.1rem; background: var(--surface); border: var(--rule) solid var(--line); box-shadow: 5px 5px 0 var(--shadow); }
+.landing li { max-width: none; padding: 1rem 1.1rem; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 1px 2px var(--shadow); }
 .landing li strong { display: block; font-size: 1.05rem; }
 @media (min-width: 40rem) { .landing ul { grid-template-columns: 1fr 1fr; } }
 @media (prefers-reduced-motion: no-preference) {
   .landing li { transition: transform .15s, box-shadow .15s; }
-  .landing li:hover { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 var(--shadow); }
+  .landing li:hover { transform: translateY(-2px); box-shadow: 0 10px 24px -8px var(--shadow); }
 }
 
-/* Calls to action: hard-edged buttons with the same pressed-in feel as the app. */
+/* Calls to action: rounded buttons with a soft press, as in the app. */
 .cta { display: flex; flex-wrap: wrap; gap: .75rem; margin: 1.25rem 0; max-width: none; }
-.btn { display: inline-block; padding: .7rem 1.5rem; font-weight: 800; text-decoration: none; text-transform: uppercase; letter-spacing: .04em;
-  background: var(--surface); color: var(--ink); border: var(--rule) solid var(--line); box-shadow: 4px 4px 0 var(--shadow);
+.btn { display: inline-block; padding: .7rem 1.5rem; font-weight: 800; text-decoration: none; letter-spacing: .02em; border-radius: 12px;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line); box-shadow: 0 1px 2px var(--shadow);
   white-space: nowrap; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
-.btn-primary { background: var(--lime); color: var(--on-lime); border-color: var(--on-lime); }
-.btn:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--shadow); }
+.btn-primary { background: var(--lime); color: var(--on-lime); border-color: transparent; }
+.btn:active { transform: scale(.97); }
 @media (prefers-reduced-motion: no-preference) {
-  .btn { transition: transform .08s, box-shadow .08s; }
+  .btn { transition: transform .12s ease-out; }
   .btn:active { transition-duration: .08s; }
 }
-.quote { margin: 1rem 0; padding: 1rem 1.1rem; border: var(--rule) solid var(--line); box-shadow: 5px 5px 0 var(--shadow); background: var(--surface); }
+.quote { margin: 1rem 0; padding: 1rem 1.1rem; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 1px 2px var(--shadow); background: var(--surface); }
 .quote p { margin: 0; }
 .quote footer { margin: .5rem 0 0; padding: 0; text-align: left; font-size: .9rem; }

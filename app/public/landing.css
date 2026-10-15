@@ -30,11 +30,11 @@
   .hero:has(.hero-photo) .hero-photo { grid-row: 1 / span 4; grid-column: 2; }
 }
 
-/* Buttons: lime primary keeps the one hard shadow; secondary is a quiet outline. */
+/* Buttons: lime primary with a soft lift; secondary is a quiet outline. */
 .landing .cta { margin: .5rem 0 0; gap: 1rem; align-items: center; }
-.landing .btn { box-shadow: none; border-width: 2px; padding: .8rem 1.6rem; font-family: var(--display); font-size: 1.125rem; letter-spacing: .05em; }
-.landing .btn-primary { box-shadow: 4px 4px 0 var(--shadow); }
-.landing .btn-primary:active { box-shadow: 0 0 0 var(--shadow); }
+.landing .btn { box-shadow: none; border-width: 1px; padding: .8rem 1.6rem; font-family: var(--display); font-size: 1.125rem; letter-spacing: .03em; }
+.landing .btn-primary { box-shadow: 0 6px 16px -6px var(--shadow); }
+.landing .btn-primary:active { box-shadow: none; }
 .landing .btn:not(.btn-primary) { background: transparent; border-color: var(--hair); }
 @media (hover: hover) and (pointer: fine) {
   .landing .btn:not(.btn-primary):hover { border-color: var(--ink); }

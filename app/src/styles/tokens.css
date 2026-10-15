@@ -27,7 +27,8 @@
   --surface-raised: #FFFFFF;
   --ink: #0C0C0C;
   --muted: #5B5B57;
-  --border: var(--ink);
+  --border: #D8D8D2;
+  --border-strong: #85857E; /* form control edges: 3:1 against the page */
   --accent: #436B0C;
   --accent-deep: #345409;
   --accent-tint: #EFF7D9;
@@ -44,7 +45,7 @@
   --on-header: var(--brand-chalk);
   --on-header-muted: #A3A39D;
   --on-dark-muted: #A3A39D; /* secondary text on black panels */
-  --rule: 3px; /* structural line weight */
+  --rule: 2px; /* emphasis line weight */
 
   /* Type */
   --font-body: 'Geist Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -62,22 +63,19 @@
 
   /* Space & shape. Rule: actions and chips are pills, inputs --radius-input,
      cards --radius-card, feature panels --radius-hero. */
-  --radius-card: 0;
-  --radius-hero: 0;
+  --radius-card: 14px;
+  --radius-hero: 22px;
   --radius-pill: 999px;
-  --radius-input: 0;
+  --radius-input: 10px;
   --page-max-width: 1120px;
   --header-height: 88px;
   --tab-header-height: 58px;
   --sidebar-width: 248px;
   --card-padding: 20px;
-  /* Hard offset shadows: no blur, always ink. */
-  --shadow-rest: 4px 4px 0 var(--ink);
-  --shadow-hover: 6px 6px 0 var(--ink);
-  --shadow-hero: 8px 8px 0 var(--brand-volt);
-
-  /* Logo-derived cut: the L's top-right corner is sliced at ~45deg. Used on hero panels. */
-  --cut: 28px;
+  /* Soft layered shadows: low contrast, a little blur. */
+  --shadow-rest: 0 1px 2px rgba(12, 12, 12, 0.06), 0 2px 8px rgba(12, 12, 12, 0.04);
+  --shadow-hover: 0 2px 4px rgba(12, 12, 12, 0.06), 0 10px 24px -8px rgba(12, 12, 12, 0.16);
+  --shadow-hero: 0 4px 8px rgba(12, 12, 12, 0.06), 0 24px 48px -16px rgba(12, 12, 12, 0.22);
 
   /* Surfaces & interactive accents */
   --muted-bg: #EEEEEA;
@@ -110,9 +108,11 @@
     --surface-raised: #1B1B1B;
     --ink: #F1F1EE;
     --muted: #9A9A94;
-    --border: #5A5A55;
-    --shadow-rest: 4px 4px 0 #3A3A36;
-    --shadow-hover: 6px 6px 0 var(--brand-volt);
+    --border: #2E2E2B;
+    --border-strong: #7A7A74;
+    --shadow-rest: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-hover: 0 12px 30px -10px rgba(0, 0, 0, 0.6);
+    --shadow-hero: 0 24px 48px -16px rgba(0, 0, 0, 0.7);
     --brand-volt-on-light: #A8E11D;
     --accent: #A8E11D;
     /* Tint text must stay light-on-dark, or it goes muddy against --accent-tint. */
@@ -126,8 +126,6 @@
     --warning-tint: #33270F;
     --muted-bg: #1F1F1D;
     --accent-hover: #BDF03F;
-    --shadow-rest: 0 1px 2px rgba(0, 0, 0, 0.3);
-    --shadow-hover: 0 12px 30px -10px rgba(0, 0, 0, 0.6);
     --chart-hatch: #0A0A0A;
   }
 }

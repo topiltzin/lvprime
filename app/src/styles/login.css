@@ -9,8 +9,8 @@
   min-height: min(640px, calc(100dvh - var(--header-height) - 4rem));
   margin: clamp(0.5rem, 3vh, 2rem) auto;
   background: var(--surface);
-  border: var(--rule) solid var(--ink);
-  border-radius: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-hero);
   box-shadow: var(--shadow-hero);
   overflow: hidden;
   animation: rise-in 500ms var(--motion-out) both;

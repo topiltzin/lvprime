@@ -93,3 +93,13 @@ h3 {
   white-space: nowrap;
   border: 0;
 }
+
+/* Touch screens: every control gets at least a 44px target (WCAG 2.5.8, Apple HIG). */
+@media (pointer: coarse) {
+  .day-chip,
+  .hero-archive-button,
+  .lang-option,
+  form.feedback-form .editor-mode {
+    min-height: 44px;
+  }
+}
